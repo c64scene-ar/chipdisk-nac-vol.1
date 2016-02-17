@@ -187,6 +187,12 @@ ret_x_value = * + 1
         ldx #00                         ; self modifying
 ;        lda tmp_dc02
 ;        sta $dc02
+        
+        lda $dc01                       ; ready joy #1 for button: bit 4
+        asl
+        asl
+        asl
+        asl                             ; C=0: button pressed
         rts
 
 opotx: .byte $00
