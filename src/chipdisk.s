@@ -144,9 +144,9 @@ djr3:   lsr                             ; dy=0 (move down screen), dy=0 (no y ch
 
         clc                             ; set new sprite X position
         txa
-        adc $d000 + 6 * 2
-        sta $d000 + 6 * 2
-        sta $d000 + 7 * 2
+        adc VIC_SPR0_X
+        sta VIC_SPR0_X
+        sta VIC_SPR1_X
 
         pha                             ; save in tmp
 
@@ -163,7 +163,7 @@ test_addition:
 
 change_MSB:
         lda $d010                       ; sprite x MSB
-        eor #%11000000
+        eor #%00000011
         sta $d010
 
 check_x_bounds:
@@ -171,24 +171,24 @@ check_x_bounds:
         tax
 
         lda $d010
-        and #%10000000
+        and #%00000001
         bne x_upper
 
         txa
         cmp #24                         ; lower bounds: x < 24 and LSB
         bcs test_y
         lda #24
-        sta $d000 + 6 * 2
-        sta $d000 + 7 * 2
-        bne test_y
+        bne set_x
 
 x_upper:
         txa
         cmp #84                         ; lower bounds: x > 80 and MSB
         bcc test_y
         lda #84
-        sta $d000 + 6 * 2
-        sta $d000 + 7 * 2
+
+set_x:
+        sta VIC_SPR0_X
+        sta VIC_SPR1_X
 
 
 test_y:
@@ -197,7 +197,7 @@ test_y:
 
         clc
         tya
-        adc $d000 + 6 * 2 + 1           ; set new sprite Y position
+        adc VIC_SPR0_Y                  ; set new sprite Y position
         tay                             ; save A in tmp
 
         cmp #50                         ; don't go lower than 50
@@ -211,8 +211,8 @@ test_y:
         lda #245                        ; set 200 as the maximum
 
 set_y:
-        sta $d000 + 6 * 2 + 1
-        sta $d000 + 7 * 2 + 1
+        sta VIC_SPR0_Y
+        sta VIC_SPR1_Y
 end:
         rts
 
@@ -222,13 +222,13 @@ end:
 ; do_anim_cassette
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_anim_cassette
-        ldx $63f8                       ; sprite pointer for sprite #0
+        ldx $63f8 + 6                   ; sprite pointer for sprite #0
         inx
         cpx #(144 + 16)
         bne :+
         ldx #144
-:       stx $63f8                       ; turning wheel sprite pointer #0
-        stx $63f9                       ; turning wheel sprite pointer #1
+:       stx $63f8 + 6                   ; turning wheel sprite pointer #0
+        stx $63f8 + 7                   ; turning wheel sprite pointer #1
         rts
 .endproc
 
@@ -265,16 +265,16 @@ l1:
         rts
 
 sprites_x_pos:
-        .byte 192, 136, 0, 0, 0, 0, 150, 150
+        .byte 150, 150, 0, 0, 0, 0, 192, 136
 
 sprites_y_pos:
-        .byte 126, 98, 0, 0, 0, 0, 150, 150
+        .byte 150, 150, 0, 0, 0, 0, 126, 98
 
 sprites_color:
-        .byte 12, 12, 0, 0, 0, 0, 0, 1
+        .byte 0, 1, 0, 0, 0, 0, 12, 12
 
 sprites_pointer:
-        .byte 144, 144, 0, 0, 0, 0, 207, 206
+        .byte 207, 206, 0, 0, 0, 0, 144, 144
 
 .endproc
 
