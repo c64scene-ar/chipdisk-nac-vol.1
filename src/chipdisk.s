@@ -70,16 +70,18 @@ BITMAP_ADDR = $2000 + 8 * 40 * 12
         cli
 
 main_loop:
+;       jsr read_mouse
+;       jsr process_cursor
+
         lda sync_raster                 ; raster triggered ?
-        beq :+
+        beq main_loop
+
         jsr do_raster_anims
 
         jsr read_joy2
-        lda $dc00
-        eor #$7f
-        beq :+
-        jsr process_joy2
-:
+        jsr process_cursor
+
+
         jmp main_loop
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -133,12 +135,86 @@ djr3:   lsr                             ; dy=0 (move down screen), dy=0 (no y ch
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; process_joy2
+; read_mouse
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc read_mouse
+        lda $d419                       ; read delta X
+        ldy opotx
+        jsr mouse_move_check
+        sty opotx
+        stx ret_x_value
+
+        lda $d41a                       ; read delay Y
+        ldy opoty
+        jsr mouse_move_check
+        sty opoty
+
+        eor #$ff                        ; delta is inverted... fix it
+        tay
+
+        sec                             ; C=1 (means button not pressed)
+
+ret_x_value = * + 1
+        ldx #00                         ; self modifying
+        rts
+
+opotx: .byte $00
+opoty: .byte $00
+
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; mouse_move_check
+; taken from:
+; http://codebase64.org/doku.php?id=base:c_1351_standard_mouse_routine&s[]=mouse
+;
+;       entry   y = old value of pot register
+;               a = currrent value of pot register
+;       exit    y = value to use for old value
+;               x,a = delta value for position
+;
+; Most of the mouse code is taken from the CC65 libraries written by
+; Ullrich von Bassewitz
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc mouse_move_check
+        sty     old_value
+        sta     new_value
+        ldx     #$00
+
+        sec
+        sbc     old_value               ; a = mod64 (new - old)
+        and     #%01111111
+        cmp     #%01000000              ; if (a > 0)
+        bcs     @L1                     ;
+        lsr     a                       ;   a /= 2;
+        beq     @L2                     ;   if (a != 0)
+        ldy     new_value               ;     y = NewValue
+        rts                             ;   return
+ 
+@L1:    ora     #%11000000              ; else or in high order bits
+        cmp     #$ff                    ; if (a != -1)
+        beq     @L2
+        sec
+        ror     a                       ;   a /= 2
+        dex                             ;   high byte = -1 (X = $FF)
+        ldy     new_value
+        rts
+                                                                               
+@L2:    txa                             ; A = $00
+        rts
+
+old_value: .byte 0
+new_value: .byte 0
+
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; process_cursor
 ; X = -1, 0, or 1
 ; Y = -1, 0, or 1
 ; C = button pressed if Carry Clear
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc process_joy2
+.proc process_cursor
         cpx #0
         beq test_y                      ; skip if no changes in Y
 
@@ -236,7 +312,7 @@ end:
 ; init_sprites
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_sprites
-        lda #%11000011                  ; enable sprites
+        lda #%11111111                  ; enable sprites
         sta VIC_SPR_ENA
 
         lda #0
@@ -265,16 +341,16 @@ l1:
         rts
 
 sprites_x_pos:
-        .byte 150, 150, 0, 0, 0, 0, 192, 136
+        .byte 150, 150,     31, 60, 86, 115,     192, 136
 
 sprites_y_pos:
-        .byte 150, 150, 0, 0, 0, 0, 126, 98
+        .byte 150, 150,     176, 195, 206, 221,     126, 98
 
 sprites_color:
-        .byte 0, 1, 0, 0, 0, 0, 12, 12
+        .byte 0, 1, 1, 1, 1, 1, 12, 12
 
 sprites_pointer:
-        .byte 207, 206, 0, 0, 0, 0, 144, 144
+        .byte 161, 160, 162, 163, 164, 165, 144, 144
 
 .endproc
 
