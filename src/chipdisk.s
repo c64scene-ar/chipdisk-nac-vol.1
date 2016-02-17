@@ -2,6 +2,10 @@
 ;
 ; chipdisk
 ; http://pungas.space
+;
+; To control it use:
+;  - Joystick in port #2
+;  - or Mouse 1351 in port #1
 ;       
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 
@@ -16,10 +20,7 @@
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .include "c64.inc"                      ; c64 constants
 
-DEBUG = 1                               ; rasterlines:1, music:2, all:3
-
-BITMAP_ADDR = $2000 + 8 * 40 * 12
-
+DEBUG = 0                               ; rasterlines:1, music:2, all:3
 
 .segment "CODE"
         sei
@@ -70,19 +71,35 @@ BITMAP_ADDR = $2000 + 8 * 40 * 12
         cli
 
 main_loop:
-;       jsr read_mouse
-;       jsr process_cursor
+        lda #%01000000                  ; enable mouse
+        sta $dc00
+:
+        lda sync_raster_irq             ; raster triggered ?
+        beq :+
+        jsr process_events
 
-        lda sync_raster                 ; raster triggered ?
-        beq main_loop
+:
+        lda sync_timer_irq
+        beq :+
+        dec sync_timer_irq
+        jsr $1003                       ; play music
 
-        jsr do_raster_anims
+:       jmp main_loop
+
+process_events:
+        dec sync_raster_irq
+        jsr read_mouse
+        jsr process_cursor
+
+        lda #%00111111                  ; enable joystick again
+        sta $dc00
 
         jsr read_joy2
         jsr process_cursor
 
+        jsr do_raster_anims
+        rts
 
-        jmp main_loop
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_raster_anims
@@ -91,9 +108,12 @@ main_loop:
 .if (::DEBUG & 1)
         inc $d020
 .endif
-        dec sync_raster
-
+        
+        lda is_playing
+        beq do_nothing
         jsr do_anim_cassette
+
+do_nothing:
 
 .if (::DEBUG & 1)
         dec $d020
@@ -136,36 +156,49 @@ djr3:   lsr                             ; dy=0 (move down screen), dy=0 (no y ch
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; read_mouse
+;       exit    x = delta x movement
+;               y = delta y movement
+;               C = 0 if button pressed
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc read_mouse
-        lda $d419                       ; read delta X
-        ldy opotx
-        jsr mouse_move_check
-        sty opotx
-        stx ret_x_value
+;        lda $dc02
+;        sta tmp_dc02
+;        lda #$ff                        ; pins set to input
+;        sta $dc02
 
-        lda $d41a                       ; read delay Y
+        lda $d419                       ; read delta X (pot x)
+        ldy opotx
+        jsr mouse_move_check            ; calculate delta
+        sty opotx
+        sta ret_x_value
+
+        lda $d41a                       ; read delay Y (pot y)
         ldy opoty
-        jsr mouse_move_check
+        jsr mouse_move_check            ; calculate delta
         sty opoty
 
         eor #$ff                        ; delta is inverted... fix it
         tay
+        iny
 
         sec                             ; C=1 (means button not pressed)
 
 ret_x_value = * + 1
         ldx #00                         ; self modifying
+;        lda tmp_dc02
+;        sta $dc02
         rts
 
 opotx: .byte $00
 opoty: .byte $00
+;tmp_dc02: .byte $00
 
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; mouse_move_check
-; taken from:
+; taken from these places:
+; https://github.com/adamdunkels/contiki-1.x/blob/master/contiki-c64/ctk/ctk-mouse-1351.S
 ; http://codebase64.org/doku.php?id=base:c_1351_standard_mouse_routine&s[]=mouse
 ;
 ;       entry   y = old value of pot register
@@ -210,11 +243,31 @@ new_value: .byte 0
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; process_cursor
-; X = -1, 0, or 1
-; Y = -1, 0, or 1
-; C = button pressed if Carry Clear
+;
+; entry
+;       X = delta x
+;       Y = delta y
+;       C = 0 if button pressed
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc process_cursor
+        bcs no_button
+        lda $d01e                       ; quick and dirty. check for sprite collision
+        lsr
+        lsr                             ; skip sprite 0 and 1 (cursor)
+        lsr                             ; sprite #2: play button
+        bcc :+
+        jmp do_play_song
+:       lsr                             ; sprite #3: rewind
+        bcc :+
+        jmp do_prev_song
+:       lsr                             ; sprite #4: fast forward
+        bcc :+
+        jmp do_next_song
+:       lsr                             ; sprite #5: stop
+        bcc no_button
+        jmp do_stop_song
+
+no_button:
         cpx #0
         beq test_y                      ; skip if no changes in Y
 
@@ -341,10 +394,10 @@ l1:
         rts
 
 sprites_x_pos:
-        .byte 150, 150,     31, 60, 86, 115,     192, 136
+        .byte 150, 150,     32, 60, 86, 115,     192, 136
 
 sprites_y_pos:
-        .byte 150, 150,     176, 195, 206, 221,     126, 98
+        .byte 150, 150,     180, 195, 206, 221,     126, 98
 
 sprites_color:
         .byte 0, 1, 1, 1, 1, 1, 12, 12
@@ -366,9 +419,16 @@ sprites_pointer:
         pha
 
         asl $d019                       ; clears raster interrupt
+        bcs raster
 
-        inc sync_raster
+        lda $dc0d                       ; clears CIA interrupts, in particular timer A
+        inc sync_timer_irq
+        bne end                         ; A will never be 0. Jump to end
 
+raster:
+        inc sync_raster_irq
+
+end:
         pla                             ; restores A, X, Y
         tay
         pla
@@ -377,11 +437,64 @@ sprites_pointer:
         rti                             ; restores previous PC, status
 .endproc
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; do_play_song
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc do_play_song
+        lda is_playing                  ; already playing ? skip
+        bne end
+
+        sei
+
+        inc is_playing                  ; is_playing = true
+
+        jsr $1000                       ; setups up the timer IRQ
+
+        lda $dc0e
+        ora #$11
+        sta $dc0e                       ; start timer interrupt A
+        lda #$81
+        sta $dc0d                       ; enable timer A interrupts
+
+        cli
+end:
+        rts
+.endproc
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; do_prev_song
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc do_prev_song
+        rts
+.endproc
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; do_next_song
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc do_next_song
+        rts
+.endproc
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; do_stop_song
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc do_stop_song
+        sei
+        lda #0
+        sta is_playing                  ; is_playing = false
+
+        lda #$7f                        ; turn off cia interrups
+        sta $dc0d
+
+        lda #$00
+        sta $d418                       ; no volume
+        cli
+        rts
+.endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; global variables
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-sync_raster: .byte 0
+sync_raster_irq:        .byte 0                 ; boolean
+sync_timer_irq:         .byte 0                 ; boolean
+is_playing:             .byte 0
 
 
 .segment "BITMAP"
@@ -392,3 +505,6 @@ sync_raster: .byte 0
 
 .segment "SPRITES"
 .incbin "sprites.bin"
+
+.segment "SIDMUSIC"
+.incbin "pvm5-turro.sid", $7e
