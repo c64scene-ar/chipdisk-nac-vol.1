@@ -73,7 +73,7 @@ DEBUG = 0                               ; rasterlines:1, music:2, all:3
 main_loop:
         lda #%01000000                  ; enable mouse
         sta $dc00
-:
+
         lda sync_raster_irq             ; raster triggered ?
         beq :+
         jsr process_events
