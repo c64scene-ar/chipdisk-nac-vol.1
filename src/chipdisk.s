@@ -88,14 +88,14 @@ main_loop:
 
 process_events:
         dec sync_raster_irq
-;        jsr read_mouse
-;        jsr process_cursor
+        jsr read_mouse
+        jsr process_mouse
 
         lda #%00111111                  ; enable joystick again
         sta $dc00
 
         jsr read_joy2
-        jsr process_cursor
+        jsr process_joy
 
         jsr do_raster_anims
 
@@ -248,20 +248,57 @@ new_value: .byte 0
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; process_cursor
+; process_mouse
 ;
 ; entry
 ;       X = delta x
 ;       Y = delta y
 ;       C = 0 if button pressed
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc process_cursor
+.proc process_mouse
         bcs no_button
-        lda button_already_pressed      ; don't trigger events if the button was already pressed
-        bne do_delta
-        lda #1
-        sta button_already_pressed
+        lda mouse_button_already_pressed ; don't trigger events if the button was already pressed
+        beq :+
+        jmp process_movement
 
+:       lda #1
+        sta mouse_button_already_pressed
+        jmp process_pressed_button
+
+no_button:
+        lda #0
+        sta mouse_button_already_pressed      ; button can be pressed
+        jmp process_movement
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; process_joy
+;
+; entry
+;       X = delta x
+;       Y = delta y
+;       C = 0 if button pressed
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc process_joy
+        bcs no_button
+        lda joy_button_already_pressed ; don't trigger events if the button was already pressed
+        beq :+
+        jmp process_movement
+
+:       lda #1
+        sta joy_button_already_pressed
+        jmp process_pressed_button
+
+no_button:
+        lda #0
+        sta joy_button_already_pressed      ; button can be pressed
+        jmp process_movement
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; process_pressed_button
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc process_pressed_button
         lda $d01e                       ; quick and dirty. check for sprite collision
         lsr
         lsr                             ; skip sprite 0 and 1 (cursor)
@@ -275,14 +312,19 @@ new_value: .byte 0
         bcc :+
         jmp do_next_song
 :       lsr                             ; sprite #5: stop
-        bcc do_delta
+        bcc :+
         jmp do_stop_song
+:       rts
+.endproc
 
-no_button:
-        lda #0
-        sta button_already_pressed      ; button can be pressed
-
-do_delta:
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; process_movement
+;
+; entry
+;       X = delta x
+;       Y = delta y
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc process_movement
         cpx #0
         beq test_y                      ; skip if no changes in Y
 
@@ -359,9 +401,6 @@ set_y:
         sta VIC_SPR1_Y
 end:
         rts
-
-button_already_pressed: .byte 0         ; boolean. don't trigger the button again
-                                        ; if it is already pressed
 
 .endproc
 
@@ -628,6 +667,9 @@ sync_raster_irq:        .byte 0                 ; boolean
 sync_timer_irq:         .byte 0                 ; boolean
 is_playing:             .byte 0
 current_song:           .byte 0                 ; selected song
+joy_button_already_pressed: .byte 0             ; boolean. don't trigger the button again if it is already pressed
+mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the button again if it is already pressed
+
 
 TOTAL_SONGS = 8
 song_addrs:
