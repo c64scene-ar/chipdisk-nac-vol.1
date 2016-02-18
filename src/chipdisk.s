@@ -21,7 +21,6 @@
 .include "c64.inc"                      ; c64 constants
 
 DEBUG = 0                               ; rasterlines:1, music:2, all:3
-TOTAL_SONGS = 7
 
 .segment "CODE"
         sei
@@ -99,6 +98,10 @@ process_events:
         jsr process_cursor
 
         jsr do_raster_anims
+
+
+        lda $d01e                       ; load / clear the collision bits
+
         rts
 
 
@@ -546,7 +549,13 @@ end:
         lda song_sizes,x
         tax                             ; LSB
 
+        lda #$34                        ; RAM 100%
+        sta $01
+
         jsr memcpy                      ; copy song
+
+        lda #$35                        ; RAM + IO ($D000-$DF00)
+        sta $01
 
         lda #0
         tax
@@ -620,6 +629,7 @@ sync_timer_irq:         .byte 0                 ; boolean
 is_playing:             .byte 0
 current_song:           .byte 0                 ; selected song
 
+TOTAL_SONGS = 8
 song_addrs:
         .addr song_1
         .addr song_2
@@ -628,7 +638,7 @@ song_addrs:
         .addr song_5
         .addr song_6
         .addr song_7
-;        .addr song_8
+        .addr song_8
 
 song_sizes:
         .word SONG1_SIZE
@@ -638,7 +648,7 @@ song_sizes:
         .word SONG5_SIZE
         .word SONG6_SIZE
         .word SONG7_SIZE
-;        .word SONG8_SIZE
+        .word SONG8_SIZE
 
 song_PAL_frequencies:
         .word $62ae
@@ -648,7 +658,7 @@ song_PAL_frequencies:
         .word $4cc8 - 1
         .word $4cc8 - 1
         .word $6df5
-;        .word $4cc8 - 1
+        .word $4cc8 - 1
 
 
 .segment "BITMAP"
@@ -678,10 +688,8 @@ song_7: .incbin "pvm2-indiecito.sid", $7e
 SONG7_SIZE = * - song_7
 song_4: .incbin "uct-que_hago_en_manila.sid", $7e
 SONG4_SIZE = * - song_4
-
-.segment "MUSIC3"
 song_3: .incbin "pvm5-porro.sid", $7e
 SONG3_SIZE = * - song_3
-;song_8: .incbin "uct-carito.sid", $7e
-;SONG8_SIZE = * - song_8
+song_8: .incbin "uct-carito.sid", $7e
+SONG8_SIZE = * - song_8
 
