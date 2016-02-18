@@ -21,6 +21,7 @@
 .include "c64.inc"                      ; c64 constants
 
 DEBUG = 0                               ; rasterlines:1, music:2, all:3
+TOTAL_SONGS = 7
 
 .segment "CODE"
         sei
@@ -88,8 +89,8 @@ main_loop:
 
 process_events:
         dec sync_raster_irq
-        jsr read_mouse
-        jsr process_cursor
+;        jsr read_mouse
+;        jsr process_cursor
 
         lda #%00111111                  ; enable joystick again
         sta $dc00
@@ -123,7 +124,7 @@ do_nothing:
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; read_joy2
-; Routine taken from here:
+; Taken from here:
 ; http://codebase64.org/doku.php?id=base:joystick_input_handling&s[]=joystick
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc read_joy2
@@ -203,17 +204,13 @@ opoty: .byte $00
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; mouse_move_check
-; taken from these places:
-; https://github.com/adamdunkels/contiki-1.x/blob/master/contiki-c64/ctk/ctk-mouse-1351.S
-; http://codebase64.org/doku.php?id=base:c_1351_standard_mouse_routine&s[]=mouse
+; Taken from here:
+; https://github.com/cc65/cc65/blob/master/libsrc/c64/mou/c64-1351.s
 ;
 ;       entry   y = old value of pot register
 ;               a = currrent value of pot register
 ;       exit    y = value to use for old value
 ;               x,a = delta value for position
-;
-; Most of the mouse code is taken from the CC65 libraries written by
-; Ullrich von Bassewitz
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc mouse_move_check
         sty     old_value
@@ -257,6 +254,11 @@ new_value: .byte 0
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc process_cursor
         bcs no_button
+        lda button_already_pressed      ; don't trigger events if the button was already pressed
+        bne do_delta
+        lda #1
+        sta button_already_pressed
+
         lda $d01e                       ; quick and dirty. check for sprite collision
         lsr
         lsr                             ; skip sprite 0 and 1 (cursor)
@@ -270,10 +272,14 @@ new_value: .byte 0
         bcc :+
         jmp do_next_song
 :       lsr                             ; sprite #5: stop
-        bcc no_button
+        bcc do_delta
         jmp do_stop_song
 
 no_button:
+        lda #0
+        sta button_already_pressed      ; button can be pressed
+
+do_delta:
         cpx #0
         beq test_y                      ; skip if no changes in Y
 
@@ -350,6 +356,9 @@ set_y:
         sta VIC_SPR1_Y
 end:
         rts
+
+button_already_pressed: .byte 0         ; boolean. don't trigger the button again
+                                        ; if it is already pressed
 
 .endproc
 
@@ -454,13 +463,7 @@ end:
 
         inc is_playing                  ; is_playing = true
 
-        jsr $1000                       ; setups up the timer IRQ
-
-        lda $dc0e
-        ora #$11
-        sta $dc0e                       ; start timer interrupt A
-        lda #$81
-        sta $dc0d                       ; enable timer A interrupts
+        jmp init_song
 
         cli
 end:
@@ -470,13 +473,26 @@ end:
 ; do_prev_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_prev_song
-        rts
+        ldx current_song                ; current_song = max(0, current_song - 1)
+        dex
+        bpl :+
+        ldx #0
+:       stx current_song
+        
+        jmp init_song
 .endproc
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_next_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_next_song
-        rts
+        ldx current_song                ; current_song = min(7, current_song + 1)
+        inx  
+        cpx #TOTAL_SONGS
+        bne :+
+        ldx #TOTAL_SONGS-1
+:       stx current_song
+
+        jmp init_song
 .endproc
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_stop_song
@@ -496,11 +512,143 @@ end:
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; init_song
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc init_song
+        sei
+
+        lda #$7f                        ; turn off cia interrups
+        sta $dc0d
+        lda #$00
+        sta $d418                       ; no volume
+
+        lda current_song                ; x = current_song * 2
+        asl
+        tax
+
+        lda song_PAL_frequencies,x
+        sta $dc04
+        lda song_PAL_frequencies+1,x
+        sta $dc05
+
+        lda #<$1000                      ; memcpy: dst addr
+        sta $fb
+        lda #>$1000
+        sta $fc
+
+        lda song_addrs,x                ; memcpy: src addr
+        sta $fd
+        lda song_addrs+1,x
+        sta $fe
+
+        lda song_sizes+1,x              ; memcpy: size to copy (x,y)
+        tay                             ; MSB
+        lda song_sizes,x
+        tax                             ; LSB
+
+        jsr memcpy                      ; copy song
+
+        lda #0
+        tax
+        tay
+        jsr $1000                       ; init song
+
+        lda #$81                        ; turn on cia interrups
+        sta $dc0d
+
+        cli
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; memcpy
+; entry: $fb,$fc: destination
+;        $fd,$fe: source
+;        x,y:     size
+; Taken from here: https://github.com/cc65/cc65/blob/master/libsrc/common/memcpy.s
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc memcpy
+        cpy     #$00            ; Get high byte of n
+        beq     L2              ; Jump if zero
+
+        stx     copy_size
+        sty     copy_size+1
+        ldy     #$00
+        ldx     copy_size+1
+
+L1:     .repeat 2               ; Unroll this a bit to make it faster...
+        lda     ($fd),y         ; copy a byte
+        sta     ($fb),y
+        iny
+        .endrepeat
+        bne     L1
+        inc     $fd+1
+        inc     $fb+1
+        dex                     ; Next 256 byte block
+        bne     L1              ; Repeat if any
+
+        ldx     copy_size       ; x = <copy_size
+
+        ; the following section could be 10% faster if we were able to copy
+        ; back to front - unfortunately we are forced to copy strict from
+        ; low to high since this function is also used for
+        ; memmove and blocks could be overlapping!
+        ; {
+L2:                             ; assert Y = 0
+                                ; assert X = <copy_size
+        beq     done            ; something to copy
+
+L3:     lda     ($fd),y         ; copy a byte
+        sta     ($fb),y
+        iny
+        dex
+        bne     L3
+
+        ; }
+
+done:   rts
+
+copy_size: .byte $00, $00
+.endproc
+
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; global variables
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 sync_raster_irq:        .byte 0                 ; boolean
 sync_timer_irq:         .byte 0                 ; boolean
 is_playing:             .byte 0
+current_song:           .byte 0                 ; selected song
+
+song_addrs:
+        .addr song_1
+        .addr song_2
+        .addr song_3
+        .addr song_4
+        .addr song_5
+        .addr song_6
+        .addr song_7
+;        .addr song_8
+
+song_sizes:
+        .word SONG1_SIZE
+        .word SONG2_SIZE
+        .word SONG3_SIZE
+        .word SONG4_SIZE
+        .word SONG5_SIZE
+        .word SONG6_SIZE
+        .word SONG7_SIZE
+;        .word SONG8_SIZE
+
+song_PAL_frequencies:
+        .word $62ae
+        .word $4cc8 - 1
+        .word $8973
+        .word $4cc8 - 1
+        .word $4cc8 - 1
+        .word $4cc8 - 1
+        .word $6df5
+;        .word $4cc8 - 1
 
 
 .segment "BITMAP"
@@ -513,4 +661,27 @@ is_playing:             .byte 0
 .incbin "sprites.bin"
 
 .segment "SIDMUSIC"
-.incbin "pvm5-turro.sid", $7e
+
+
+.segment "MUSIC1"
+song_6: .incbin "pvm-mamakilla.sid", $7e
+SONG6_SIZE = * - song_6
+
+.segment "MUSIC2"
+song_1: .incbin "pvm5-turro.sid", $7e
+SONG1_SIZE = * - song_1
+song_2: .incbin "uct-balloon_country.sid", $7e
+SONG2_SIZE = * - song_2
+song_5: .incbin "Pronta_Entrega.sid", $7e
+SONG5_SIZE = * - song_5
+song_7: .incbin "pvm2-indiecito.sid", $7e
+SONG7_SIZE = * - song_7
+song_4: .incbin "uct-que_hago_en_manila.sid", $7e
+SONG4_SIZE = * - song_4
+
+.segment "MUSIC3"
+song_3: .incbin "pvm5-porro.sid", $7e
+SONG3_SIZE = * - song_3
+;song_8: .incbin "uct-carito.sid", $7e
+;SONG8_SIZE = * - song_8
+
