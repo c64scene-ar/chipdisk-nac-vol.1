@@ -20,6 +20,13 @@
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .include "c64.inc"                      ; c64 constants
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; Imports/Exports
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.import decrunch                        ; exomizer decrunch
+.export get_crunched_byte               ; needed for exomizer decruncher
+
+
 DEBUG = 0                               ; rasterlines:1, music:2, all:3
 
 .segment "CODE"
@@ -573,28 +580,13 @@ end:
         lda song_PAL_frequencies+1,x
         sta $dc05
 
-        lda #<$1000                      ; memcpy: dst addr
-        sta $fb
-        lda #>$1000
-        sta $fc
+        jsr init_crunch_data
 
-        lda song_addrs,x                ; memcpy: src addr
-        sta $fd
-        lda song_addrs+1,x
-        sta $fe
+        dec $01                         ; $34: RAM 100%
 
-        lda song_sizes+1,x              ; memcpy: size to copy (x,y)
-        tay                             ; MSB
-        lda song_sizes,x
-        tax                             ; LSB
+        jsr decrunch                    ; copy song
 
-        lda #$34                        ; RAM 100%
-        sta $01
-
-        jsr memcpy                      ; copy song
-
-        lda #$35                        ; RAM + IO ($D000-$DF00)
-        sta $01
+        inc $01                         ; $35: RAM + IO ($D000-$DF00)
 
         lda #0
         tax
@@ -607,6 +599,43 @@ end:
         cli
         rts
 .endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; init_crunch_data
+; initializes the data needed by get_crunched_byte
+; entry:
+;       x = index of the table (current song * 2)
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc init_crunch_data
+        lda song_end_addrs,x
+        sta _crunched_byte_lo
+        lda song_end_addrs+1,x
+        sta _crunched_byte_hi
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; get_crunched_byte
+; The decruncher jsr:s to the get_crunched_byte address when it wants to
+; read a crunched byte. This subroutine has to preserve x and y register
+; and must not modify the state of the carry flag.
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+get_crunched_byte:
+        lda _crunched_byte_lo
+        bne @byte_skip_hi
+        dec _crunched_byte_hi
+@byte_skip_hi:
+        inc $01                         ; $35 (video available)
+	sta $d020
+        dec $01                         ; $34 (diable video again)
+
+        dec _crunched_byte_lo
+_crunched_byte_lo = * + 1
+_crunched_byte_hi = * + 2
+        lda song_end_addrs              ; self-modyfing. needs to be set correctly before
+	rts			        ; decrunch_file is called.
+; end_of_data needs to point to the address just after the address
+; of the last byte of crunched data.
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; memcpy
@@ -682,6 +711,16 @@ song_addrs:
         .addr song_7
         .addr song_8
 
+song_end_addrs:
+        .addr song_1_end_of_data
+        .addr song_2_end_of_data
+        .addr song_3_end_of_data
+        .addr song_4_end_of_data
+        .addr song_5_end_of_data
+        .addr song_6_end_of_data
+        .addr song_7_end_of_data
+        .addr song_8_end_of_data
+
 song_sizes:
         .word SONG1_SIZE
         .word SONG2_SIZE
@@ -713,25 +752,41 @@ song_PAL_frequencies:
 .incbin "sprites.bin"
 
 .segment "SIDMUSIC"
+; $1000 - $2800 free are to copy the songs
 
 
-.segment "MUSIC1"
-song_6: .incbin "pvm-mamakilla.sid", $7e
-SONG6_SIZE = * - song_6
-
-.segment "MUSIC2"
-song_1: .incbin "pvm5-turro.sid", $7e
+.segment "MUSIC"
+song_1: .incbin "pvm5-turro.exo"
 SONG1_SIZE = * - song_1
-song_2: .incbin "uct-balloon_country.sid", $7e
+song_1_end_of_data:
+
+song_2: .incbin "uct-balloon_country.exo"
 SONG2_SIZE = * - song_2
-song_5: .incbin "Pronta_Entrega.sid", $7e
-SONG5_SIZE = * - song_5
-song_7: .incbin "pvm2-indiecito.sid", $7e
-SONG7_SIZE = * - song_7
-song_4: .incbin "uct-que_hago_en_manila.sid", $7e
-SONG4_SIZE = * - song_4
-song_3: .incbin "pvm5-porro.sid", $7e
+song_2_end_of_data:
+
+song_3: .incbin "pvm5-porro.exo"
 SONG3_SIZE = * - song_3
-song_8: .incbin "uct-carito.sid", $7e
+song_3_end_of_data:
+
+song_4: .incbin "uct-que_hago_en_manila.exo"
+SONG4_SIZE = * - song_4
+song_4_end_of_data:
+
+song_5: .incbin "Pronta_Entrega.exo"
+SONG5_SIZE = * - song_5
+song_5_end_of_data:
+
+song_6: .incbin "pvm-mamakilla.exo"
+SONG6_SIZE = * - song_6
+song_6_end_of_data:
+
+song_7: .incbin "pvm2-indiecito.exo"
+SONG7_SIZE = * - song_7
+song_7_end_of_data:
+
+song_8: .incbin "uct-carito.exo"
 SONG8_SIZE = * - song_8
+song_8_end_of_data:
+
+.byte 0                 ; ignore
 
