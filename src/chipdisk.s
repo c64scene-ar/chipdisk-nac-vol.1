@@ -625,9 +625,16 @@ get_crunched_byte:
         bne @byte_skip_hi
         dec _crunched_byte_hi
 @byte_skip_hi:
-        inc $01                         ; $35 (video available)
-	sta $d020
-        dec $01                         ; $34 (diable video again)
+
+        php
+        inc $63f8 + 6                   ; sprite pointer for sprite #0
+        lda $63f8 + 6                   ; sprite pointer for sprite #0
+        cmp #(144 + 16)
+        bne :+
+        lda #144
+:       sta $63f8 + 6                   ; turning wheel sprite pointer #0
+        sta $63f8 + 7                   ; turning wheel sprite pointer #1
+        plp
 
         dec _crunched_byte_lo
 _crunched_byte_lo = * + 1
