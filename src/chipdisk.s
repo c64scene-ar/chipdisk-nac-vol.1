@@ -418,8 +418,8 @@ end:
         ldx $63f8 + 6                   ; sprite pointer for sprite #0
         inx
         txa
-        and #%1111000
-        ora #144
+        and #%00001111                  ; and 16
+        ora #%10010000                  ; ora 144
         sta $63f8 + 6                   ; turning wheel sprite pointer #0
         sta $63f8 + 7                   ; turning wheel sprite pointer #1
         rts
@@ -429,7 +429,7 @@ end:
 ; init_sprites
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_sprites
-        lda #%11111111                  ; enable all sprites
+        lda #%11111111                  ; enable sprites
         sta VIC_SPR_ENA
 
         lda #0
@@ -438,306 +438,18 @@ end:
         sta $d01d                       ; no x double resolution
         sta $d01c                       ; no sprite multi-color. hi-res only
 
-        lda #150                        ; set sprite #0 and #1 (used for the cursor)
-        sta VIC_SPR0_X
-        sta VIC_SPR1_X
-        sta VIC_SPR0_Y
-        sta VIC_SPR1_Y
 
-        ldx #1                          ; white for sprite #0
-        stx VIC_SPR0_COLOR
-        dex
-        stx VIC_SPR1_COLOR              ; black for sprite #1
-
-        ldx #161                        ; sprite pointers
-        stx $63f8
-        dex
-        stx $63f9
-
-        rts
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; set_sprites_a
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc set_sprites_a
-        ldx #5                          ; sets the sprites #2-#7
-        ldy #10                         ; since sprites #0 & #1 are reserved
-                                        ; for the cursor
+        ldx #7
+        ldy #14
 l1:
         lda sprites_x_pos,x             ; set x position
-        sta VIC_SPR2_X,y
+        sta VIC_SPR0_X,y
         lda sprites_y_pos,x             ; set y position
-        sta VIC_SPR2_Y,y
+        sta VIC_SPR0_Y,y
         lda sprites_color,x             ; set sprite color
-        sta VIC_SPR2_COLOR,x
+        sta VIC_SPR0_COLOR,x
         lda sprites_pointer,x           ; set sprite pointers
-        sta $63f8 + 2,x
-        dey
-        dey
-        dex
-        bpl l1
-
-        rts
-
-OFFSET_TOP_X = 134
-sprites_x_pos:
-        .repeat 4, XX
-                .byte OFFSET_TOP_X + 20 * XX ; names
-        .endrepeat
-OFFSET_BOTTOM_X = 109
-        .repeat 2, XX
-                .byte OFFSET_BOTTOM_X + 16 * XX ; names
-        .endrepeat
-
-OFFSET_TOP_Y = 69
-sprites_y_pos:
-        .repeat 4, YY
-                .byte OFFSET_TOP_Y + YY * 10 ; names
-        .endrepeat
-OFFSET_BOTTOM_Y = 98
-        .repeat 4, YY
-                .byte OFFSET_BOTTOM_Y + YY * 8 ; names
-        .endrepeat
-
-sprites_color:
-        .byte 0, 1, 2, 3
-        .byte 0, 1
-
-sprites_pointer:
-        .byte 176, 177, 178, 179
-        .byte 182, 183
-
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; set_sprites_b
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc set_sprites_b
-        ldx #1                          ; sprites #2, #3
-        ldy #2                          ; since sprites #0 & #1 are reserved
-                                        ; for the cursor
-l1:
-        lda sprites_x_top_pos,x         ; set x position
-        sta VIC_SPR2_X,y
-        lda sprites_y_top_pos,x         ; set y position
-        sta VIC_SPR2_Y,y
-        lda sprites_top_color,x         ; set sprite color
-        sta VIC_SPR2_COLOR,x
-        lda sprites_top_pointer,x       ; set sprite pointers
-        sta $63f8 + 2,x
-
-        dey
-        dey
-        dex
-        bpl l1
-
-        rts
-
-OFFSET_TOP_X = 134 + 20 * 4
-sprites_x_top_pos:
-        .repeat 2, XX
-                .byte OFFSET_TOP_X + 20 * XX ; names
-        .endrepeat
-OFFSET_TOP_Y = 69 + 10 * 4
-sprites_y_top_pos:
-        .repeat 2, YY
-                .byte OFFSET_TOP_Y + 10 * YY ; names
-        .endrepeat
-
-sprites_top_color:
-        .byte 4,6
-
-sprites_top_pointer:
-        .byte 180, 181
-
-.endproc
-
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; set_sprites_c
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc set_sprites_c
-        ldx #0                          ; sets the sprites #4
-        ldy #0                          ; since sprites #0 & #1 are reserved
-                                        ; for the cursor
-l1:
-        lda sprites_x_pos,x             ; set x position
-        sta VIC_SPR4_X,y
-        lda sprites_y_pos,x             ; set y position
-        sta VIC_SPR4_Y,y
-        lda sprites_color,x             ; set sprite color
-        sta VIC_SPR4_COLOR,x
-        lda sprites_pointer,x           ; set sprite pointers
-        sta $63f8 + 4,x
-        dey
-        dey
-        dex
-        bpl l1
-
-        rts
-
-OFFSET_X = 109 + 2 * 16
-sprites_x_pos:
-        .repeat 1, XX
-                .byte OFFSET_X + 16 * XX ; names
-        .endrepeat
-OFFSET_Y = 98 + 2 * 8
-sprites_y_pos:
-        .repeat 1, YY
-                .byte OFFSET_Y + 8 * YY ; names
-        .endrepeat
-
-sprites_color:
-        .byte 2
-
-sprites_pointer:
-        .byte 184
-
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; set_sprites_d
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc set_sprites_d
-        ldx #0                          ; sets the sprites #5
-        ldy #0                          ; since sprites #0 & #1 are reserved
-                                        ; for the cursor
-l1:
-        lda sprites_x_pos,x             ; set x position
-        sta VIC_SPR5_X,y
-        lda sprites_y_pos,x             ; set y position
-        sta VIC_SPR5_Y,y
-        lda sprites_color,x             ; set sprite color
-        sta VIC_SPR5_COLOR,x
-        lda sprites_pointer,x           ; set sprite pointers
-        sta $63f8 + 5,x
-        dey
-        dey
-        dex
-        bpl l1
-
-        rts
-
-OFFSET_X = 109 + 3 * 16
-sprites_x_pos:
-        .repeat 1, XX
-                .byte OFFSET_X + 16 * XX ; names
-        .endrepeat
-OFFSET_Y = 98 + 3 * 8
-sprites_y_pos:
-        .repeat 1, YY
-                .byte OFFSET_Y + 8 * YY ; names
-        .endrepeat
-
-sprites_color:
-        .byte 3
-
-sprites_pointer:
-        .byte 185
-
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; set_sprites_e
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc set_sprites_e
-        ldx #1                          ; sets the sprites #6, #7
-        ldy #2                          ; since sprites #0 & #1 are reserved
-                                        ; for the cursor
-l1:
-        lda sprites_x_pos,x             ; set x position
-        sta VIC_SPR6_X,y
-        lda sprites_y_pos,x             ; set y position
-        sta VIC_SPR6_Y,y
-        lda sprites_color,x             ; set sprite color
-        sta VIC_SPR6_COLOR,x
-        lda sprites_pointer,x           ; set sprite pointers
-        sta $63f8 + 6,x
-        dey
-        dey
-        dex
-        bpl l1
-
-        rts
-
-OFFSET_X = 109 + 4 * 16
-sprites_x_pos:
-        .repeat 2, XX
-                .byte OFFSET_X + 16 * XX ; names
-        .endrepeat
-OFFSET_Y = 98 + 4 * 8
-sprites_y_pos:
-        .repeat 2, YY
-                .byte OFFSET_Y + 8 * YY ; names
-        .endrepeat
-
-sprites_color:
-        .byte 4, 6
-
-sprites_pointer:
-        .byte 186, 187
-
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; set_sprites_f
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc set_sprites_f
-        ldx #0                          ; sets the sprites #2
-        ldy #0                          ; since sprites #0 & #1 are reserved
-                                        ; for the cursor
-l1:
-        lda sprites_x_pos,x             ; set x position
-        sta VIC_SPR2_X,y
-        lda sprites_y_pos,x             ; set y position
-        sta VIC_SPR2_Y,y
-        lda sprites_color,x             ; set sprite color
-        sta VIC_SPR2_COLOR,x
-        lda sprites_pointer,x           ; set sprite pointers
-        sta $63f8 + 2,x
-        dey
-        dey
-        dex
-        bpl l1
-
-        rts
-
-OFFSET_X = 109 + 6 * 16
-sprites_x_pos:
-        .repeat 1, XX
-                .byte OFFSET_X + 16 * XX ; names
-        .endrepeat
-OFFSET_Y = 98 + 6 * 8
-sprites_y_pos:
-        .repeat 1, YY
-                .byte OFFSET_Y + 8 * YY ; names
-        .endrepeat
-
-sprites_color:
-        .byte 0
-
-sprites_pointer:
-        .byte 188
-
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; set_sprites_bottom
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc set_sprites_bottom
-        ldx #3                          ; sets the sprites #2-#5
-        ldy #6                          ; since sprites #0 & #1 are reserved
-                                        ; for the cursor
-l1:
-        lda sprites_x_pos,x             ; set x position
-        sta VIC_SPR2_X,y
-        lda sprites_y_pos,x             ; set y position
-        sta VIC_SPR2_Y,y
-        lda sprites_color,x             ; set sprite color
-        sta VIC_SPR2_COLOR,x
-        lda sprites_pointer,x           ; set sprite pointers
-        sta $63fa,x
+        sta $63f8,x
         dey
         dey
         dex
@@ -746,19 +458,110 @@ l1:
         rts
 
 sprites_x_pos:
-        .byte 32, 60, 86, 115
+        .byte 150, 150,     32, 60, 86, 115,     192, 136
 
 sprites_y_pos:
-        .byte 180, 195, 206, 221
+        .byte 150, 150,     180, 195, 206, 221,     126, 98
 
 sprites_color:
-        .byte 1, 1, 1, 1
+        .byte 0, 1, 1, 1, 1, 1, 12, 12
 
 sprites_pointer:
-        .byte 162, 163, 164, 165
-
+        .byte 161, 160, 162, 163, 164, 165, 144, 144
 .endproc
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_name
+;
+; Uses $fb, $fc and $fd for tmp variables
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_name
+
+OFFSET_Y = 5
+OFFSET_X = 10
+
+        ldx #<(bitmap + OFFSET_Y * 8 * 40 + OFFSET_X * 8)
+        ldy #>(bitmap + OFFSET_Y * 8 * 40 + OFFSET_X * 8)
+        stx $fb                         ; x coordinate
+        sty $fc                         ; y coordinate
+        
+        ldx #0
+        stx $fd                         ; tmp for X
+
+loop:
+        lda name,x
+        cmp $ff                         ; end of name ?
+        beq end                         ; goto end then
+
+        asl
+        asl
+        asl                             ; char_ptr = char * 8 (lower 64 chars)
+
+        jsr plot_char
+
+        inc $fb                         ; position X
+
+        inc $fd                         ; inc register X (index for name)
+        ldx $fd                         ; load register X
+        bne loop                        ; always jump
+end:
+        rts
+
+name:
+        scrcode  "uctumi"
+        .byte $ff
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_char
+; entry:
+;       A = charset offset (next 8 bytes will be used)
+;       $fb, $fc: bitmap offset
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_char
+
+        tax
+        ldy #7
+loop:
+        lda charset,x
+        jsr plot_byte
+        inx
+        iny
+        bpl loop
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_byte (8 pixels)
+; entry:
+;       A = byte to plot
+;       Y = Y offset of the byte
+;       
+;       $fb, $fc: bitmap offset
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_byte
+
+        ldx #7
+loop:
+        asl
+        jsr plot_bit
+        dex
+        bpl loop
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_bit 
+; entry:
+;       C = bit on or off
+;       Y = Y offset of the byte
+;       X = X offset of the bit (0 == 7th bit, 1 == 6th bit, etc...)
+;       
+;       $fb, $fc: bitmap offset
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_bit
+        rts
+.endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; irq vectors
@@ -778,229 +581,6 @@ sprites_pointer:
         bne end                         ; A will never be 0. Jump to end
 
 raster:
-        lda #0
-        sta $d020
-
-        jsr set_sprites_a
-
-        ldx #<irq_b
-        ldy #>irq_b
-        stx $fffe
-        sty $ffff
-
-        lda #104
-        sta $d012
-
-end:
-        pla                             ; restores A, X, Y
-        tay
-        pla
-        tax
-        pla
-        rti                             ; restores previous PC, status
-.endproc
-
-.proc irq_b
-        pha                             ; saves A, X, Y
-        txa
-        pha
-        tya
-        pha
-
-        asl $d019                       ; clears raster interrupt
-        bcs raster
-
-        lda $dc0d                       ; clears CIA interrupts, in particular timer A
-        inc sync_timer_irq
-        bne end                         ; A will never be 0. Jump to end
-
-raster:
-        inc $d020
-        jsr set_sprites_b
-
-        ldx #<irq_c
-        ldy #>irq_c
-        stx $fffe
-        sty $ffff
-
-        lda #111
-        sta $d012
-
-end:
-        pla                             ; restores A, X, Y
-        tay
-        pla
-        tax
-        pla
-        rti                             ; restores previous PC, status
-.endproc
-
-.proc irq_c
-        pha                             ; saves A, X, Y
-        txa
-        pha
-        tya
-        pha
-
-        asl $d019                       ; clears raster interrupt
-        bcs raster
-
-        lda $dc0d                       ; clears CIA interrupts, in particular timer A
-        inc sync_timer_irq
-        bne end                         ; A will never be 0. Jump to end
-
-raster:
-        inc $d020
-        jsr set_sprites_c
-
-        ldx #<irq_d
-        ldy #>irq_d
-        stx $fffe
-        sty $ffff
-
-        lda #119
-        sta $d012
-
-end:
-        pla                             ; restores A, X, Y
-        tay
-        pla
-        tax
-        pla
-        rti                             ; restores previous PC, status
-.endproc
-
-.proc irq_d
-        pha                             ; saves A, X, Y
-        txa
-        pha
-        tya
-        pha
-
-        asl $d019                       ; clears raster interrupt
-        bcs raster
-
-        lda $dc0d                       ; clears CIA interrupts, in particular timer A
-        inc sync_timer_irq
-        bne end                         ; A will never be 0. Jump to end
-
-raster:
-        inc $d020
-        jsr set_sprites_d
-
-        ldx #<irq_e
-        ldy #>irq_e
-        stx $fffe
-        sty $ffff
-
-        lda #127
-        sta $d012
-
-end:
-        pla                             ; restores A, X, Y
-        tay
-        pla
-        tax
-        pla
-        rti                             ; restores previous PC, status
-.endproc
-
-.proc irq_e
-        pha                             ; saves A, X, Y
-        txa
-        pha
-        tya
-        pha
-
-        asl $d019                       ; clears raster interrupt
-        bcs raster
-
-        lda $dc0d                       ; clears CIA interrupts, in particular timer A
-        inc sync_timer_irq
-        bne end                         ; A will never be 0. Jump to end
-
-raster:
-        inc $d020
-        jsr set_sprites_e
-
-        ldx #<irq_f
-        ldy #>irq_f
-        stx $fffe
-        sty $ffff
-
-        lda #142
-        sta $d012
-
-end:
-        pla                             ; restores A, X, Y
-        tay
-        pla
-        tax
-        pla
-        rti                             ; restores previous PC, status
-.endproc
-
-.proc irq_f
-        pha                             ; saves A, X, Y
-        txa
-        pha
-        tya
-        pha
-
-        asl $d019                       ; clears raster interrupt
-        bcs raster
-
-        lda $dc0d                       ; clears CIA interrupts, in particular timer A
-        inc sync_timer_irq
-        bne end                         ; A will never be 0. Jump to end
-
-raster:
-        inc $d020
-        jsr set_sprites_f
-
-        ldx #<irq_bottom
-        ldy #>irq_bottom
-        stx $fffe
-        sty $ffff
-
-        lda #170
-        sta $d012
-
-end:
-        pla                             ; restores A, X, Y
-        tay
-        pla
-        tax
-        pla
-        rti                             ; restores previous PC, status
-.endproc
-
-.proc irq_bottom
-        pha                             ; saves A, X, Y
-        txa
-        pha
-        tya
-        pha
-
-        asl $d019                       ; clears raster interrupt
-        bcs raster
-
-        lda $dc0d                       ; clears CIA interrupts, in particular timer A
-        inc sync_timer_irq
-        bne end                         ; A will never be 0. Jump to end
-
-raster:
-        inc $d020
-        jsr set_sprites_bottom
-
-        ldx #<irq_a
-        ldy #>irq_a
-        stx $fffe
-        sty $ffff
-
-        lda #$00
-        sta $d012
-
         inc sync_raster_irq
 end:
         pla                             ; restores A, X, Y
@@ -1139,9 +719,8 @@ get_crunched_byte:
         php
         inc $63f8 + 6                   ; sprite pointer for sprite #0
         lda $63f8 + 6                   ; sprite pointer for sprite #0
-        cmp #(144 + 16)
-        bne :+
-        lda #144
+        and #%00001111                  ; and 16
+        ora #%10010000                  ; ora 144
 :       sta $63f8 + 6                   ; turning wheel sprite pointer #0
         sta $63f8 + 7                   ; turning wheel sprite pointer #1
         plp
@@ -1218,15 +797,6 @@ mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the but
 
 
 TOTAL_SONGS = 8
-song_addrs:
-        .addr song_1
-        .addr song_2
-        .addr song_3
-        .addr song_4
-        .addr song_5
-        .addr song_6
-        .addr song_7
-        .addr song_8
 
 song_end_addrs:
         .addr song_1_end_of_data
@@ -1238,28 +808,20 @@ song_end_addrs:
         .addr song_7_end_of_data
         .addr song_8_end_of_data
 
-song_sizes:
-        .word SONG1_SIZE
-        .word SONG2_SIZE
-        .word SONG3_SIZE
-        .word SONG4_SIZE
-        .word SONG5_SIZE
-        .word SONG6_SIZE
-        .word SONG7_SIZE
-        .word SONG8_SIZE
 
 song_PAL_frequencies:
+        .word $4cc8 - 1
+        .word $4cc8 - 1
+        .word $4cc8 - 1
+        .word $4cc8 - 1
+        .word $4cc8 - 1
         .word $62ae
         .word $4cc8 - 1
-        .word $8973
-        .word $4cc8 - 1
-        .word $4cc8 - 1
-        .word $4cc8 - 1
-        .word $6df5
         .word $4cc8 - 1
 
 
 .segment "BITMAP"
+bitmap:
 .incbin "datasette.bitmap"
 
 .segment "COLORMAP"
@@ -1268,47 +830,38 @@ song_PAL_frequencies:
 .segment "SPRITES"
 .incbin "sprites.bin"
 
-.repeat 1024
-        .byte 255
-        .byte 0
-.endrepeat
-
 .segment "SIDMUSIC"
 ; $1000 - $2800 free are to copy the songs
 
 
 .segment "MUSIC"
-song_1: .incbin "pvm5-turro.exo"
-SONG1_SIZE = * - song_1
+song_1: .incbin "uct-balloon_country.exo"
 song_1_end_of_data:
 
-song_2: .incbin "uct-balloon_country.exo"
-SONG2_SIZE = * - song_2
+song_2: .incbin "uc-ryuuju_no_dengon.exo"
 song_2_end_of_data:
 
-song_3: .incbin "pvm5-porro.exo"
-SONG3_SIZE = * - song_3
+song_3: .incbin "uc-yasashisa_ni.exo"
 song_3_end_of_data:
 
-song_4: .incbin "uct-que_hago_en_manila.exo"
-SONG4_SIZE = * - song_4
+song_4: .incbin "leetit38580.exo"
 song_4_end_of_data:
 
-song_5: .incbin "Pronta_Entrega.exo"
-SONG5_SIZE = * - song_5
+song_5: .incbin "pvm-mamakilla.exo"
 song_5_end_of_data:
 
-song_6: .incbin "pvm-mamakilla.exo"
-SONG6_SIZE = * - song_6
+song_6: .incbin "pvm5-turro.exo"
 song_6_end_of_data:
 
-song_7: .incbin "pvm2-indiecito.exo"
-SONG7_SIZE = * - song_7
+song_7: .incbin "uct-carito.exo"
 song_7_end_of_data:
 
-song_8: .incbin "uct-carito.exo"
-SONG8_SIZE = * - song_8
+song_8: .incbin "uct-que_hago_en_manila.exo"
 song_8_end_of_data:
 
 .byte 0                 ; ignore
+
+.segment "CHARSET"
+charset:
+.incbin "names-charset.bin"
 
