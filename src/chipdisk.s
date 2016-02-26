@@ -72,6 +72,7 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
         lda #$35                        ; no basic, no kernal
         sta $01
 
+        jsr fix_bitmap                  ; FIXME: fix THE bitmap, instead of adding code
         jsr init_sprites                ; init sprites
 
         lda $dd00                       ; Vic bank 1: $4000-$7FFF
@@ -460,6 +461,55 @@ end:
         ora #%10010000                  ; ora 144
         sta $63f8 + 6                   ; turning wheel sprite pointer #0
         sta $63f8 + 7                   ; turning wheel sprite pointer #1
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; fix_bitmap
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc fix_bitmap
+
+FIX_COL_A = 20
+FIX_ROW_A = 7
+
+FIX_COL_B = 24
+FIX_ROW_B = 9
+
+        ldx #7
+loop:
+        lda $4000 + 8 * 40 * FIX_ROW_A + FIX_COL_A * 8,x
+        eor #$ff
+        sta $4000 + 8 * 40 * FIX_ROW_A + FIX_COL_A * 8,x
+
+        lda $4000 + 8 * 40 * FIX_ROW_B + FIX_COL_B * 8,x
+        eor #$ff
+        sta $4000 + 8 * 40 * FIX_ROW_B + FIX_COL_B * 8,x
+
+        dex
+        bpl loop
+
+        lda $6000 + 40 * FIX_ROW_A + FIX_COL_A
+        cmp #$80                        ; swap nibble
+        rol
+        cmp #$80
+        rol
+        cmp #$80
+        rol
+        cmp #$80
+        rol
+        sta $6000 + 40 * FIX_ROW_A + FIX_COL_A
+
+        lda $6000 + 40 * FIX_ROW_B + FIX_COL_B
+        cmp #$80                        ; swap nibble
+        rol
+        cmp #$80
+        rol
+        cmp #$80
+        rol
+        cmp #$80
+        rol
+        sta $6000 + 40 * FIX_ROW_B + FIX_COL_B
+
         rts
 .endproc
 
@@ -1593,7 +1643,7 @@ song_durations:                                 ; measured in "cycles ticks"
 song_1_name:
         scrcode "Balloon Country"
 song_2_name:
-        ;scrcode "Ryuuju No Dengo"      ; n
+        ;scrcode "Ryuuju No Dengon"
         .byte 128,129,130,131,132,133,134,135,136,137,138,139,140,141,142
 song_3_name:
         scrcode " Yasashisa  Ni "
