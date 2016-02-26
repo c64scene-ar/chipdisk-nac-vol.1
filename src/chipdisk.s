@@ -43,12 +43,26 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
 .endmacro
 
 .macro NEXT_CHAR
+        ldx #0                          ; could use a table to multiply by 8
+        stx tmp_mul8_hi                 ; but plotting the name doesn't require speed (at least not now)
+        stx tmp_mul8_lo                 ; so it is better to trade speed for space in this case
+
+        asl           
+        rol tmp_mul8_hi
+        asl
+        rol tmp_mul8_hi
+        asl
+        rol tmp_mul8_hi
+        sta tmp_mul8_lo
+
         clc
-        lda $f6
-        adc #8
-        sta $f6
-        lda $f7
-        adc #0
+        lda #<charset
+        adc tmp_mul8_lo
+        sta $f6                         ; $f6,$f7 points to the char to plot
+
+        clc
+        lda #>charset
+        adc tmp_mul8_hi
         sta $f7
 .endmacro
 
@@ -98,17 +112,6 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
         lda $dd0d
         asl $d019
 
-OFFSET_Y_UPPER = 3
-OFFSET_X_UPPER = 14
-        ldx #<(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
-        ldy #>(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
-        jsr plot_name
-
-OFFSET_Y_BOTTOM = 6
-OFFSET_X_BOTTOM = 11
-        ldx #<(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
-        ldy #>(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
-        jsr plot_name
 
         cli
 
@@ -603,6 +606,8 @@ end:
         lda #$00
         sta $d418                       ; no volume
 
+        jsr print_names
+
         lda current_song                ; x = current_song * 2
         asl
         tax
@@ -628,8 +633,43 @@ end:
         lda #$81                        ; turn on cia interrups
         sta $dc0d
 
+
         cli
         rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; print_names
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc print_names
+        lda current_song                ; x = current_song * 2
+        asl
+        tax
+        pha                             ; save it
+
+        lda song_names,x                ; pointer to name
+        sta $fc
+        lda song_names+1,x
+        sta $fd
+
+OFFSET_Y_UPPER = 3
+OFFSET_X_UPPER = 14
+        ldx #<(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
+        ldy #>(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
+        jsr plot_name
+
+        pla                              ; restore x
+        tax
+        lda song_authors,x               ; pointer to name
+        sta $fc
+        lda song_authors+1,x
+        sta $fd
+
+OFFSET_Y_BOTTOM = 6
+OFFSET_X_BOTTOM = 11
+        ldx #<(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
+        ldy #>(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
+        jmp plot_name
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -734,6 +774,7 @@ copy_size: .byte $00, $00
 ; entry:
 ;       x = LSB bitmap address
 ;       y = MSB bitmap address
+;       $fc,$fd: pointer to string to print. Only 15 chars
 ;       
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_name
@@ -741,83 +782,49 @@ copy_size: .byte $00, $00
         stx $f8                         ; $f8,$f9: bitmap address
         sty $f9
 
-        txa
-        clc
-        adc #8
+        txa                             ; $fa,$fb points to bitmap address + 8
+        clc                             ; plot_char_odd / _event uses ($f8) and
+        adc #8                          ; ($fa) to plot the pixels
         sta $fa 
         tya
-        adc #0                          ; Add carry
-        sty $fb                         ; $fa/$fb: bitmap address + 8
+        adc #0                          
+        sty $fb
 
-        ldx #<(charset+1*8)               ; $f6/$f7: charset's char to print
-        ldy #>(charset+1*8)
-        stx $f6
-        sty $f7
+        ldy #0
+        sty tmp_counter
 
+        ldy tmp_counter
+        lda ($fc),y
 
+        NEXT_CHAR                       ; updates $f6/$f7. modifies A,X
         jsr plot_char_even
 
-        NEXT_CHAR
+        inc tmp_counter
+        ldy tmp_counter
+
+loop:
+        lda ($fc),y
+        NEXT_CHAR                       ; updates $f6/f7. modifies A,X
         jsr next_char_odd
         jsr plot_char_odd
 
-        NEXT_CHAR
+        inc tmp_counter
+        ldy tmp_counter
+
+        lda ($fc),y
+        NEXT_CHAR                       ; updates $f6/f7, modifies A,X
         jsr next_char_even
         jsr plot_char_even
 
-        NEXT_CHAR
-        jsr next_char_odd
-        jsr plot_char_odd
-
-        NEXT_CHAR
-        jsr next_char_even
-        jsr plot_char_even
-
-        NEXT_CHAR
-        jsr next_char_odd
-        jsr plot_char_odd
-
-        NEXT_CHAR
-        jsr next_char_even
-        jsr plot_char_even
-
-        NEXT_CHAR
-        jsr next_char_odd
-        jsr plot_char_odd
-
-        NEXT_CHAR
-        jsr next_char_even
-        jsr plot_char_even
-
-        NEXT_CHAR
-        jsr next_char_odd
-        jsr plot_char_odd
-
-        NEXT_CHAR
-        jsr next_char_even
-        jsr plot_char_even
-
-        NEXT_CHAR
-        jsr next_char_odd
-        jsr plot_char_odd
-
-        NEXT_CHAR
-        jsr next_char_even
-        jsr plot_char_even
-
-        NEXT_CHAR
-        jsr next_char_odd
-        jsr plot_char_odd
-
-        NEXT_CHAR
-        jsr next_char_even
-        jsr plot_char_even
+        inc tmp_counter
+        ldy tmp_counter
+        cpy #15
+        bne loop
         
         rts
-
-name:
-        scrcode  "uctumi"
-        .byte $ff
+tmp_counter: .byte 0
+tmp_mul8_hi: .byte 0
+tmp_mul8_lo: .byte 0
 .endproc
 
 .proc next_char_odd
@@ -1530,6 +1537,26 @@ mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the but
 
 TOTAL_SONGS = 8
 
+song_names:
+        .addr song_1_name
+        .addr song_2_name
+        .addr song_3_name
+        .addr song_4_name
+        .addr song_5_name
+        .addr song_6_name
+        .addr song_7_name
+        .addr song_8_name
+
+song_authors:
+        .addr song_1_author
+        .addr song_2_author
+        .addr song_3_author
+        .addr song_4_author
+        .addr song_5_author
+        .addr song_6_author
+        .addr song_7_author
+        .addr song_8_author
+
 song_end_addrs:
         .addr song_1_end_of_data
         .addr song_2_end_of_data
@@ -1562,6 +1589,40 @@ song_durations:                                 ; measured in "cycles ticks"
         .word 0
         .word 0
 
+                 ;ABCDEFGHIJKLMNO
+song_1_name:
+        scrcode "Balloon Country"
+song_2_name:
+        scrcode "Ryuuju No Dengo"      ; n
+song_3_name:
+        scrcode " Yasashisa  Ni "
+song_4_name:
+        scrcode "   Leetit 3    "
+song_5_name:
+        scrcode "  Mama  Killa  "
+song_6_name:
+        scrcode "     Turro     "
+song_7_name:
+        scrcode "    Carito     "
+song_8_name:
+        scrcode "Que Hago En Man"      ; ila
+
+song_1_author:
+        scrcode "    Uctumi     "
+song_2_author:
+        scrcode "    Uctumi     "
+song_3_author:
+        scrcode "    Uctumi     "
+song_4_author:
+        scrcode "     CoMu      "
+song_5_author:
+        scrcode "     CoMu      "
+song_6_author:
+        scrcode "     Naku      "
+song_7_author:
+        scrcode "    Uctumi     "
+song_8_author:
+        scrcode "    Uctumi     "
 
 .segment "BITMAP"
 bitmap:
