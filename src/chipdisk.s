@@ -1593,7 +1593,8 @@ song_durations:                                 ; measured in "cycles ticks"
 song_1_name:
         scrcode "Balloon Country"
 song_2_name:
-        scrcode "Ryuuju No Dengo"      ; n
+        ;scrcode "Ryuuju No Dengo"      ; n
+        .byte 128,129,130,131,132,133,134,135,136,137,138,139,140,141,142
 song_3_name:
         scrcode " Yasashisa  Ni "
 song_4_name:
