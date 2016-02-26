@@ -113,6 +113,7 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
         lda $dd0d
         asl $d019
 
+        jsr do_play_song                ; start song 0 at the beginning
 
         cli
 
@@ -599,13 +600,7 @@ end:
         lda is_playing                  ; already playing ? skip
         bne end
 
-        sei
-
-        inc is_playing                  ; is_playing = true
-
         jmp init_song
-
-        cli
 end:
         rts
 .endproc
@@ -656,6 +651,10 @@ end:
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_song
         sei
+
+        lda #1
+        sta is_playing                  ; is_playing = true
+
 
         lda #$7f                        ; turn off cia interrups
         sta $dc0d
