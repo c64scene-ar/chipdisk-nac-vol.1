@@ -29,6 +29,19 @@
 DEBUG = 0                               ; rasterlines:1, music:2, all:3
 SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; Macros
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.macro PLOT_NEXT_Y
+        iny
+        cpy #8
+        bne :+
+        ldy #64                         ; add 320
+        inc $f9
+        inc $fb
+:
+.endmacro
+
 .segment "CODE"
         sei
 
@@ -473,648 +486,6 @@ sprites_pointer:
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; plot_name
-;
-; Uses $fb, $fc and $fd for tmp variables
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc plot_name
-
-OFFSET_Y = 3
-OFFSET_X = 14
-
-        ldx #<(charset+1*8)               ; $f6/$f7: charset's char to print
-        ldy #>(charset+1*8)
-        stx $f6
-        sty $f7
-
-        ldx #<(bitmap + OFFSET_Y * 8 * 40 + OFFSET_X * 8)
-        ldy #>(bitmap + OFFSET_Y * 8 * 40 + OFFSET_X * 8)
-        stx $f8                         ; $f8,$f9: bitmap address
-        sty $f9
-
-        txa
-        clc
-        adc #8
-        sta $fa 
-        tya
-        adc #0                          ; Add carry
-        sty $fb                         ; $fa/$fb: bitmap address + 8
-
-        txa
-        clc
-        adc #64                         ; 320 = 64 + 256
-        sta $fc
-        tya
-        adc #01                         ; 1 + C
-        sta $fd                         ; $fc/$fd = bitmap address + 320
-
-        txa
-        clc
-        adc #(64 + 8)                   ; 328 = 8 + 64 + 256
-        sta $fe
-        tya
-        adc #01                         ; 1 + C
-        sta $ff                         ; $fc/$fd = bitmap address + 328
-
-        jsr plot_char
-
-        
-        rts
-
-name:
-        scrcode  "uctumi"
-        .byte $ff
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; plot_char
-; entry:
-;       $f6,$f7: address of char from charset (8 bytes)
-;       $f8,$f9: bitmap
-;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc plot_char
-        ldy #0
-        lda ($f6),y                     ; plot char + y (top row)
-        jsr plot_row_0
-
-        ldy #1
-        lda ($f6),y                     ; plot char + y
-        jsr plot_row_1
-
-        ldy #2
-        lda ($f6),y                     ; 
-        jsr plot_row_2
-
-        ldy #3
-        lda ($f6),y                     ; 
-        jsr plot_row_3
-
-        ldy #4
-        lda ($f6),y                     ; 
-        jsr plot_row_4
-
-        ldy #5
-        lda ($f6),y                     ; 
-        jsr plot_row_5
-
-        ldy #6
-        lda ($f6),y                     ; 
-        jsr plot_row_6
-
-        ldy #7
-        lda ($f6),y                     ; 
-        jsr plot_row_7
-
-        rts
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; plot_row_0
-; entry:
-;       A = byte to plot
-;       $f8,$f9: bitmap
-;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc plot_row_0
-        asl                             ; rotate one to left (or 7 to right)
-        adc #0
-        tax                             ; save for next value
-        ldy #0
-
-                                        ; start new bit (one bit)
-        and #%00000001                  ; x=0, y=0
-        sta ora_0
-        lda ($f8),y
-        and #%11111110
-ora_0 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        ;                               ; Start new bit 
-        txa                             ; x=1, y=0 
-        and #%10000000
-        sta ora_1
-        lda ($fa),y                     ; assert: y==0
-        and #%01111111
-ora_1 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-        ;                               ; Start new bit (two bits)
-        txa                             ; x=2,3, y=0
-        and #%01100000
-        sta ora_23
-        iny
-        lda ($fa),y                     ; assert: y==1
-        and #%10011111
-ora_23 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-        ;                               ; start new bit (two bits)
-        txa                             ; x=4,5, y=0
-        and #%00011000
-        sta ora_45
-        iny
-        lda ($fa),y                     ; assert: y==2
-        and #%11100111
-ora_45 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-        ;                               ; start new bit (two bits)
-        txa                             ; x=6,7, y=0
-        and #%00000110
-        sta ora_67
-        iny 
-        lda ($fa),y                     ; assert: y==3
-        and #%11111001
-ora_67 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-        rts
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; plot_row_1
-; entry:
-;       A = byte to plot
-;       $f8,$f9: bitmap
-;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc plot_row_1
-        asl                             ; rotate two to left (or 6 to right)
-        adc #0
-        asl
-        adc #0
-        tax                             ; save for next value
-        ldy #1
-
-                                        ; start new bit (two bit)
-        and #%00000011                  ; x=0,1
-        sta ora_01
-        lda ($f8),y
-        and #%11111100
-ora_01 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        txa                             ; start new bit (two bit)
-        and #%11000000                  ; x=2,3
-        sta ora_23
-        iny                             ; assert: y==2
-        lda ($fa),y
-        and #%00111111
-ora_23 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-        txa                             ; start new bit (two bit)
-        and #%00110000                  ; x=4,5
-        sta ora_45
-        iny                             ; assert: y==3
-        lda ($fa),y
-        and #%11001111
-ora_45 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-        txa                             ; start new bit (two bit)
-        and #%00001100                  ; x=6,7
-        sta ora_67
-        iny                             ; assert: y==4
-        lda ($fa),y
-        and #%11110011
-ora_67 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-        rts
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; plot_row_2
-; entry:
-;       A = byte to plot
-;       $f8,$f9: bitmap
-;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc plot_row_2
-        asl                             ; rotate 3 to left (or 5 to right)
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        tax                             ; save for next value
-        ldy #2
-
-                                        ; start new bit (two bits)
-        and #%00000110                  ; x=0,1
-        sta ora_01
-        lda ($f8),y
-        and #%11111001
-ora_01 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        ;                               ; Start new bit  (one bit)
-        txa                             ; x=2
-        and #%00000001
-        sta ora_2
-        iny                             ; assert: y==3
-        lda ($f8),y
-        and #%11111110
-ora_2 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        ;                               ; Start new bit (one bit)
-        txa                             ; x=3
-        and #%10000000
-        sta ora_3
-        lda ($fa),y                     ; assert: y==3
-        and #%01111111
-ora_3 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-        ;                               ; start new bit (two bits)
-        txa                             ; x=4,5
-        and #%01100000
-        sta ora_45
-        iny
-        lda ($fa),y                     ; assert: y==4
-        and #%10011111
-ora_45 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-        ;                               ; start new bit (two bits)
-        txa                             ; x=4,5
-        and #%00011000
-        sta ora_67
-        iny
-        lda ($fa),y                     ; assert: y==5
-        and #%11100111
-ora_67 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-
-        rts
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; plot_row_3
-; entry:
-;       A = byte to plot
-;       $f8,$f9: bitmap
-;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc plot_row_3
-        asl                             ; rotate 4 to left (or 4 to right)
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        tax                             ; save for next value
-        ldy #3
-
-                                        ; start new bit (two bit)
-        and #%00001100                  ; x=0,1
-        sta ora_01
-        lda ($f8),y
-        and #%11110011
-ora_01 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        txa                             ; start new bit (two bit)
-        and #%00000011                  ; x=2,3
-        sta ora_23
-        iny                             ; assert: y==4
-        lda ($f8),y
-        and #%11111100
-ora_23 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        txa                             ; start new bit (two bit)
-        and #%11000000                  ; x=4,5
-        sta ora_45
-        iny                             ; assert: y==5
-        lda ($fa),y
-        and #%00111111
-ora_45 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-        txa                             ; start new bit (two bit)
-        and #%00110000                  ; x=6,7
-        sta ora_67
-        iny                             ; assert: y==6
-        lda ($fa),y
-        and #%11001111
-ora_67 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-        rts
-.endproc
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; plot_row_4
-; entry:
-;       A = byte to plot
-;       $f8,$f9: bitmap
-;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc plot_row_4
-        asl                             ; rotate 5 to left (or 3 to right)
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        tax                             ; save for next value
-        ldy #4
-
-                                        ; start new bit (two bits)
-        and #%00011000                  ; x=0,1
-        sta ora_01
-        lda ($f8),y
-        and #%11100111
-ora_01 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        ;
-        txa                             ; start new bit (two bits)
-        and #%00000110                  ; x=2,3
-        sta ora_23
-        iny                             ; assert: y=5
-        lda ($f8),y
-        and #%11111001
-ora_23 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        ;                               ; Start new bit  (one bit)
-        txa                             ; x=4
-        and #%00000001
-        sta ora_4
-        iny                             ; assert: y==6
-        lda ($f8),y
-        and #%11111110
-ora_4 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        ;                               ; Start new bit (one bit)
-        txa                             ; x=5
-        and #%10000000
-        sta ora_5
-        lda ($fa),y                     ; assert: y==6
-        and #%01111111
-ora_5 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-        ;                               ; start new bit (two bits)
-        txa                             ; x=6,7
-        and #%01100000
-        sta ora_67
-        iny
-        lda ($fa),y                     ; assert: y==7
-        and #%10011111
-ora_67 = *+1
-        ora #0                          ; self modifying
-        sta ($fa),y
-
-
-        rts
-.endproc
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; plot_row_5
-; entry:
-;       A = byte to plot
-;       $f8,$f9: bitmap
-;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc plot_row_5
-        asl                             ; rotate 6 to left (or 2 to right)
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        tax                             ; save for next value
-        ldy #5
-
-                                        ; start new bit (two bit)
-        and #%00110000                  ; x=0,1
-        sta ora_01
-        lda ($f8),y
-        and #%11001111
-ora_01 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        txa                             ; start new bit (two bit)
-        and #%00001100                  ; x=2,3
-        sta ora_23
-        iny                             ; assert: y==6
-        lda ($f8),y
-        and #%11110011
-ora_23 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        txa                             ; start new bit (two bit)
-        and #%00000011                  ; x=4,5
-        sta ora_45
-        iny                             ; assert: y==7
-        lda ($f8),y
-        and #%11111100
-ora_45 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        txa                             ; start new bit (two bit)
-        and #%11000000                  ; x=6,7
-        sta ora_67
-        ldy #0
-        lda ($fe),y
-        and #%00111111
-ora_67 = *+1
-        ora #0                          ; self modifying
-        sta ($fe),y
-
-        rts
-.endproc
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; plot_row_6
-; entry:
-;       A = byte to plot
-;       $f8,$f9: bitmap
-;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc plot_row_6
-        asl                             ; rotate 7 to left (or 1 to right)
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        tax                             ; save for next value
-        ldy #6
-
-                                        ; start new bit (two bits)
-        and #%01100000                  ; x=0,1
-        sta ora_01
-        lda ($f8),y
-        and #%10011111
-ora_01 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        txa                             ; start new bit (two bits)
-        and #%00011000                  ; x=2,3
-        sta ora_23
-        iny                             ; assert: y=7
-        lda ($f8),y
-        and #%11100111
-ora_23 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        ;                               ; start new bit (two bits)
-        txa                             ; x=4,5
-        and #%00000110
-        sta ora_45
-        ldy #0
-        lda ($fc),y                     ; assert: y==0
-        and #%11111001
-ora_45 = *+1
-        ora #0                          ; self modifying
-        sta ($fc),y
-
-        ;                               ; Start new bit  (one bit)
-        txa                             ; x=4
-        and #%00000001
-        sta ora_6
-        iny                             ; assert: y==1
-        lda ($fc),y
-        and #%11111110
-ora_6 = *+1
-        ora #0                          ; self modifying
-        sta ($fc),y
-
-        ;                               ; Start new bit (one bit)
-        txa                             ; x=5
-        and #%10000000
-        sta ora_7
-        lda ($fe),y                     ; assert: y==1
-        and #%01111111
-ora_7 = *+1
-        ora #0                          ; self modifying
-        sta ($fe),y
-
-        rts
-.endproc
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; plot_row_7
-; entry:
-;       A = byte to plot
-;       $f8,$f9: bitmap
-;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc plot_row_7
-        tax
-        ldy #7
-                                        ; start new bit (two bit)
-        and #%11000000                  ; x=0,1
-        sta ora_01
-        lda ($f8),y
-        and #%00111111
-ora_01 = *+1
-        ora #0                          ; self modifying
-        sta ($f8),y
-
-        txa                             ; start new bit (two bit)
-        and #%00110000                  ; x=2,3
-        sta ora_23
-        ldy #0
-        lda ($fc),y
-        and #%11001111
-ora_23 = *+1
-        ora #0                          ; self modifying
-        sta ($fc),y
-
-        txa                             ; start new bit (two bit)
-        and #%00001100                  ; x=4,5
-        sta ora_45
-        iny                             ; assert: y==1
-        lda ($fc),y
-        and #%11110011
-ora_45 = *+1
-        ora #0                          ; self modifying
-        sta ($fc),y
-
-        txa                             ; start new bit (two bit)
-        and #%00000011                  ; x=6,7
-        sta ora_67
-        iny                             ; assert: y==2
-        lda ($fc),y
-        and #%11111100
-ora_67 = *+1
-        ora #0                          ; self modifying
-        sta ($fc),y
-
-        rts
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; irq vectors
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc irq_a
@@ -1335,6 +706,741 @@ done:   rts
 copy_size: .byte $00, $00
 .endproc
 
+
+.segment "MORECODE"
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_name
+;
+; Uses $fb, $fc and $fd for tmp variables
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_name
+
+OFFSET_Y = 3
+OFFSET_X = 14
+
+        ldx #<(charset+1*8)               ; $f6/$f7: charset's char to print
+        ldy #>(charset+1*8)
+        stx $f6
+        sty $f7
+
+        ldx #<(bitmap + OFFSET_Y * 8 * 40 + OFFSET_X * 8)
+        ldy #>(bitmap + OFFSET_Y * 8 * 40 + OFFSET_X * 8)
+        stx $f8                         ; $f8,$f9: bitmap address
+        sty $f9
+
+        txa
+        clc
+        adc #8
+        sta $fa 
+        tya
+        adc #0                          ; Add carry
+        sty $fb                         ; $fa/$fb: bitmap address + 8
+
+        jsr plot_char_even
+        jsr next_char_odd
+        jsr plot_char_odd
+        
+        rts
+
+name:
+        scrcode  "uctumi"
+        .byte $ff
+.endproc
+
+.proc next_char_odd
+        ldx $fa                         ; $f8/$f9 = previous $fa/$fb
+        ldy $fb
+        stx $f8
+        sty $f9
+
+        clc                             ; $fa/$fb += 8
+        txa
+        adc #08
+        sta $fa
+        tya
+        adc #00
+        sta $fb
+
+        rts
+.endproc
+
+.proc next_char_even
+        ldx $fa                         ; $f8/$f9 = previous $fa/$fb
+        ldy $fb
+        stx $f8
+        sty $f9
+
+        clc                             ; $fa/$fb += 8
+        txa
+        adc #08
+        sta $fa
+        tya
+        adc #00
+        sta $fb
+
+        rts
+.endproc
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_char_even
+; entry:
+;       $f6,$f7: address of char from charset (8 bytes)
+;       $f8,$f9: bitmap
+;       $fa,$fb: bitmap + 8
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_char_even
+        ldy #0
+        lda ($f6),y                     ; plot char + y (top row)
+        jsr plot_row_0
+
+        ldy #1
+        lda ($f6),y                     ; plot char + y
+        jsr plot_row_1
+
+        ldy #2
+        lda ($f6),y                     ; 
+        jsr plot_row_2
+
+        ldy #3
+        lda ($f6),y                     ; 
+        jsr plot_row_3
+
+        ldy #4
+        lda ($f6),y                     ; 
+        jsr plot_row_4
+
+        ldy #5
+        lda ($f6),y                   
+        jsr plot_row_5
+        dec $f9
+        dec $fb
+
+        ldy #6
+        lda ($f6),y                     ; 
+        jsr plot_row_6
+        dec $f9
+        dec $fb
+
+        ldy #7
+        lda ($f6),y                     ; 
+        jsr plot_row_7
+        dec $f9
+        dec $fb
+
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_char_odd
+; entry:
+;       $f6,$f7: address of char from charset (8 bytes)
+;       $f8,$f9: bitmap
+;       $fa,$fb: bitmap + 8
+;       $fc,$fd: bitmap + 320
+;       $fe,$ff: bitmap + 328
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_char_odd
+        ldy #0
+        lda ($f6),y                     ; plot char + y (top row)
+        ldy #4
+        jsr plot_row_0
+
+        ldy #1
+        lda ($f6),y                     ; plot char + y
+        ldy #5
+        jsr plot_row_1
+        dec $f9
+        dec $fb
+
+        ldy #2
+        lda ($f6),y                     ; 
+        ldy #6
+        jsr plot_row_2
+        dec $f9
+        dec $fb
+
+        ldy #3
+        lda ($f6),y                     ; 
+        ldy #7
+        jsr plot_row_3
+
+                                        ; don't restore $f9,$fb
+                                        ; start rendering at 320
+        ldy #4
+        lda ($f6),y                     ; 
+        ldy #64
+        jsr plot_row_4
+
+        ldy #5
+        lda ($f6),y                     ; 
+        ldy #65
+        jsr plot_row_5
+
+        ldy #6
+        lda ($f6),y                     ; 
+        ldy #66
+        jsr plot_row_6
+
+        ldy #7
+        lda ($f6),y                     ; 
+        ldy #67
+        jsr plot_row_7
+
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_row_0
+; entry:
+;       A = byte to plot
+;       Y = bitmap offset
+;       $f8,$f9: bitmap
+;       $fa,$fb: bitmap + 8
+;       $fc,$fd: bitmap + 320
+;       $fe,$ff: bitmap + 328
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_row_0
+        asl                             ; rotate one to left (or 7 to right)
+        adc #0
+        tax                             ; save for next value
+
+                                        ; start new bit (one bit)
+        and #%00000001                  ; x=0, y=0
+        sta ora_0
+        lda ($f8),y
+        and #%11111110
+ora_0 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;                               ; Start new bit 
+        txa                             ; x=1, y=0 
+        and #%10000000
+        sta ora_1
+        lda ($fa),y
+        and #%01111111
+ora_1 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        PLOT_NEXT_Y
+        txa                             ; x=2,3, y=0
+        and #%01100000
+        sta ora_23
+        lda ($fa),y                     ; assert: y==1
+        and #%10011111
+ora_23 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        PLOT_NEXT_Y
+        txa                             ; x=4,5, y=0
+        and #%00011000
+        sta ora_45
+        lda ($fa),y                     ; assert: y==2
+        and #%11100111
+ora_45 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        PLOT_NEXT_Y
+        txa                             ; x=6,7, y=0
+        and #%00000110
+        sta ora_67
+        lda ($fa),y                     ; assert: y==3
+        and #%11111001
+ora_67 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_row_1
+; entry:
+;       A = byte to plot
+;       Y = bitmap offset
+;       $f8,$f9: bitmap
+;       $fa,$fb: bitmap + 8
+;       $fc,$fd: bitmap + 320
+;       $fe,$ff: bitmap + 328
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_row_1
+        asl                             ; rotate two to left (or 6 to right)
+        adc #0
+        asl
+        adc #0
+        tax                             ; save for next value
+
+                                        ; start new bit (two bit)
+        and #%00000011                  ; x=0,1
+        sta ora_01
+        lda ($f8),y
+        and #%11111100
+ora_01 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        PLOT_NEXT_Y
+        txa                             ; start new bit (two bit)
+        and #%11000000                  ; x=2,3
+        sta ora_23
+        lda ($fa),y
+        and #%00111111
+ora_23 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        PLOT_NEXT_Y
+        txa                             ; start new bit (two bit)
+        and #%00110000                  ; x=4,5
+        sta ora_45
+        lda ($fa),y
+        and #%11001111
+ora_45 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        PLOT_NEXT_Y
+        txa                             ; start new bit (two bit)
+        and #%00001100                  ; x=6,7
+        sta ora_67
+        lda ($fa),y
+        and #%11110011
+ora_67 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_row_2
+; entry:
+;       A = byte to plot
+;       Y = bitmap offset
+;       $f8,$f9: bitmap
+;       $fa,$fb: bitmap + 8
+;       $fc,$fd: bitmap + 320
+;       $fe,$ff: bitmap + 328
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_row_2
+        asl                             ; rotate 3 to left (or 5 to right)
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        tax                             ; save for next value
+
+                                        ; start new bit (two bits)
+        and #%00000110                  ; x=0,1
+        sta ora_01
+        lda ($f8),y
+        and #%11111001
+ora_01 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;                               ; Start new bit  (one bit)
+        PLOT_NEXT_Y
+        txa                             ; x=2
+        and #%00000001
+        sta ora_2
+        lda ($f8),y
+        and #%11111110
+ora_2 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;                               ; Start new bit (one bit)
+        txa                             ; x=3
+        and #%10000000
+        sta ora_3
+        lda ($fa),y                     ; assert: y==3
+        and #%01111111
+ora_3 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        ;                               ; start new bit (two bits)
+        PLOT_NEXT_Y
+        txa                             ; x=4,5
+        and #%01100000
+        sta ora_45
+        lda ($fa),y                     ; assert: y==4
+        and #%10011111
+ora_45 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        ;                               ; start new bit (two bits)
+        PLOT_NEXT_Y
+        txa                             ; x=4,5
+        and #%00011000
+        sta ora_67
+        lda ($fa),y                     ; assert: y==5
+        and #%11100111
+ora_67 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_row_3
+; entry:
+;       A = byte to plot
+;       Y = bitmap offset
+;       $f8,$f9: bitmap
+;       $fa,$fb: bitmap + 8
+;       $fc,$fd: bitmap + 320
+;       $fe,$ff: bitmap + 328
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_row_3
+        asl                             ; rotate 4 to left (or 4 to right)
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        tax                             ; save for next value
+
+                                        ; start new bit (two bit)
+        and #%00001100                  ; x=0,1
+        sta ora_01
+        lda ($f8),y
+        and #%11110011
+ora_01 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        PLOT_NEXT_Y
+        txa                             ; start new bit (two bit)
+        and #%00000011                  ; x=2,3
+        sta ora_23
+        lda ($f8),y
+        and #%11111100
+ora_23 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        PLOT_NEXT_Y
+        txa                             ; start new bit (two bit)
+        and #%11000000                  ; x=4,5
+        sta ora_45
+        lda ($fa),y
+        and #%00111111
+ora_45 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        PLOT_NEXT_Y
+        txa                             ; start new bit (two bit)
+        and #%00110000                  ; x=6,7
+        sta ora_67
+        lda ($fa),y
+        and #%11001111
+ora_67 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        rts
+.endproc
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_row_4
+; entry:
+;       A = byte to plot
+;       Y = bitmap offset
+;       $f8,$f9: bitmap
+;       $fa,$fb: bitmap + 8
+;       $fc,$fd: bitmap + 320
+;       $fe,$ff: bitmap + 328
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_row_4
+        asl                             ; rotate 5 to left (or 3 to right)
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        tax                             ; save for next value
+
+                                        ; start new bit (two bits)
+        and #%00011000                  ; x=0,1
+        sta ora_01
+        lda ($f8),y
+        and #%11100111
+ora_01 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;
+        PLOT_NEXT_Y
+        txa                             ; start new bit (two bits)
+        and #%00000110                  ; x=2,3
+        sta ora_23
+        lda ($f8),y
+        and #%11111001
+ora_23 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;                               ; Start new bit  (one bit)
+        PLOT_NEXT_Y
+        txa                             ; x=4
+        and #%00000001
+        sta ora_4
+        lda ($f8),y
+        and #%11111110
+ora_4 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;                               ; Start new bit (one bit)
+        txa                             ; x=5
+        and #%10000000
+        sta ora_5
+        lda ($fa),y                     ; assert: y==6
+        and #%01111111
+ora_5 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        ;                               ; start new bit (two bits)
+        PLOT_NEXT_Y
+        txa                             ; x=6,7
+        and #%01100000
+        sta ora_67
+        lda ($fa),y                     ; assert: y==7
+        and #%10011111
+ora_67 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+
+        rts
+.endproc
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_row_5
+; entry:
+;       A = byte to plot
+;       Y = bitmap offset
+;       $f8,$f9: bitmap
+;       $fa,$fb: bitmap + 8
+;       $fc,$fd: bitmap + 320
+;       $fe,$ff: bitmap + 328
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_row_5
+        asl                             ; rotate 6 to left (or 2 to right)
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        tax                             ; save for next value
+
+                                        ; start new bit (two bit)
+        and #%00110000                  ; x=0,1
+        sta ora_01
+        lda ($f8),y
+        and #%11001111
+ora_01 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;
+        PLOT_NEXT_Y
+        txa                             ; start new bit (two bit)
+        and #%00001100                  ; x=2,3
+        sta ora_23
+        lda ($f8),y
+        and #%11110011
+ora_23 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;
+        PLOT_NEXT_Y
+        txa                             ; start new bit (two bit)
+        and #%00000011                  ; x=4,5
+        sta ora_45
+        lda ($f8),y
+        and #%11111100
+ora_45 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;
+        PLOT_NEXT_Y
+        txa                             ; start new bit (two bit)
+        and #%11000000                  ; x=6,7
+        sta ora_67
+        lda ($fa),y
+        and #%00111111
+ora_67 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        rts
+.endproc
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_row_6
+; entry:
+;       A = byte to plot
+;       Y = bitmap offset
+;       $f8,$f9: bitmap
+;       $fa,$fb: bitmap + 8
+;       $fc,$fd: bitmap + 320
+;       $fe,$ff: bitmap + 328
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_row_6
+        asl                             ; rotate 7 to left (or 1 to right)
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        asl
+        adc #0
+        tax                             ; save for next value
+
+                                        ; start new bit (two bits)
+        and #%01100000                  ; x=0,1
+        sta ora_01
+        lda ($f8),y
+        and #%10011111
+ora_01 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;
+        PLOT_NEXT_Y
+
+        txa
+        and #%00011000                  ; x=2,3
+        sta ora_23
+        lda ($f8),y
+        and #%11100111
+ora_23 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;
+        PLOT_NEXT_Y
+
+        txa                             ; x=4,5
+        and #%00000110
+        sta ora_45
+        lda ($f8),y                     ; assert: y==0
+        and #%11111001
+ora_45 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;
+        PLOT_NEXT_Y
+
+        txa                             ; x=4
+        and #%00000001
+        sta ora_6
+        lda ($f8),y
+        and #%11111110
+ora_6 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;                               ; Start new bit (one bit)
+        txa                             ; x=5
+        and #%10000000
+        sta ora_7
+        lda ($fa),y
+        and #%01111111
+ora_7 = *+1
+        ora #0                          ; self modifying
+        sta ($fa),y
+
+        rts
+.endproc
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_row_7
+; entry:
+;       A = byte to plot
+;       Y = bitmap offset
+;       $f8,$f9: bitmap
+;       $fa,$fb: bitmap + 8
+;       $fc,$fd: bitmap + 320
+;       $fe,$ff: bitmap + 328
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_row_7
+        tax
+                                        ; start new bit (two bit)
+        and #%11000000                  ; x=0,1
+        sta ora_01
+        lda ($f8),y
+        and #%00111111
+ora_01 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;
+        PLOT_NEXT_Y
+
+:       txa                             ; start new bit (two bit)
+        and #%00110000                  ; x=2,3
+        sta ora_23
+        lda ($f8),y
+        and #%11001111
+ora_23 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;
+        PLOT_NEXT_Y
+
+        txa                             ; start new bit (two bit)
+        and #%00001100                  ; x=4,5
+        sta ora_45
+        lda ($f8),y
+        and #%11110011
+ora_45 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        ;
+        PLOT_NEXT_Y
+
+        txa                             ; start new bit (two bit)
+        and #%00000011                  ; x=6,7
+        sta ora_67
+        lda ($f8),y
+        and #%11111100
+ora_67 = *+1
+        ora #0                          ; self modifying
+        sta ($f8),y
+
+        rts
+.endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; global variables
