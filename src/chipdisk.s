@@ -26,7 +26,7 @@
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; Constants
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-DEBUG = 0                               ; rasterlines:1, music:2, all:3
+DEBUG = 3                               ; rasterlines:1, music:2, all:3
 SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -42,7 +42,7 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
 :
 .endmacro
 
-.macro NEXT_CHAR
+.macro FETCH_NEXT_CHAR
         ldx #0                          ; could use a table to multiply by 8
         stx tmp_mul8_hi                 ; but plotting the name doesn't require speed (at least not now)
         stx tmp_mul8_lo                 ; so it is better to trade speed for space in this case
@@ -128,7 +128,13 @@ main_loop:
         lda sync_timer_irq
         beq :+
         dec sync_timer_irq
+.if (::DEBUG & 2)
+        inc $d020
+.endif
         jsr $1003                       ; play music
+.if (::DEBUG & 2)
+        dec $d020
+.endif
 
 :       jmp main_loop
 
@@ -708,9 +714,10 @@ OFFSET_X_UPPER = 14
         ldy #>(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
         jsr plot_name
 
-        pla                              ; restore x
+        ;
+        pla                             ; restore x
         tax
-        lda song_authors,x               ; pointer to name
+        lda song_authors,x              ; pointer to name
         sta $fc
         lda song_authors+1,x
         sta $fd
@@ -719,7 +726,25 @@ OFFSET_Y_BOTTOM = 6
 OFFSET_X_BOTTOM = 11
         ldx #<(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
         ldy #>(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
-        jmp plot_name
+        jsr plot_name
+
+        ;
+        ldx current_song 
+        inx
+        txa
+        ora #$30
+        sta counter_label + 2           ; store song number in PETSCII format
+
+        lda #<counter_label
+        sta $fc
+        lda #>counter_label
+        sta $fd
+
+OFFSET_Y_COUNTER = 15
+OFFSET_X_COUNTER = 32
+        ldx #<(bitmap + OFFSET_Y_COUNTER * 8 * 40 + OFFSET_X_COUNTER * 8)
+        ldy #>(bitmap + OFFSET_Y_COUNTER * 8 * 40 + OFFSET_X_COUNTER * 8)
+        jmp plot_counter
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -820,6 +845,57 @@ copy_size: .byte $00, $00
 .segment "MORECODE"
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; plot_counter
+; entry:
+;       x = LSB bitmap address
+;       y = MSB bitmap address
+;       $fc,$fd: pointer to string to print. Only 3 chars
+;       
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc plot_counter
+
+        stx $f8                         ; $f8,$f9: bitmap address
+        sty $f9
+
+        txa                             ; $fa,$fb points to bitmap address + 8
+        clc                             ; plot_char_odd / _event uses ($f8) and
+        adc #8                          ; ($fa) to plot the pixels
+        sta $fa 
+        tya
+        adc #0                          
+        sty $fb
+
+        ldy #0
+        sty tmp_counter
+
+        lda ($fc),y
+
+        FETCH_NEXT_CHAR                 ; updates $f6/$f7. modifies A,X
+        jsr plot_char_odd
+
+        inc tmp_counter
+        ldy tmp_counter
+
+        lda ($fc),y
+        FETCH_NEXT_CHAR                 ; updates $f6/f7. modifies A,X
+        jsr set_next_bitmap_even
+        jsr plot_char_even
+
+        inc tmp_counter
+        ldy tmp_counter
+
+        lda ($fc),y
+        FETCH_NEXT_CHAR                 ; updates $f6/f7, modifies A,X
+        jsr set_next_bitmap_odd
+        jsr plot_char_odd
+        
+        rts
+tmp_counter: .byte 0
+tmp_mul8_hi: .byte 0
+tmp_mul8_lo: .byte 0
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; plot_name
 ; entry:
 ;       x = LSB bitmap address
@@ -846,7 +922,7 @@ copy_size: .byte $00, $00
         ldy tmp_counter
         lda ($fc),y
 
-        NEXT_CHAR                       ; updates $f6/$f7. modifies A,X
+        FETCH_NEXT_CHAR                 ; updates $f6/$f7. modifies A,X
         jsr plot_char_even
 
         inc tmp_counter
@@ -854,16 +930,16 @@ copy_size: .byte $00, $00
 
 loop:
         lda ($fc),y
-        NEXT_CHAR                       ; updates $f6/f7. modifies A,X
-        jsr next_char_odd
+        FETCH_NEXT_CHAR                 ; updates $f6/f7. modifies A,X
+        jsr set_next_bitmap_odd
         jsr plot_char_odd
 
         inc tmp_counter
         ldy tmp_counter
 
         lda ($fc),y
-        NEXT_CHAR                       ; updates $f6/f7, modifies A,X
-        jsr next_char_even
+        FETCH_NEXT_CHAR                 ; updates $f6/f7, modifies A,X
+        jsr set_next_bitmap_even
         jsr plot_char_even
 
         inc tmp_counter
@@ -877,7 +953,7 @@ tmp_mul8_hi: .byte 0
 tmp_mul8_lo: .byte 0
 .endproc
 
-.proc next_char_odd
+.proc set_next_bitmap_odd
         ldx $fa                         ; $f8/$f9 = previous $fa/$fb
         ldy $fb
         stx $f8
@@ -894,7 +970,7 @@ tmp_mul8_lo: .byte 0
         rts
 .endproc
 
-.proc next_char_even
+.proc set_next_bitmap_even
         clc
         lda $f8                         ; $f8,$f9 += 320 + 8
         adc #64 + 8                     ; but $f9 was already inc'ed (+ 256)
@@ -1674,6 +1750,9 @@ song_7_author:
         scrcode "    Uctumi     "
 song_8_author:
         scrcode "    Uctumi     "
+
+counter_label:
+        .byte $30, $30, $30     ; 000
 
 .segment "BITMAP"
 bitmap:
