@@ -28,6 +28,10 @@ De donde sacar memoria en caso que se necesite más:
 - El espacio de $1000 a $2800 esta reservado para tocar los sids. pero se puede usar cosas temporales (y luego moverlas a otro lado) antes de tocar el primer sid.
 - El buffer de $1000 a $2800 tiene que ser tan grande como el tamaño del sid más grande a tocar. Ejemplo: Si el .sid más grande ocupa 4k, entonces ese tamaño se puede reducir de $1000 a $2000, liberando memoria (2k)
 
+## SIDs comprimidos.
+
+Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los archivos .exo, usar este script: [sid_to_exo.py](https://github.com/ricardoquesada/c64-misc/blob/master/tools/sid_to_exo.py)
+
 
 # Que falta
 

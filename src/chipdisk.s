@@ -1,11 +1,11 @@
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ;
-; chipdisk
+; chipdisk 
 ; http://pungas.space
 ;
-; To control it use:
-;  - Joystick in port #2
-;  - or Mouse 1351 in port #1
+; code: riq/PVM
+; Some code snippets were taken from different places.
+; Credit added in those snippets.
 ;       
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 
@@ -1043,8 +1043,6 @@ tmp_mul8_lo: .byte 0
 ;       $f6,$f7: address of char from charset (8 bytes)
 ;       $f8,$f9: bitmap
 ;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_odd
         ldy #0
@@ -1103,8 +1101,6 @@ tmp_mul8_lo: .byte 0
 ;       Y = bitmap offset
 ;       $f8,$f9: bitmap
 ;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_0
         asl                             ; rotate one to left (or 7 to right)
@@ -1169,8 +1165,6 @@ ora_67 = *+1
 ;       Y = bitmap offset
 ;       $f8,$f9: bitmap
 ;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_1
         asl                             ; rotate two to left (or 6 to right)
@@ -1228,8 +1222,6 @@ ora_67 = *+1
 ;       Y = bitmap offset
 ;       $f8,$f9: bitmap
 ;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_2
         asl                             ; rotate 3 to left (or 5 to right)
@@ -1303,8 +1295,6 @@ ora_67 = *+1
 ;       Y = bitmap offset
 ;       $f8,$f9: bitmap
 ;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_3
         asl                             ; rotate 4 to left (or 4 to right)
@@ -1365,8 +1355,6 @@ ora_67 = *+1
 ;       Y = bitmap offset
 ;       $f8,$f9: bitmap
 ;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_4
         asl                             ; rotate 5 to left (or 3 to right)
@@ -1443,8 +1431,6 @@ ora_67 = *+1
 ;       Y = bitmap offset
 ;       $f8,$f9: bitmap
 ;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_5
         asl                             ; rotate 6 to left (or 2 to right)
@@ -1512,8 +1498,6 @@ ora_67 = *+1
 ;       Y = bitmap offset
 ;       $f8,$f9: bitmap
 ;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_6
         asl                             ; rotate 7 to left (or 1 to right)
@@ -1596,8 +1580,6 @@ ora_7 = *+1
 ;       Y = bitmap offset
 ;       $f8,$f9: bitmap
 ;       $fa,$fb: bitmap + 8
-;       $fc,$fd: bitmap + 320
-;       $fe,$ff: bitmap + 328
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_7
         tax
