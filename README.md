@@ -7,7 +7,7 @@
 Y luego darle `make`
 
 
-# Internal
+# Internals
 
 ## Directorio
 
@@ -38,8 +38,8 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
 
 ## Necesario
 
-- Los temas! creo que deben faltar 3 o 4 temas al menos. Y luego ver si hay lugar para mas
-- Que detecte final de cancion y le de play a la siguiente. Detectar final de cancion se puede hacer por tiempo... al cabo de N segundos, la cancion se acabo
+- Los temas! Definir que temás van. Creo que solo hay 4 o 5 de temas de los temas oficiales (el resto de los temas que estan, son de prueba). Y ver si se pueden poner más de 8 temas.
+- Que detecte final de cancion y le de play a la siguiente. Detectar final de cancion se puede hacer que al cabo de N segundos toque la siguiente canción. Se usa una suerte de "ticks por canciíon".
 - Que use los graficos de los botones apretados. Puede llegar a consumir mucha memoria. Hay que tener precaución al implementar esto.
 - Que anime la ruedita con sprites: se necesitan nuevos sprites
 - Que el contador este en el lugar correcto. Probablemente se pueda hacer con sprites. Se puede hacer con bitmap también pero el gráfico para el contador debería ser un poco más grande
