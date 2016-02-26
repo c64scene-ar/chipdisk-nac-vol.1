@@ -42,6 +42,16 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
 :
 .endmacro
 
+.macro NEXT_CHAR
+        clc
+        lda $f6
+        adc #8
+        sta $f6
+        lda $f7
+        adc #0
+        sta $f7
+.endmacro
+
 .segment "CODE"
         sei
 
@@ -88,6 +98,16 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
         lda $dd0d
         asl $d019
 
+OFFSET_Y_UPPER = 3
+OFFSET_X_UPPER = 14
+        ldx #<(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
+        ldy #>(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
+        jsr plot_name
+
+OFFSET_Y_BOTTOM = 6
+OFFSET_X_BOTTOM = 11
+        ldx #<(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
+        ldy #>(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
         jsr plot_name
 
         cli
@@ -711,21 +731,13 @@ copy_size: .byte $00, $00
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; plot_name
-;
-; Uses $fb, $fc and $fd for tmp variables
+; entry:
+;       x = LSB bitmap address
+;       y = MSB bitmap address
+;       
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_name
 
-OFFSET_Y = 3
-OFFSET_X = 14
-
-        ldx #<(charset+1*8)               ; $f6/$f7: charset's char to print
-        ldy #>(charset+1*8)
-        stx $f6
-        sty $f7
-
-        ldx #<(bitmap + OFFSET_Y * 8 * 40 + OFFSET_X * 8)
-        ldy #>(bitmap + OFFSET_Y * 8 * 40 + OFFSET_X * 8)
         stx $f8                         ; $f8,$f9: bitmap address
         sty $f9
 
@@ -737,9 +749,69 @@ OFFSET_X = 14
         adc #0                          ; Add carry
         sty $fb                         ; $fa/$fb: bitmap address + 8
 
+        ldx #<(charset+1*8)               ; $f6/$f7: charset's char to print
+        ldy #>(charset+1*8)
+        stx $f6
+        sty $f7
+
+
         jsr plot_char_even
+
+        NEXT_CHAR
         jsr next_char_odd
         jsr plot_char_odd
+
+        NEXT_CHAR
+        jsr next_char_even
+        jsr plot_char_even
+
+        NEXT_CHAR
+        jsr next_char_odd
+        jsr plot_char_odd
+
+        NEXT_CHAR
+        jsr next_char_even
+        jsr plot_char_even
+
+        NEXT_CHAR
+        jsr next_char_odd
+        jsr plot_char_odd
+
+        NEXT_CHAR
+        jsr next_char_even
+        jsr plot_char_even
+
+        NEXT_CHAR
+        jsr next_char_odd
+        jsr plot_char_odd
+
+        NEXT_CHAR
+        jsr next_char_even
+        jsr plot_char_even
+
+        NEXT_CHAR
+        jsr next_char_odd
+        jsr plot_char_odd
+
+        NEXT_CHAR
+        jsr next_char_even
+        jsr plot_char_even
+
+        NEXT_CHAR
+        jsr next_char_odd
+        jsr plot_char_odd
+
+        NEXT_CHAR
+        jsr next_char_even
+        jsr plot_char_even
+
+        NEXT_CHAR
+        jsr next_char_odd
+        jsr plot_char_odd
+
+        NEXT_CHAR
+        jsr next_char_even
+        jsr plot_char_even
         
         rts
 
@@ -766,17 +838,20 @@ name:
 .endproc
 
 .proc next_char_even
-        ldx $fa                         ; $f8/$f9 = previous $fa/$fb
-        ldy $fb
-        stx $f8
-        sty $f9
+        clc
+        lda $f8                         ; $f8,$f9 += 320 + 8
+        adc #64 + 8                     ; but $f9 was already inc'ed (+ 256)
+        sta $f8                         ; we only need to add 64 + 8
+        lda $f9
+        adc #0
+        sta $f9
 
-        clc                             ; $fa/$fb += 8
-        txa
-        adc #08
-        sta $fa
-        tya
-        adc #00
+        clc
+        lda $fa                         ; $fa,$fb += 320 + 8
+        adc #64 + 8                     ; but $fb was already inc'ed (+ 256)
+        sta $fa                         ; we only need to add 64 + 8
+        lda $fb
+        adc #0
         sta $fb
 
         rts
