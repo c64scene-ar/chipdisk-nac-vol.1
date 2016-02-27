@@ -605,7 +605,16 @@ end:
         lda is_playing                  ; already playing ? skip
         bne end
 
-        jmp init_song
+        lda is_already_loaded
+        beq :+
+
+        lda #1
+        sta is_playing                  ; is_playing = true
+        lda #$81
+        sta $dc0d                       ; turn on cia interrups
+        bne end
+
+:       jmp init_song
 end:
         rts
 .endproc
@@ -618,7 +627,10 @@ end:
         bpl :+
         ldx #0
 :       stx current_song
-        
+
+        lda #0
+        sta is_already_loaded           ; is_already_loaded = false
+
         jmp init_song
 .endproc
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -631,6 +643,9 @@ end:
         bne :+
         ldx #TOTAL_SONGS-1
 :       stx current_song
+
+        lda #0
+        sta is_already_loaded           ; is_already_loaded = false
 
         jmp init_song
 .endproc
@@ -689,6 +704,9 @@ end:
         tax
         tay
         jsr $1000                       ; init song
+
+        lda #1
+        sta is_already_loaded           ; is_already_loaded = true
 
         lda #0
         sta song_tick                   ; reset song tick
@@ -1677,6 +1695,7 @@ ora_67 = *+1
 sync_raster_irq:        .byte 0                 ; boolean
 sync_timer_irq:         .byte 0                 ; boolean
 is_playing:             .byte 0
+is_already_loaded:      .byte 0                 ; boolean. whether current song has already been loaded (init)
 current_song:           .byte 0                 ; selected song
 joy_button_already_pressed: .byte 0             ; boolean. don't trigger the button again if it is already pressed
 mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the button again if it is already pressed
