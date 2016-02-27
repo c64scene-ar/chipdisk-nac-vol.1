@@ -136,7 +136,10 @@ main_loop:
 .if (::DEBUG & 2)
         dec $d020
 .endif
-        jsr update_song_tick
+
+        inc song_tick                   ; update song_tick
+        bne :+
+        inc song_tick+1
 
 :       jmp main_loop
 
@@ -695,25 +698,6 @@ end:
         sta $dc0d
 
         cli
-        rts
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; update_song_tick
-;   song_tick += 1;
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc update_song_tick
-        ; increment song_tick (word)
-        clc
-
-        lda #1
-        adc song_tick
-        sta song_tick
-
-        lda #0
-        adc song_tick+1
-        sta song_tick+1
-
         rts
 .endproc
 
