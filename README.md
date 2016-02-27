@@ -38,19 +38,23 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
 
 ## Necesario
 
-- Los temas! Definir que temás van. Creo que solo hay 4 o 5 de temas de los temas oficiales (el resto de los temas que estan, son de prueba). Y ver si se pueden poner más de 8 temas.
-- Que detecte final de cancion y le de play a la siguiente. Detectar final de cancion se puede hacer que al cabo de N segundos toque la siguiente canción. Se usa una suerte de "ticks por canciíon".
-- Que use los graficos de los botones apretados. Puede llegar a consumir mucha memoria. Hay que tener precaución al implementar esto.
-- Que anime la ruedita con sprites: se necesitan nuevos sprites
-- Que el contador este en el lugar correcto. Probablemente se pueda hacer con sprites. Se puede hacer con bitmap también pero el gráfico para el contador debería ser un poco más grande
+- [ ] Los temas! Definir que temás van. Creo que solo hay 4 o 5 de temas de los temas oficiales (el resto de los temas que estan, son de prueba). Y ver si se pueden poner más de 8 temas.
+- [x] Que detecte final de cancion y le de play a la siguiente. Detectar final de cancion se puede hacer que al cabo de N segundos toque la siguiente canción. Se usa una suerte de "ticks por canciíon"
+- [ ] Que use los graficos de los botones apretados. Puede llegar a consumir mucha memoria. Hay que tener precaución al implementar esto.
+- [ ] Que anime la ruedita con sprites: se necesitan nuevos sprites
+- [ ] Que el contador este en el lugar correcto. Probablemente se pueda hacer con sprites. Se puede hacer con bitmap también pero el gráfico para el contador debería ser un poco más grande
 - Known bugs:
-   - se esta pisando la sombra del cassette cuando se plotea los nombres. Hay que hacer un _save_ de esa celda y luego _restorearla_
-- Fonts: Asi no usamos el default.
-
+   - [ ] se esta pisando la sombra del cassette cuando se plotea los nombres. Hay que hacer un _save_ de esa celda y luego _restorearla_
+- [ ] Fonts: Asi no usamos el default.
+- [ ] Led. Es rojo. En el monitor de tubo se ve casi negro. Por lo tanto cuando se le da Play a un tema tendría que cambiar a rosa para que haya una diferencia.
+- [ ] Los botones emulen el compartamiento de una casettera. Play tiene que quedar apretado. Stop nunca queda apretado. etc.., etc..
+- 
 ## Opcional
 
-- Easter Egg: definir que tiene que hacer, y hacerlo
-- Soporte de teclado. En vez que las teclas muevan el cursor como si fuera un mouse, que cicle entre posiciones predefinidas como "Play", "Rew", ...
-- Fade In al comienzo. Usar la memoria de $1000 a $2800 para eso, para no quitar memoria del player
-
-
+- [ ] Easter Egg: definir que tiene que hacer, y hacerlo
+- [ ] Soporte de teclado. En vez que las teclas muevan el cursor como si fuera un mouse, que cicle entre posiciones predefinidas como "Play", "Rew", ...
+- [ ] Fade In al comienzo. Usar la memoria de $1000 a $2800 para eso, para no quitar memoria del player
+- [ ] Que se mueva la panza del casette a medida que avanza la cinta
+- [ ] Ruido blanco antes de empezar a sonar el tema
+- [ ] Más información. Ya que la información sobre el autor y nombre del tema está muy limitada, tal vez se podría implementar que presionando la barra espaciadora, o cualquier otra cosa, se pase a una pantalla con información más detallada, tal vez una pequeña reseña del autor, o si es un cover, la información necesaria. Esto podría ser incluso diagramado como si fuera el booklet del casette escrito a mano.
+- [ ] Casette. Cuando uno presiona F.FWD y REW además de cambiar la información de tema y autor que cambie el color del casette. Esto no estoy tan convencido, pero por ahí queda bien.
