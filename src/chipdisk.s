@@ -137,10 +137,15 @@ main_loop:
         dec $d020
 .endif
 
+        inc song_tick                   ; update song_tick
+        bne :+
+        inc song_tick+1
+
 :       jmp main_loop
 
 process_events:
         dec sync_raster_irq
+
         jsr read_mouse
         jsr process_mouse
 
@@ -149,9 +154,9 @@ process_events:
 
         jsr read_joy2
         jsr process_joy
+        jsr skip_song_if_ended
 
         jsr do_raster_anims
-
 
         lda $d01e                       ; load / clear the collision bits
 
@@ -685,11 +690,46 @@ end:
         tay
         jsr $1000                       ; init song
 
+        lda #0
+        sta song_tick                   ; reset song tick
+        sta song_tick+1
+
         lda #$81                        ; turn on cia interrups
         sta $dc0d
 
-
         cli
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; skip_song_if_ended
+;   if (song_tick >= song_durations[current_song]) do_next_song();
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc skip_song_if_ended
+        lda current_song                ; x = current_song * 2
+        asl                             ; (song_durations is a word array)
+        tax
+
+        lda song_durations,x            ; pointer to song durations
+        sta $fc
+        lda song_durations+1,x
+        sta $fd
+
+        ; unsigned comparison per byte
+        lda song_tick+1   ; compare high bytes
+        cmp $fd
+        bcc end_skip_song ; if MSB(song_tick) < MSB(song_duration) then
+                          ;     song_tick < song_duration
+        bne skip_song     ; if MSB(song_tick) <> MSB(song_duration) then
+                          ;     song_tick > song_duration (so song_tick >= song_duration)
+
+        lda song_tick     ; compare low bytes
+        cmp $fc
+        bcc end_skip_song ; if LSB(song_tick) < LSB(song_duration) then
+                          ;     song_tick < song_duration
+skip_song:
+        jsr do_next_song
+end_skip_song:
         rts
 .endproc
 
@@ -1640,6 +1680,7 @@ is_playing:             .byte 0
 current_song:           .byte 0                 ; selected song
 joy_button_already_pressed: .byte 0             ; boolean. don't trigger the button again if it is already pressed
 mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the button again if it is already pressed
+song_tick: .word 0                              ; word. incremented on each frame, when playing
 
 
 TOTAL_SONGS = 8
@@ -1686,15 +1727,15 @@ song_PAL_frequencies:
         .word $4cc8 - 1
 
 
-song_durations:                                 ; measured in "cycles ticks"
-        .word 100 * 50                          ; 100s * 50hz
-        .word 0
-        .word 0
-        .word 0
-        .word 0
-        .word 0
-        .word 0
-        .word 0
+song_durations:                                ; measured in "cycles ticks"
+        .word 10 * 50                          ; 100s * 50hz
+        .word 10 * 50
+        .word 10 * 50
+        .word 10 * 50
+        .word 10 * 50
+        .word 10 * 50
+        .word 10 * 50
+        .word 10 * 50
 
                  ;ABCDEFGHIJKLMNO
 song_1_name:
