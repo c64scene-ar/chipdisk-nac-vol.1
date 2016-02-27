@@ -43,12 +43,12 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
 - [ ] Que use los graficos de los botones apretados. Puede llegar a consumir mucha memoria. Hay que tener precaución al implementar esto.
 - [ ] Que anime la ruedita con sprites: se necesitan nuevos sprites
 - [ ] Que el contador este en el lugar correcto. Probablemente se pueda hacer con sprites. Se puede hacer con bitmap también pero el gráfico para el contador debería ser un poco más grande
-- Known bugs:
-   - [ ] se esta pisando la sombra del cassette cuando se plotea los nombres. Hay que hacer un _save_ de esa celda y luego _restorearla_
 - [ ] Fonts: Asi no usamos el default.
 - [ ] Led. Es rojo. En el monitor de tubo se ve casi negro. Por lo tanto cuando se le da Play a un tema tendría que cambiar a rosa para que haya una diferencia.
 - [ ] Los botones emulen el compartamiento de una casettera. Play tiene que quedar apretado. Stop nunca queda apretado. etc.., etc..
-- 
+- Known bugs:
+   - [ ] se esta pisando la sombra del cassette cuando se plotea los nombres. Hay que hacer un _save_ de esa celda y luego _restorearla_
+ 
 ## Opcional
 
 - [ ] Easter Egg: definir que tiene que hacer, y hacerlo
