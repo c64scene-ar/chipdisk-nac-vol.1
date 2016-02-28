@@ -66,6 +66,7 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
         sta $f7
 .endmacro
 
+
 .segment "CODE"
         sei
 
@@ -602,6 +603,9 @@ end:
 ; do_play_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_play_song
+        jsr button_play_save
+        jsr button_play_plot
+
         lda is_playing                  ; already playing ? skip
         bne end
 
@@ -618,10 +622,16 @@ end:
 end:
         rts
 .endproc
+
+
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_prev_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_prev_song
+        jsr button_play_restore
+        jsr button_rew_save
+        jsr button_rew_plot
+
         ldx current_song                ; current_song = max(0, current_song - 1)
         dex
         bpl :+
@@ -631,12 +641,23 @@ end:
         lda #0
         sta is_already_loaded           ; is_already_loaded = false
 
-        jmp init_song
+        jsr init_song
+
+        ; TODO do this in the next frame
+        jsr button_rew_restore
+        jsr button_play_save
+        jsr button_play_plot
+
+        rts
 .endproc
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_next_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_next_song
+        jsr button_play_restore
+        jsr button_ff_save
+        jsr button_ff_plot
+
         ldx current_song                ; current_song = min(7, current_song + 1)
         inx  
         cpx #TOTAL_SONGS
@@ -647,22 +668,40 @@ end:
         lda #0
         sta is_already_loaded           ; is_already_loaded = false
 
-        jmp init_song
+        jsr init_song
+
+        ; TODO do this in the next frame
+        jsr button_ff_restore
+        jsr button_play_save
+        jsr button_play_plot
+
+        rts
 .endproc
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_stop_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_stop_song
         sei
+
         lda #0
         sta is_playing                  ; is_playing = false
+
+        jsr button_play_restore
+        ;jsr button_stop_save
+        ;jsr button_stop_plot
 
         lda #$7f                        ; turn off cia interrups
         sta $dc0d
 
         lda #$00
         sta $d418                       ; no volume
+
         cli
+
+        ; TODO do this in the next frame
+        ;jsr button_stop_restore
+        ;jsr button_play_save
+
         rts
 .endproc
 
@@ -1690,6 +1729,104 @@ ora_67 = *+1
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; BUTTON_IMAGE_COPY
+;
+; Copy button (7x7 block) bitmap and colormap to Screen RAM and Color RAM
+; respectively, from source address.  Source address must point to the start of
+; the bitmap data, and its colormap must follow.
+;
+; If from_screen is not blank, data from screen is copied to src.
+;
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.macro BUTTON_IMAGE_COPY   src, pos_x, pos_y, from_screen
+        Width  = 7
+        Height = 7
+
+        ;; Copy bitmap
+        ScreenRAM = $4000
+        ScreenSrc  = src
+        ScreenDest = ScreenRAM + (pos_y * 40 * 8) + (pos_x * 8)
+
+.repeat Height, YY
+        ldx #(Width*8-1)
+.ifblank from_screen
+:       lda ScreenSrc  + (YY * (Width * 8)), x
+        sta ScreenDest + (YY * (40 * 8)), x
+.else
+:       lda ScreenDest + (YY * (40 * 8)), x
+        sta ScreenSrc  + (YY * (Width * 8)), x
+.endif
+        dex
+        bpl :-
+.endrepeat
+
+        ;; Copy color attributes
+        ColorRAM  = $6000
+        ColorSrc  = src + (Width * Height * 8)
+        ColorDest = ColorRAM + (pos_y * 40) + pos_x
+
+.repeat Height, YY
+        ldx #(Width-1)
+.ifblank from_screen
+:       lda ColorSrc  + (YY * Width), x
+        sta ColorDest + (YY * 40), x
+.else
+:       lda ColorDest + (YY * 40), x
+        sta ColorSrc  + (YY * Width), x
+.endif
+        dex
+        bpl :-
+.endrepeat
+
+        rts
+.endmacro
+
+;; play
+.proc button_play_plot
+        BUTTON_IMAGE_COPY  img_button_play, 0, 14
+.endproc
+.proc button_play_save
+        BUTTON_IMAGE_COPY  tmp_img_button, 0, 14, 1
+.endproc
+.proc button_play_restore
+        BUTTON_IMAGE_COPY  tmp_img_button,  0, 14
+.endproc
+
+;; rew
+.proc button_rew_plot
+        BUTTON_IMAGE_COPY  img_button_rew, 3, 16
+.endproc
+.proc button_rew_save
+        BUTTON_IMAGE_COPY  tmp_img_button, 3, 16, 1
+.endproc
+.proc button_rew_restore
+        BUTTON_IMAGE_COPY  tmp_img_button, 3, 16
+.endproc
+
+;; ff
+.proc button_ff_plot
+        BUTTON_IMAGE_COPY  img_button_ff,  7, 18
+.endproc
+.proc button_ff_save
+        BUTTON_IMAGE_COPY  tmp_img_button,  7, 18, 1
+.endproc
+.proc button_ff_restore
+        BUTTON_IMAGE_COPY  tmp_img_button, 7, 18
+.endproc
+
+;; stop
+.proc button_stop_plot
+        BUTTON_IMAGE_COPY  img_button_stop, 10, 18
+.endproc
+.proc button_stop_save
+        BUTTON_IMAGE_COPY  tmp_img_button, 10, 18, 1
+.endproc
+.proc button_stop_restore
+        BUTTON_IMAGE_COPY  tmp_img_button,  10, 18
+.endproc
+
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; global variables
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 sync_raster_irq:        .byte 0                 ; boolean
@@ -1794,6 +1931,20 @@ song_8_author:
 
 counter_label:
         .byte $30, $30, $30     ; 000
+
+
+.segment "IMAGES"
+img_button_play:
+.incbin "button_play.raw"
+img_button_rew:
+.incbin "button_rew.raw"
+img_button_ff:
+.incbin "button_ff.raw"
+img_button_stop:
+.incbin "button_stop.raw"
+tmp_img_button:
+.res 441, 0       ; reserved for temporary storing
+                  ; button bitmap before being pressed
 
 .segment "BITMAP"
 bitmap:
