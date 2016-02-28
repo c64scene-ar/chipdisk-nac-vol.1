@@ -3,7 +3,7 @@
 ; chipdisk 
 ; http://pungas.space
 ;
-; code: riq/PVM
+; code: riq/PVM, munshkr/PVM
 ; Some code snippets were taken from different places.
 ; Credit added in those snippets.
 ;       
