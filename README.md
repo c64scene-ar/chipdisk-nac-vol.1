@@ -40,7 +40,7 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
 
 - [ ] Los temas! Definir que temás van. Creo que solo hay 4 o 5 de temas de los temas oficiales (el resto de los temas que estan, son de prueba). Y ver si se pueden poner más de 8 temas.
 - [x] Que detecte final de cancion y le de play a la siguiente. Detectar final de cancion se puede hacer que al cabo de N segundos toque la siguiente canción. Se usa una suerte de "ticks por canciíon"
-- [ ] Que use los graficos de los botones apretados. Puede llegar a consumir mucha memoria. Hay que tener precaución al implementar esto.
+- [x] Que use los graficos de los botones apretados. Puede llegar a consumir mucha memoria. Hay que tener precaución al implementar esto.
 - [ ] Que anime la ruedita con sprites: se necesitan nuevos sprites
 - [ ] Que el contador este en el lugar correcto. Probablemente se pueda hacer con sprites. Se puede hacer con bitmap también pero el gráfico para el contador debería ser un poco más grande
 - [ ] Fonts: Asi no usamos el default.
@@ -48,6 +48,9 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
 - [ ] Los botones emulen el compartamiento de una casettera. Play tiene que quedar apretado. Stop nunca queda apretado. etc.., etc..
 - Known bugs:
    - [ ] se esta pisando la sombra del cassette cuando se plotea los nombres. Hay que hacer un _save_ de esa celda y luego _restorearla_
+   - [ ] cuando avanza automáticamente al siguiente tema, no debería activarse el botón de FF ni "rebobinar" (la animación de las rueditas debería mantenerse como cuando se reproduce música)
+   - [ ] hay que sacar los sprites de la botonera, ya no son necesario ahora que se anima la presión de los botones
+   - [ ] no se ve la animación del botón de Stop, creo que hay que retrasar la restauración de la imagen original uno o 2 de frames para que se note
  
 ## Opcional
 
