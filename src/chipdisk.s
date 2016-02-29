@@ -1742,12 +1742,16 @@ ora_67 = *+1
         Width  = 7
         Height = 7
 
-        ;; Copy bitmap
         ScreenRAM = $4000
         ScreenSrc  = src
         ScreenDest = ScreenRAM + (pos_y * 40 * 8) + (pos_x * 8)
 
+        ColorRAM  = $6000
+        ColorSrc  = src + (Width * Height * 8)
+        ColorDest = ColorRAM + (pos_y * 40) + pos_x
+
 .repeat Height, YY
+        ;; Copy bitmap
         ldx #(Width*8-1)
 .ifblank from_screen
 :       lda ScreenSrc  + (YY * (Width * 8)), x
@@ -1758,14 +1762,8 @@ ora_67 = *+1
 .endif
         dex
         bpl :-
-.endrepeat
 
         ;; Copy color attributes
-        ColorRAM  = $6000
-        ColorSrc  = src + (Width * Height * 8)
-        ColorDest = ColorRAM + (pos_y * 40) + pos_x
-
-.repeat Height, YY
         ldx #(Width-1)
 .ifblank from_screen
 :       lda ColorSrc  + (YY * Width), x
