@@ -495,37 +495,30 @@ end:
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc fix_bitmap
 
-FIX_COL_A = 20
-FIX_ROW_A = 7
-
-FIX_COL_B = 24
-FIX_ROW_B = 9
-
         ldx #7
+
+next_cell:
+        lda cells_lo,x
+        sta $fe
+        lda cells_hi,x
+        sta $ff
+
+        ldy #7
 loop:
-        lda $4000 + 8 * 40 * FIX_ROW_A + FIX_COL_A * 8,x
+        lda ($fe),y
         eor #$ff
-        sta $4000 + 8 * 40 * FIX_ROW_A + FIX_COL_A * 8,x
-
-        lda $4000 + 8 * 40 * FIX_ROW_B + FIX_COL_B * 8,x
-        eor #$ff
-        sta $4000 + 8 * 40 * FIX_ROW_B + FIX_COL_B * 8,x
-
-        dex
+        sta ($fe),y
+        dey
         bpl loop
 
-        lda $6000 + 40 * FIX_ROW_A + FIX_COL_A
-        cmp #$80                        ; swap nibble
-        rol
-        cmp #$80
-        rol
-        cmp #$80
-        rol
-        cmp #$80
-        rol
-        sta $6000 + 40 * FIX_ROW_A + FIX_COL_A
+        ;
+        lda colors_lo,x
+        sta $fe
+        lda colors_hi,x
+        sta $ff
 
-        lda $6000 + 40 * FIX_ROW_B + FIX_COL_B
+        ldy #0
+        lda ($fe),y
         cmp #$80                        ; swap nibble
         rol
         cmp #$80
@@ -534,10 +527,56 @@ loop:
         rol
         cmp #$80
         rol
-        sta $6000 + 40 * FIX_ROW_B + FIX_COL_B
+        sta ($fe),y
+
+        dex
+        bpl next_cell
+
 
         rts
+        ; row: 7, 9, 3, 4, 5, 6, 7, 8
+        ; cols: 20,24,17,19,21,23,25,27
+cells_lo:
+        .byte <($4000 + 320 * 7 + 8 * 20)
+        .byte <($4000 + 320 * 9 + 8 * 24)
+        .byte <($4000 + 320 * 8 + 8 * 18)
+        .byte <($4000 + 320 * 9 + 8 * 20)
+        .byte <($4000 + 320 * 7 + 8 * 16)
+        .byte <($4000 + 320 * 10 + 8 * 22)
+        .byte <($4000 + 320 * 13 + 8 * 26)
+        .byte <($4000 + 320 * 9 + 8 * 29)
+
+cells_hi:
+        .byte >($4000 + 320 * 7 + 8 * 20)
+        .byte >($4000 + 320 * 9 + 8 * 24)
+        .byte >($4000 + 320 * 8 + 8 * 18)
+        .byte >($4000 + 320 * 9 + 8 * 20)
+        .byte >($4000 + 320 * 7 + 8 * 16)
+        .byte >($4000 + 320 * 10 + 8 * 22)
+        .byte >($4000 + 320 * 13 + 8 * 26)
+        .byte >($4000 + 320 * 9 + 8 * 29)
+
+colors_lo:
+        .byte <($6000 + 40 * 7 + 20)
+        .byte <($6000 + 40 * 9 + 24)
+        .byte <($6000 + 40 * 8 + 18)
+        .byte <($6000 + 40 * 9 + 20)
+        .byte <($6000 + 40 * 7 + 16)
+        .byte <($6000 + 40 * 10 + 22)
+        .byte <($6000 + 40 * 13 + 26)
+        .byte <($6000 + 40 * 9 + 29)
+
+colors_hi:
+        .byte >($6000 + 40 * 7 + 20)
+        .byte >($6000 + 40 * 9 + 24)
+        .byte >($6000 + 40 * 8 + 18)
+        .byte >($6000 + 40 * 9 + 20)
+        .byte >($6000 + 40 * 7 + 16)
+        .byte >($6000 + 40 * 10 + 22)
+        .byte >($6000 + 40 * 13 + 26)
+        .byte >($6000 + 40 * 9 + 29)
 .endproc
+
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; init_sprites
