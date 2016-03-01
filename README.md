@@ -51,7 +51,7 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
    - [ ] cuando avanza automáticamente al siguiente tema, no debería activarse el botón de FF ni "rebobinar" (la animación de las rueditas debería mantenerse como cuando se reproduce música)
    - [x] hay que sacar los sprites de la botonera, ya no son necesario ahora que se anima la presión de los botones
    - [ ] no se ve la animación del botón de Stop, creo que hay que retrasar la restauración de la imagen original uno o 2 de frames para que se note
-   - [ ] al darle Stop, a veces el sonido se queda colgado
+   - [x] al darle Stop, a veces el sonido se queda colgado
 
 ## Opcional
 

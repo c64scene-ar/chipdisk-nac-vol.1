@@ -738,10 +738,6 @@ end:
         lda #0
         sta is_playing                  ; is_playing = false
 
-        jsr button_play_restore
-        ;jsr button_stop_save
-        ;jsr button_stop_plot
-
         lda #$7f                        ; turn off cia interrups
         sta $dc0d
 
@@ -749,6 +745,10 @@ end:
         sta $d418                       ; no volume
 
         cli
+
+        jsr button_play_restore
+        ;jsr button_stop_save
+        ;jsr button_stop_plot
 
         ; TODO do this in the next frame
         ;jsr button_stop_restore
