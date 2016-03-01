@@ -66,6 +66,26 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
         sta $f7
 .endmacro
 
+; entry
+;       X = cursor pos x
+;       Y = cursor pos y
+.macro CHECK_PRESSED_BUTTON offset_x, offset_y, routine
+.scope
+        AreaSize = 24
+
+        cpx #offset_x
+        bcc :+
+        cpx #(offset_x + AreaSize)
+        bcs :+
+        cpy #offset_y
+        bcc :+
+        cpy #(offset_y + AreaSize)
+        bcs :+
+        jmp routine
+:
+.endscope
+.endmacro
+
 
 .segment "CODE"
         sei
@@ -358,22 +378,15 @@ no_button:
 ; process_pressed_button
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc process_pressed_button
-        lda $d01e                       ; quick and dirty. check for sprite collision
-        lsr
-        lsr                             ; skip sprite 0 and 1 (cursor)
-        lsr                             ; sprite #2: play button
-        bcc :+
-        jmp do_play_song
-:       lsr                             ; sprite #3: rewind
-        bcc :+
-        jmp do_prev_song
-:       lsr                             ; sprite #4: fast forward
-        bcc :+
-        jmp do_next_song
-:       lsr                             ; sprite #5: stop
-        bcc :+
-        jmp do_stop_song
-:       rts
+        ldx VIC_SPR0_X        ; get cursor position
+        ldy VIC_SPR0_Y
+
+        CHECK_PRESSED_BUTTON 36     , 180     , do_play_song
+        CHECK_PRESSED_BUTTON 36+28  , 180+14  , do_prev_song
+        CHECK_PRESSED_BUTTON 36+28*2, 180+14*2, do_next_song
+        CHECK_PRESSED_BUTTON 36+28*3, 180+14*3, do_stop_song
+
+        rts
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -559,16 +572,16 @@ l1:
         rts
 
 sprites_x_pos:
-        .byte 150, 150,     32, 60, 86, 115,     192, 136
+        .byte 150, 150,     0, 0, 0, 0,     192, 136
 
 sprites_y_pos:
-        .byte 150, 150,     180, 195, 206, 221,     126, 98
+        .byte 150, 150,     0, 0, 0, 0,     126, 98
 
 sprites_color:
-        .byte 0, 1, 1, 1, 1, 1, 12, 12
+        .byte 0, 1,   1, 1, 1, 1,   12, 12
 
 sprites_pointer:
-        .byte 161, 160, 162, 163, 164, 165, 144, 144
+        .byte 161, 160,   162, 163, 164, 165,   144, 144
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -603,11 +616,11 @@ end:
 ; do_play_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_play_song
-        jsr button_play_save
-        jsr button_play_plot
-
         lda is_playing                  ; already playing ? skip
         bne end
+
+        jsr button_play_save
+        jsr button_play_plot
 
         lda is_already_loaded
         beq :+
