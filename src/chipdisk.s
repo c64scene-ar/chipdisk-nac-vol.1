@@ -32,7 +32,7 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; Macros
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.macro PLOT_NEXT_Y
+.macro BITMAP_NEXT_Y
         clc
         lda $f8                         ; $f8/$f9 += 320
         adc #64
@@ -50,7 +50,7 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
         sta $fb
 .endmacro
 
-.macro PLOT_PREV_Y
+.macro BITMAP_PREV_Y
         sec
         lda $f8                         ; $f8/$f9 -= 320
         sbc #64
@@ -68,7 +68,7 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
         sta $fb
 .endmacro
 
-.macro PLOT_PREV_X
+.macro BITMAP_PREV_X
         sec
         lda $f8                         ; $f8/$f9 -= 8
         sta $fa                         ; $fa/$fb = $f8/$f9 (which is the same as -=8)
@@ -80,7 +80,7 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
         sta $f9
 .endmacro
 
-.macro PLOT_NEXT_X
+.macro BITMAP_NEXT_X
         clc
         lda $fa                         ; $fa/$fb += 8
         sta $f8                         ; $f8/$f9 = $fa/$fb (which is the same as +=8)
@@ -1169,7 +1169,7 @@ tmp_mul8_lo: .byte 0
 ; entry:
 ;       x = LSB bitmap address
 ;       y = MSB bitmap address
-;       $fc,$fd: pointer to string to print. Only 15 chars
+;       $fc,$fd: pointer to string to print. terminated with $ff
 ;       
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_name
@@ -1187,7 +1187,6 @@ tmp_mul8_lo: .byte 0
         ldy #0
         sty tmp_counter
 
-        ldy tmp_counter
         lda ($fc),y
 
         FETCH_NEXT_CHAR                 ; updates $f6/$f7. modifies A,X
@@ -1197,9 +1196,9 @@ tmp_mul8_lo: .byte 0
         ldy tmp_counter
 
 loop:
-        PLOT_NEXT_X                     ; updates bitmap: $f8,$f9 / $fa,$fb
+        BITMAP_NEXT_X                   ; updates bitmap: $f8,$f9 / $fa,$fb
         lda ($fc),y
-        cmp #$ff                        ; wide char?
+        cmp #$ff
         beq skip_1
 
         FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7. modifies A,X
@@ -1220,7 +1219,7 @@ skip_2:
         inc tmp_counter
         ldy tmp_counter
 
-        PLOT_NEXT_X
+        BITMAP_NEXT_X                   ; updates bitmap: $f8/$f9, $fa/$fb
         lda ($fc),y
         cmp #$ff                        ; wide char?
         beq skip_3
@@ -1232,7 +1231,7 @@ skip_3:
         inc tmp_counter
         ldy tmp_counter
 
-        PLOT_NEXT_Y
+        BITMAP_NEXT_Y                   ; updates bitmap: $f8/$f9, $fa/$fb
         lda ($fc),y
         cmp #$ff                        ; wide char?
         beq skip_4
@@ -1261,37 +1260,12 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_0
-        ldy #0
-        lda ($f6),y                     ; plot char + y (top row)
-        jsr plot_row_0
 
-        ldy #1
-        lda ($f6),y                     ; plot char + y
-        jsr plot_row_1
-
-        ldy #2
-        lda ($f6),y                     ; 
-        jsr plot_row_2
-
-        ldy #3
-        lda ($f6),y                     ; 
-        jsr plot_row_3
-
-        ldy #4
-        lda ($f6),y                     ; 
-        jsr plot_row_4
-
-        ldy #5
-        lda ($f6),y                   
-        jsr plot_row_5
-
-        ldy #6
-        lda ($f6),y                     ; 
-        jsr plot_row_6
-
-        ldy #7
-        lda ($f6),y                     ; 
-        jsr plot_row_7
+        .repeat 8, YY
+                ldy #YY
+                lda ($f6),y
+                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY)))
+        .endrepeat
 
         rts
 .endproc
@@ -1304,53 +1278,35 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_1
-        ldy #0
-        lda ($f6),y                     ; plot char + y (top row)
-        ldy #2
-        jsr plot_row_4
+        .repeat 4, YY
+                ldy #YY
+                lda ($f6),y
+                ldy #(YY + 2)
+                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY+4)))
+        .endrepeat
 
-        ldy #1
-        lda ($f6),y                     ; plot char + y
-        ldy #3
-        jsr plot_row_5
 
-        ldy #2
-        lda ($f6),y                     ; 
-        ldy #4
-        jsr plot_row_6
-        
-        ldy #3
-        lda ($f6),y                     ; 
-        ldy #5
-        jsr plot_row_7
+        BITMAP_PREV_X
 
-        PLOT_PREV_X
+        .repeat 2, YY
+                ldy #YY+4
+                lda ($f6),y
+                ldy #(YY + 6)
+                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY)))
+        .endrepeat
 
-        ldy #4
-        lda ($f6),y                     ; 
-        ldy #6
-        jsr plot_row_0
+        BITMAP_NEXT_Y
 
-        ldy #5
-        lda ($f6),y                   
-        ldy #7
-        jsr plot_row_1
+        .repeat 2, YY
+                ldy #YY+6
+                lda ($f6),y
+                ldy #(YY)
+                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY+2)))
+        .endrepeat
 
-        PLOT_NEXT_Y
 
-        ldy #6
-        lda ($f6),y                     ; 
-        ldy #0
-        jsr plot_row_2
-
-        ldy #7
-        lda ($f6),y                     ; 
-        ldy #1
-        jsr plot_row_3
-       
-
-        PLOT_NEXT_X                     ; restore
-        PLOT_PREV_Y                     ; restore
+        BITMAP_NEXT_X                     ; restore
+        BITMAP_PREV_Y                     ; restore
 
         rts
 .endproc
@@ -1363,51 +1319,23 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_2
-        ldy #0
-        lda ($f6),y                     ; plot char + y (top row)
-        ldy #4
-        jsr plot_row_0
+        .repeat 4, YY
+                ldy #YY
+                lda ($f6),y
+                ldy #YY+4
+                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY)))
+        .endrepeat
 
-        ldy #1
-        lda ($f6),y                     ; plot char + y
-        ldy #5
-        jsr plot_row_1
+        BITMAP_NEXT_Y
 
-        ldy #2
-        lda ($f6),y                     ; 
-        ldy #6
-        jsr plot_row_2
+        .repeat 4, YY
+                ldy #YY+4
+                lda ($f6),y
+                ldy #YY
+                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY+4)))
+        .endrepeat
 
-        ldy #3
-        lda ($f6),y                     ; 
-        ldy #7
-        jsr plot_row_3
-
-        PLOT_NEXT_Y
-
-                                        ; don't restore $f9,$fb
-                                        ; start rendering at 320
-        ldy #4
-        lda ($f6),y                     ; 
-        ldy #0
-        jsr plot_row_4
-
-        ldy #5
-        lda ($f6),y                     ; 
-        ldy #1
-        jsr plot_row_5
-
-        ldy #6
-        lda ($f6),y                     ; 
-        ldy #2
-        jsr plot_row_6
-
-        ldy #7
-        lda ($f6),y                     ; 
-        ldy #3
-        jsr plot_row_7
-
-        PLOT_PREV_Y                     ; restore
+        BITMAP_PREV_Y                     ; restore
 
         rts
 .endproc
@@ -1420,53 +1348,33 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_3
-        ldy #0
-        lda ($f6),y                     ; plot char + y (top row)
-        ldy #6
-        jsr plot_row_4
+        .repeat 2, YY
+                ldy #YY
+                lda ($f6),y
+                ldy #YY+6
+                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY+4)))
+        .endrepeat
 
-        ldy #1
-        lda ($f6),y                     ; plot char + y
-        ldy #7
-        jsr plot_row_5
+        BITMAP_NEXT_Y
 
-        PLOT_NEXT_Y
+        .repeat 2, YY
+                ldy #YY+2
+                lda ($f6),y
+                ldy #YY
+                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY+6)))
+        .endrepeat
 
-        ldy #2
-        lda ($f6),y                     ; 
-        ldy #0
-        jsr plot_row_6
-        
-        ldy #3
-        lda ($f6),y                     ; 
-        ldy #1
-        jsr plot_row_7
+        BITMAP_PREV_X
 
-        PLOT_PREV_X
+        .repeat 4, YY
+                ldy #YY+4
+                lda ($f6),y
+                ldy #YY+2
+                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY)))
+        .endrepeat
 
-        ldy #4
-        lda ($f6),y                     ; 
-        ldy #2
-        jsr plot_row_0
-
-        ldy #5
-        lda ($f6),y                   
-        ldy #3
-        jsr plot_row_1
-
-
-        ldy #6
-        lda ($f6),y                     ; 
-        ldy #4
-        jsr plot_row_2
-
-        ldy #7
-        lda ($f6),y                     ; 
-        ldy #5
-        jsr plot_row_3
-       
-        PLOT_NEXT_X                     ; restore
-        PLOT_PREV_Y                     ; restore
+        BITMAP_NEXT_X                     ; restore
+        BITMAP_PREV_Y                     ; restore
 
         rts
 .endproc
