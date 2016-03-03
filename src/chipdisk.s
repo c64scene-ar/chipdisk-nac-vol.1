@@ -556,14 +556,23 @@ end:
 ; do_anim_cassette
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_anim_cassette
-        ldx $63f8 + 6                   ; sprite pointer for sprite #0
-        inx
-        txa
-        and #%00001111                  ; and 16
-        ora #%10010000                  ; ora 144
-        sta $63f8 + 6                   ; turning wheel sprite pointer #0
+        dec delay
+        bne end
+
+        lda #2
+        sta delay
+
+:       inc $63f8 + 6                   ; sprite pointer for sprite #0
+        lda $63f8 + 6                   ; sprite pointer for sprite #0
+        cmp #144 + 5
+        bne :+
+        lda #144
+:       sta $63f8 + 6                   ; turning wheel sprite pointer #0
         sta $63f8 + 7                   ; turning wheel sprite pointer #1
+end:
         rts
+delay:
+        .byte 1
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -1051,15 +1060,23 @@ get_crunched_byte:
         dec _crunched_byte_hi
 @byte_skip_hi:
 
+        dec ff_delay
+        bne @cont
+
+        lda #60
+        sta ff_delay
+
         php
         inc $63f8 + 6                   ; sprite pointer for sprite #0
         lda $63f8 + 6                   ; sprite pointer for sprite #0
-        and #%00001111                  ; and 16
-        ora #%10010000                  ; ora 144
-        sta $63f8 + 6                   ; turning wheel sprite pointer #0
+        cmp #144 + 5
+        bne :+
+        lda #144
+:       sta $63f8 + 6                   ; turning wheel sprite pointer #0
         sta $63f8 + 7                   ; turning wheel sprite pointer #1
         plp
 
+@cont:
         dec _crunched_byte_lo
 _crunched_byte_lo = * + 1
 _crunched_byte_hi = * + 2
@@ -1067,6 +1084,8 @@ _crunched_byte_hi = * + 2
 	rts			        ; decrunch_file is called.
 ; end_of_data needs to point to the address just after the address
 ; of the last byte of crunched data.
+ff_delay:
+        .byte 5
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; memcpy
