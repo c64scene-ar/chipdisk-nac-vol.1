@@ -52,7 +52,7 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
    - [x] hay que sacar los sprites de la botonera, ya no son necesario ahora que se anima la presión de los botones
    - [ ] no se ve la animación del botón de Stop, creo que hay que retrasar la restauración de la imagen original uno o 2 de frames para que se note
    - [x] al darle Stop, a veces el sonido se queda colgado
-   - [ ] no se renderea bien la M y W (riq)
+   - [x] no se renderea bien la M y W (riq)
    - [ ] problemas de colores con font + fondo: naranja y negro. Debería ser solo un color. Lo mismo con el nombre del autor
 
 ## Opcional

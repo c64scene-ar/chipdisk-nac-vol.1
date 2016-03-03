@@ -1226,48 +1226,29 @@ tmp_mul8_lo: .byte 0
 loop:
         BITMAP_NEXT_X                   ; updates bitmap: $f8,$f9 / $fa,$fb
         lda ($fc),y
-        cmp #$ff
-        beq skip_1
-
         FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7. modifies A,X
         jsr plot_char_1
 
-skip_1:
         inc tmp_counter
         ldy tmp_counter
-
         lda ($fc),y
-        cmp #$ff                        ; wide char?
-        beq skip_2
-
         FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7. modifies A,X
         jsr plot_char_2
 
-skip_2:
         inc tmp_counter
         ldy tmp_counter
-
         BITMAP_NEXT_X                   ; updates bitmap: $f8/$f9, $fa/$fb
         lda ($fc),y
-        cmp #$ff                        ; wide char?
-        beq skip_3
-
         FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7. modifies A,X
         jsr plot_char_3
 
-skip_3:
         inc tmp_counter
         ldy tmp_counter
-
         BITMAP_NEXT_Y                   ; updates bitmap: $f8/$f9, $fa/$fb
         lda ($fc),y
-        cmp #$ff                        ; wide char?
-        beq skip_4
-
         FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7, modifies A,X
         jsr plot_char_0
 
-skip_4:
         inc tmp_counter
         ldy tmp_counter
         cpy #25
@@ -1696,6 +1677,12 @@ song_durations:                                ; measured in "cycles ticks"
         .word 10 * 50
         .word 10 * 50
 
+
+; M, m, w and W uses two chars to render
+; M = M'
+; m = m&
+; w = w(
+; W = W)
                 ;12345678901234567890123456789
 song_1_name:
         scrcode "      Balloon  Country      "
@@ -1706,50 +1693,30 @@ song_3_name:
 song_4_name:
         scrcode "          Leetit 3          "
 song_5_name:
-        scrcode "        M"
-        .byte $ff
-        scrcode "am"
-        .byte $ff
-        scrcode "a  Killa        "
+        scrcode "        M'am&a  Killa       "
 song_6_name:
         scrcode "            Turro           "
 song_7_name:
         scrcode "            Carito          "
 song_8_name:
-        scrcode "     Que Hago En  M"
-        .byte $ff
-        scrcode "anila   " 
+        scrcode "     Que Hago En  M'anila   " 
 
 song_1_author:
-        scrcode "           Uctum"
-        .byte $ff
-        scrcode "i          "
+        scrcode "           Uctum&i          "
 song_2_author:
-        scrcode "           Uctum"
-        .byte $ff
-        scrcode "i          "
+        scrcode "           Uctum&i          "
 song_3_author:
-        scrcode "           Uctum"
-        .byte $ff
-        scrcode "i          "
+        scrcode "           Uctum&i          "
 song_4_author:
-        scrcode "           CoM"
-        .byte $ff
-        scrcode "u             "
+        scrcode "           CoM'u            "
 song_5_author:
-        scrcode "           CoM"
-        .byte $ff
-        scrcode "u             "
+        scrcode "           CoM'u            "
 song_6_author:
-        scrcode "           Naku              "
+        scrcode "           Naku             "
 song_7_author:
-        scrcode "           Uctum"
-        .byte $ff
-        scrcode "i          "
+        scrcode "           Uctum&i          "
 song_8_author:
-        scrcode "           Uctum"
-        .byte $ff
-        scrcode "i          "
+        scrcode "           Uctum&i          "
 
 counter_label:
         .byte $30, $30, $30     ; 000
