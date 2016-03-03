@@ -32,6 +32,15 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; Macros
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.macro PLOT_ROWS number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
+        .repeat number_of_rows, YY
+                ldy #char_y_offset + YY
+                lda ($f6),y
+                ldy #cell_y_offset + YY
+                jsr .IDENT(.CONCAT("plot_row_", .STRING(cell_x_offset + YY)))
+        .endrepeat
+.endmacro
+
 .macro BITMAP_NEXT_Y
         clc
         lda $f8                         ; $f8/$f9 += 320
@@ -1261,11 +1270,7 @@ tmp_mul8_lo: .byte 0
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_0
 
-        .repeat 8, YY
-                ldy #YY
-                lda ($f6),y
-                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY)))
-        .endrepeat
+        PLOT_ROWS 8, 0, 0, 0 
 
         rts
 .endproc
@@ -1278,32 +1283,16 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_1
-        .repeat 4, YY
-                ldy #YY
-                lda ($f6),y
-                ldy #(YY + 2)
-                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY+4)))
-        .endrepeat
 
+        PLOT_ROWS 4, 0, 2, 4 
 
         BITMAP_PREV_X
 
-        .repeat 2, YY
-                ldy #YY+4
-                lda ($f6),y
-                ldy #(YY + 6)
-                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY)))
-        .endrepeat
+        PLOT_ROWS 2, 4, 6, 0 
 
         BITMAP_NEXT_Y
 
-        .repeat 2, YY
-                ldy #YY+6
-                lda ($f6),y
-                ldy #(YY)
-                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY+2)))
-        .endrepeat
-
+        PLOT_ROWS 2, 6, 0, 2 
 
         BITMAP_NEXT_X                     ; restore
         BITMAP_PREV_Y                     ; restore
@@ -1319,21 +1308,11 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_2
-        .repeat 4, YY
-                ldy #YY
-                lda ($f6),y
-                ldy #YY+4
-                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY)))
-        .endrepeat
+        PLOT_ROWS 4, 0, 4, 0 
 
         BITMAP_NEXT_Y
 
-        .repeat 4, YY
-                ldy #YY+4
-                lda ($f6),y
-                ldy #YY
-                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY+4)))
-        .endrepeat
+        PLOT_ROWS 4, 4, 0, 4 
 
         BITMAP_PREV_Y                     ; restore
 
@@ -1348,30 +1327,15 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_3
-        .repeat 2, YY
-                ldy #YY
-                lda ($f6),y
-                ldy #YY+6
-                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY+4)))
-        .endrepeat
+        PLOT_ROWS 2, 0, 6, 4 
 
         BITMAP_NEXT_Y
-
-        .repeat 2, YY
-                ldy #YY+2
-                lda ($f6),y
-                ldy #YY
-                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY+6)))
-        .endrepeat
+        
+        PLOT_ROWS 2, 2, 0, 6 
 
         BITMAP_PREV_X
 
-        .repeat 4, YY
-                ldy #YY+4
-                lda ($f6),y
-                ldy #YY+2
-                jsr .IDENT(.CONCAT("plot_row_", .STRING(YY)))
-        .endrepeat
+        PLOT_ROWS 4, 4, 2, 0 
 
         BITMAP_NEXT_X                     ; restore
         BITMAP_PREV_Y                     ; restore
@@ -1408,10 +1372,10 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_1
-        asl                             ; rotate two to left (or 6 to right)
-        adc #0
-        asl
-        adc #0
+        .repeat 2
+                asl
+                adc #0
+        .endrepeat
         
         tax                             ; save for next value
         PLOT_BYTE $f8, %00000011
@@ -1431,12 +1395,10 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_2
-        asl                             ; rotate 3 to left (or 5 to right)
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
+        .repeat 3
+                asl
+                adc #0
+        .endrepeat
 
         tax                             ; save for next value
         PLOT_BYTE $f8, %00000111
@@ -1456,14 +1418,10 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_3
-        asl                             ; rotate 4 to left (or 4 to right)
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
+        .repeat 4
+                asl
+                adc #0
+        .endrepeat
 
         tax                             ; save for next value
         PLOT_BYTE $f8, %00001111
@@ -1482,16 +1440,11 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_4
-        asl                             ; rotate 5 to left (or 3 to right)
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
+        .repeat 5
+                asl
+                adc #0
+        .endrepeat
+
 
         tax                             ; save for next value
         PLOT_BYTE $f8, %00011111
@@ -1510,18 +1463,10 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_5
-        asl                             ; rotate 6 to left (or 2 to right)
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
+        .repeat 6
+                asl
+                adc #0
+        .endrepeat
 
         tax                             ; save for next value
         PLOT_BYTE $f8, %00111111
@@ -1540,20 +1485,10 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_row_6
-        asl                             ; rotate 7 to left (or 1 to right)
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
-        asl
-        adc #0
+        .repeat 7
+                asl
+                adc #0
+        .endrepeat
 
         tax                             ; save for next value
         PLOT_BYTE $f8, %01111111
