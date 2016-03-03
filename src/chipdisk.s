@@ -92,11 +92,12 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
         sta $fb
 .endmacro
 
+; entry
+;       A = byte to multiply
 .macro FETCH_NEXT_CHAR
         ldx #0                          ; could use a table to multiply by 8
         stx tmp_mul8_hi                 ; but plotting the name doesn't require speed (at least not now)
-        stx tmp_mul8_lo                 ; so it is better to trade speed for space in this case
-
+                                        ; so it is better to trade speed for space in this case
         asl           
         rol tmp_mul8_hi
         asl
@@ -321,7 +322,7 @@ djr3:   lsr                             ; dy=0 (move down screen), dy=0 (no y ch
         sty opotx
         sta ret_x_value
 
-        lda $d41a                       ; read delay Y (pot y)
+        lda $d41a                       ; read delta Y (pot y)
         ldy opoty
         jsr mouse_move_check            ; calculate delta
         sty opoty
