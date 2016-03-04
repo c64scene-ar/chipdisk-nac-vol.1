@@ -29,6 +29,9 @@
 DEBUG = 3                               ; rasterlines:1, music:2, all:3
 SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
 
+WHEEL_FRAMES = 5
+WHEEL_BASE_FRAME = 144
+
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; Macros
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -564,9 +567,9 @@ end:
 
 :       dec $63f8 + 6                   ; sprite pointer for sprite #0
         lda $63f8 + 6                   ; sprite pointer for sprite #0
-        cmp #143
+        cmp #(WHEEL_BASE_FRAME - 1)
         bne :+
-        lda #143 + 5
+        lda #(WHEEL_BASE_FRAME + WHEEL_FRAMES - 1)
 :       sta $63f8 + 6                   ; turning wheel sprite pointer #0
         sta $63f8 + 7                   ; turning wheel sprite pointer #1
 end:
@@ -809,6 +812,9 @@ end:
         sta $dc0d                       ; turn on cia interrups
         bne end
 
+        lda #0
+        sta is_rewinding                ; is_rewinding = false
+
 :       jmp init_song
 end:
         rts
@@ -831,6 +837,9 @@ end:
 
         lda #0
         sta is_already_loaded           ; is_already_loaded = false
+
+        lda #1
+        sta is_rewinding                ; is_rewinding = true
 
         jsr init_song
 
@@ -858,6 +867,9 @@ end:
 
         lda #0
         sta is_already_loaded           ; is_already_loaded = false
+
+        lda #0
+        sta is_rewinding                ; is_rewinding = false
 
         jsr init_song
 
@@ -1063,17 +1075,30 @@ get_crunched_byte:
         dec ff_delay
         bne @cont
 
-        lda #100
+        lda #90
         sta ff_delay
 
         php
-        dec $63f8 + 6                   ; sprite pointer for sprite #0
+
+        lda is_rewinding
+        beq @anim_ff
+        inc $63f8 + 6                   ; sprite pointer for sprite #0
         lda $63f8 + 6                   ; sprite pointer for sprite #0
-        cmp #143
+        cmp #(WHEEL_BASE_FRAME + WHEEL_FRAMES)
         bne :+
-        lda #143 + 5
+        lda #WHEEL_BASE_FRAME
 :       sta $63f8 + 6                   ; turning wheel sprite pointer #0
         sta $63f8 + 7                   ; turning wheel sprite pointer #1
+        jmp @done_anim
+@anim_ff:
+        dec $63f8 + 6                   ; sprite pointer for sprite #0
+        lda $63f8 + 6                   ; sprite pointer for sprite #0
+        cmp #(WHEEL_BASE_FRAME - 1)
+        bne :+
+        lda #(WHEEL_BASE_FRAME + WHEEL_FRAMES - 1)
+:       sta $63f8 + 6                   ; turning wheel sprite pointer #0
+        sta $63f8 + 7                   ; turning wheel sprite pointer #1
+@done_anim:
         plp
 
 @cont:
@@ -1617,6 +1642,7 @@ sync_raster_irq:        .byte 0                 ; boolean
 sync_timer_irq:         .byte 0                 ; boolean
 is_playing:             .byte 0
 is_already_loaded:      .byte 0                 ; boolean. whether current song has already been loaded (init)
+is_rewinding:           .byte 0                 ; boolean
 current_song:           .byte 0                 ; selected song
 joy_button_already_pressed: .byte 0             ; boolean. don't trigger the button again if it is already pressed
 mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the button again if it is already pressed
