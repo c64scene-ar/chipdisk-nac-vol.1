@@ -559,14 +559,14 @@ end:
         dec delay
         bne end
 
-        lda #2
+        lda #3
         sta delay
 
-:       inc $63f8 + 6                   ; sprite pointer for sprite #0
+:       dec $63f8 + 6                   ; sprite pointer for sprite #0
         lda $63f8 + 6                   ; sprite pointer for sprite #0
-        cmp #144 + 5
+        cmp #143
         bne :+
-        lda #144
+        lda #143 + 5
 :       sta $63f8 + 6                   ; turning wheel sprite pointer #0
         sta $63f8 + 7                   ; turning wheel sprite pointer #1
 end:
@@ -759,7 +759,7 @@ sprites_color:
         .byte 0, 1,   1, 1, 1, 1,   12, 12
 
 sprites_pointer:
-        .byte 161, 160,   162, 163, 164, 165,   144, 144
+        .byte 161, 160,   162, 163, 164, 165,   148, 148
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -1063,15 +1063,15 @@ get_crunched_byte:
         dec ff_delay
         bne @cont
 
-        lda #60
+        lda #100
         sta ff_delay
 
         php
-        inc $63f8 + 6                   ; sprite pointer for sprite #0
+        dec $63f8 + 6                   ; sprite pointer for sprite #0
         lda $63f8 + 6                   ; sprite pointer for sprite #0
-        cmp #144 + 5
+        cmp #143
         bne :+
-        lda #144
+        lda #143 + 5
 :       sta $63f8 + 6                   ; turning wheel sprite pointer #0
         sta $63f8 + 7                   ; turning wheel sprite pointer #1
         plp
