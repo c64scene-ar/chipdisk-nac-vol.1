@@ -56,6 +56,7 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
    - [ ] problemas de colores con font + fondo: naranja y negro. Debería ser solo un color. Lo mismo con el nombre del autor
    - [ ] cuando rebobina, las rueditas deberían animare al reves (munshkr)
    - [ ] la animación de las rueditas debería ser un toque más lento, en el play sobre todo (munshkr)
+   - [ ] garabatos del renderer de fonts (riq)
 
 ## Opcional
 
