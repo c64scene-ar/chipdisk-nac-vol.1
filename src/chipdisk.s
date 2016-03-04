@@ -37,6 +37,8 @@ WHEEL_BASE_FRAME = 144
 WHEEL_FF_DELAY   = 90
 WHEEL_PLAY_DELAY = 150
 
+LED_ON_COLOR  = 2
+LED_OFF_COLOR = 12
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; Macros
@@ -844,7 +846,7 @@ colors2_hi:
 ; init_sprites
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_sprites
-        lda #%11000011                  ; enable sprites
+        lda #%11000111                  ; enable sprites
         sta VIC_SPR_ENA
 
         lda #0
@@ -873,16 +875,16 @@ l1:
         rts
 
 sprites_x_pos:
-        .byte 150, 150,     0, 0, 0, 0,     202, 146
+        .byte 150, 150, 240,    0, 0, 0,     202, 146
 
 sprites_y_pos:
-        .byte 150, 150,     0, 0, 0, 0,     120, 92
+        .byte 150, 150, 218,    0, 0, 0,     120, 92
 
 sprites_color:
-        .byte 0, 1,   1, 1, 1, 1,   12, 12
+        .byte 0, 1, 2,   1, 1, 1,   12, 12
 
 sprites_pointer:
-        .byte 161, 160,   162, 163, 164, 165,   148, 148
+        .byte 161, 160, 151,   163, 164, 165,   148, 148
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -920,6 +922,9 @@ end:
         lda is_playing                  ; already playing ? skip
         bne end
 
+        lda #LED_ON_COLOR
+        sta VIC_SPR2_COLOR
+
         jsr button_play_save
         jsr button_play_plot
 
@@ -949,6 +954,9 @@ end:
         jsr button_rew_save
         jsr button_rew_plot
 
+        lda #LED_ON_COLOR
+        sta VIC_SPR2_COLOR
+
         ldx current_song                ; current_song = max(0, current_song - 1)
         dex
         bpl :+
@@ -977,6 +985,9 @@ end:
         jsr button_play_restore
         jsr button_ff_save
         jsr button_ff_plot
+
+        lda #LED_ON_COLOR
+        sta VIC_SPR2_COLOR
 
         jsr do_next_song
 
@@ -1029,6 +1040,9 @@ end:
         jsr button_play_restore
         ;jsr button_stop_save
         ;jsr button_stop_plot
+
+        lda #LED_OFF_COLOR
+        sta VIC_SPR2_COLOR
 
         ; TODO do this in the next frame
         ;jsr button_stop_restore
