@@ -48,7 +48,7 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
 - [x] Los botones emulen el compartamiento de una casettera. Play tiene que quedar apretado. Stop nunca queda apretado. etc.., etc..
 - Known bugs:
    - [x] se esta pisando la sombra del cassette cuando se plotea los nombres. Hay que hacer un _save_ de esa celda y luego _restorearla_
-   - [ ] cuando avanza automáticamente al siguiente tema, no debería activarse el botón de FF ni "rebobinar" (la animación de las rueditas debería mantenerse como cuando se reproduce música)
+   - [x] cuando avanza automáticamente al siguiente tema, no debería activarse el botón de FF ni "rebobinar" (la animación de las rueditas debería mantenerse como cuando se reproduce música)
    - [x] hay que sacar los sprites de la botonera, ya no son necesario ahora que se anima la presión de los botones
    - [ ] no se ve la animación del botón de Stop, creo que hay que retrasar la restauración de la imagen original uno o 2 de frames para que se note
    - [x] al darle Stop, a veces el sonido se queda colgado

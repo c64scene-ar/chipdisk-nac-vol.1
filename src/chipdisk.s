@@ -31,6 +31,9 @@ SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
 
 WHEEL_FRAMES = 5
 WHEEL_BASE_FRAME = 144
+WHEEL_FF_DELAY   = 90
+WHEEL_PLAY_DELAY = 150
+
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; Macros
@@ -462,7 +465,7 @@ no_button:
 
         CHECK_PRESSED_BUTTON 36     , 180     , do_play_song
         CHECK_PRESSED_BUTTON 36+28  , 180+14  , do_prev_song
-        CHECK_PRESSED_BUTTON 36+28*2, 180+14*2, do_next_song
+        CHECK_PRESSED_BUTTON 36+28*2, 180+14*2, do_ff_song
         CHECK_PRESSED_BUTTON 36+28*3, 180+14*3, do_stop_song
 
         rts
@@ -851,15 +854,29 @@ end:
         rts
 .endproc
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; do_next_song
+; do_ff_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc do_next_song
+.proc do_ff_song
         jsr button_play_restore
         jsr button_ff_save
         jsr button_ff_plot
 
+        jsr do_next_song
+
+        ; TODO do this in the next frame
+        jsr button_ff_restore
+        jsr button_play_save
+        jsr button_play_plot
+
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; do_next_song
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc do_next_song
         ldx current_song                ; current_song = min(7, current_song + 1)
-        inx  
+        inx
         cpx #TOTAL_SONGS
         bne :+
         ldx #TOTAL_SONGS-1
@@ -872,11 +889,6 @@ end:
         sta is_rewinding                ; is_rewinding = false
 
         jsr init_song
-
-        ; TODO do this in the next frame
-        jsr button_ff_restore
-        jsr button_play_save
-        jsr button_play_plot
 
         rts
 .endproc
@@ -978,18 +990,24 @@ end:
         ; unsigned comparison per byte
         lda song_tick+1   ; compare high bytes
         cmp $fd
-        bcc end_skip_song ; if MSB(song_tick) < MSB(song_duration) then
+        bcc end           ; if MSB(song_tick) < MSB(song_duration) then
                           ;     song_tick < song_duration
-        bne skip_song     ; if MSB(song_tick) <> MSB(song_duration) then
+        bne :+            ; if MSB(song_tick) <> MSB(song_duration) then
                           ;     song_tick > song_duration (so song_tick >= song_duration)
 
         lda song_tick     ; compare low bytes
         cmp $fc
-        bcc end_skip_song ; if LSB(song_tick) < LSB(song_duration) then
+        bcc end           ; if LSB(song_tick) < LSB(song_duration) then
                           ;     song_tick < song_duration
-skip_song:
+:
+        lda #WHEEL_PLAY_DELAY
+        sta wheel_delay_count     ; set animation delay for playing
+
         jsr do_next_song
-end_skip_song:
+
+        lda #WHEEL_FF_DELAY
+        sta wheel_delay_count     ; restore delay for FF
+end:
         rts
 .endproc
 
@@ -1075,7 +1093,7 @@ get_crunched_byte:
         dec ff_delay
         bne @cont
 
-        lda #90
+        lda wheel_delay_count
         sta ff_delay
 
         php
@@ -1647,6 +1665,7 @@ current_song:           .byte 0                 ; selected song
 joy_button_already_pressed: .byte 0             ; boolean. don't trigger the button again if it is already pressed
 mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the button again if it is already pressed
 song_tick: .word 0                              ; word. incremented on each frame, when playing
+wheel_delay_count: .byte WHEEL_FF_DELAY         ; delay counter for wheel animation
 
 
 TOTAL_SONGS = 8
