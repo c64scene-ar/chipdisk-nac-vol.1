@@ -63,7 +63,7 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
 - [ ] Easter Egg: definir que tiene que hacer, y hacerlo
   - [ ] Idea 1: Si uno le dio play a todos los temas y luego aprieta eject, va al easter egg. etc.
   - [ ] Idea 2: Bonus track: cuando termina de sonar el último tema, el display se borra o tira un "[NO DATA]", pero las rueditas siguen girando. Si esperas N segundos/ ticks, empieza a sonar un tema oculto.
-- [ ] Soporte de teclado. En vez que las teclas muevan el cursor como si fuera un mouse, que cicle entre posiciones predefinidas como "Play", "Rew", ... (munshkr)
+- [x] Soporte de teclado. En vez que las teclas muevan el cursor como si fuera un mouse, que cicle entre posiciones predefinidas como "Play", "Rew", ... (munshkr)
 - [ ] Fade In al comienzo. Usar la memoria de $1000 a $2800 para eso, para no quitar memoria del player
 - [ ] Que se mueva la panza del casette a medida que avanza la cinta
 - [ ] Ruido blanco antes de empezar a sonar el tema (riq)

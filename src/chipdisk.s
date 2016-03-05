@@ -29,6 +29,9 @@
 DEBUG = 3                               ; rasterlines:1, music:2, all:3
 SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
 
+BORDER_LEFT = 32
+BORDER_TOP = 50
+
 WHEEL_FRAMES = 5
 WHEEL_BASE_FRAME = 144
 WHEEL_FF_DELAY   = 90
@@ -252,11 +255,15 @@ process_events:
         jsr read_mouse
         jsr process_mouse
 
+        jsr read_keyboard
+        jsr process_keyboard
+
         lda #%00111111                  ; enable joystick again
         sta $dc00
 
         jsr read_joy2
         jsr process_joy
+
         jsr skip_song_if_ended
 
         jsr do_raster_anims
@@ -284,6 +291,71 @@ do_nothing:
         dec $d020
 .endif
         rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; read_keyboard
+; Taken from here:
+;   https://www.c64-wiki.com/index.php/Keyboard
+; Reference:
+;   http://sta.c64.org/cbm64kbdlay.html
+;
+; Only checks if left or right cursor keys are pressed.
+;
+; A = 0 means no key has been pressed
+; A = 1 means Right key has been pressed
+; A = 2 means Left key has been pressed
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc read_keyboard
+        ;; NOTE: bits are inverted when using CIA (0 = on, 1 = off)
+
+        NoKey    = 0
+        LeftKey  = 1
+        RightKey = 2
+
+        ;; First check for shift modifier keys
+        ;; Left shift
+        lda #%11111101    ; row 2
+        sta CIA1_PRA
+        lda CIA1_PRB
+        and #%10000000    ; col 7
+        beq :+
+        ;; Right shift
+        lda #%10111111    ; row 6
+        sta CIA1_PRA
+        lda CIA1_PRB
+        and #%00010000    ; col 4
+        beq :+
+        lda #$ff          ; no shift then
+:       sta shift_on
+
+        ;; Then, check for "cursor left/right"
+        lda #%11111110    ; row 0
+        sta CIA1_PRA
+        lda CIA1_PRB
+        and #%00000100    ; col 2
+        cmp keydown
+        bne newkey
+        lda #NoKey        ; no key change
+        rts
+newkey:
+        sta keydown
+        lda keydown
+        beq :+
+        lda #NoKey        ; key up
+        rts
+:       lda shift_on
+        beq left
+        lda #RightKey
+        rts
+left:   lda #LeftKey
+        rts
+
+keydown:
+    .byte %00000100
+shift_on:
+    .byte $ff  ; $ff = false, $00 = true
+
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -406,6 +478,51 @@ opoty: .byte $00
 old_value: .byte 0
 new_value: .byte 0
 
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; process_keyboard
+;
+; entry
+;       A = 0 => no key
+;       A = 1 => right key
+;       A = 2 => left key
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc process_keyboard
+        beq end
+        cmp #1
+        beq left
+right:
+        ;; if (current_button >= 0)
+        ;;     current_button = (current_button + 1) % 4;
+        ;; else
+        ;;     current_button = 0;
+        ldx current_button
+        inx
+        txa
+        cmp #4
+        bcc :+
+        lda #0
+:       sta current_button
+        jmp move_cursor
+left:
+        ldx current_button
+        dex
+        txa
+        cmp #$ff
+        bcc :+
+        lda #(4-1)
+:       sta current_button
+move_cursor:
+        asl
+        tax
+        lda buttons_pos, x
+        sta VIC_SPR0_X
+        sta VIC_SPR1_X
+        lda buttons_pos+1, x
+        sta VIC_SPR0_Y
+        sta VIC_SPR1_Y
+end:    rts
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -1666,7 +1783,12 @@ joy_button_already_pressed: .byte 0             ; boolean. don't trigger the but
 mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the button again if it is already pressed
 song_tick: .word 0                              ; word. incremented on each frame, when playing
 wheel_delay_count: .byte WHEEL_FF_DELAY         ; delay counter for wheel animation
+current_button: .byte $ff                       ; byte. current button when using keyboard (default: -1)
 
+buttons_pos:
+        .repeat 4, II
+        .byte BORDER_LEFT + 18 + 28*II, BORDER_TOP + 145 + 14*II
+        .endrepeat
 
 TOTAL_SONGS = 8
 
