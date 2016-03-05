@@ -1887,7 +1887,7 @@ song_PAL_frequencies:
 
 song_durations:                                ; measured in "cycles ticks"
         .word 102 * 50                         ; 100s * 50hz
-        .word 137 * 50
+        .word 91 * 50
         .word 199 * 50
         .word 120 * 50
         .word 10 * 50
