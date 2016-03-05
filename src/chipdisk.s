@@ -282,7 +282,8 @@ process_events:
 .if (::DEBUG & 1)
         inc $d020
 .endif
-        
+        jsr do_anim_button
+
         lda is_playing
         beq do_nothing
         jsr do_anim_cassette
@@ -680,6 +681,24 @@ end:
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_anim_cassette
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc do_anim_button
+        ;; decrement animation counter
+        ldx button_delay_counter
+        beq :+
+        dex
+        stx button_delay_counter
+        bne :+
+
+        ;; the only animation so far is for Stop button
+        jsr button_stop_restore
+        jsr button_play_save
+:
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; do_anim_cassette
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_anim_cassette
         dec delay
         bne end
@@ -919,6 +938,10 @@ end:
 ; do_play_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_play_song
+        lda button_delay_counter
+        beq :+                          ; if on button animation, return
+        rts
+:
         lda is_playing                  ; already playing ? skip
         bne end
 
@@ -950,6 +973,10 @@ end:
 ; do_prev_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_prev_song
+        lda button_delay_counter
+        beq :+                          ; if on button animation, return
+        rts
+:
         jsr button_play_restore
         jsr button_rew_save
         jsr button_rew_plot
@@ -971,7 +998,6 @@ end:
 
         jsr init_song
 
-        ; TODO do this in the next frame
         jsr button_rew_restore
         jsr button_play_save
         jsr button_play_plot
@@ -982,6 +1008,10 @@ end:
 ; do_ff_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_ff_song
+        lda button_delay_counter
+        beq :+                          ; if on button animation, return
+        rts
+:
         jsr button_play_restore
         jsr button_ff_save
         jsr button_ff_plot
@@ -991,7 +1021,6 @@ end:
 
         jsr do_next_song
 
-        ; TODO do this in the next frame
         jsr button_ff_restore
         jsr button_play_save
         jsr button_play_plot
@@ -1003,6 +1032,10 @@ end:
 ; do_next_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_next_song
+        lda button_delay_counter
+        beq :+                          ; if on button animation, return
+        rts
+:
         ldx current_song                ; current_song = min(7, current_song + 1)
         inx
         cpx #TOTAL_SONGS
@@ -1024,6 +1057,10 @@ end:
 ; do_stop_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc do_stop_song
+        lda button_delay_counter
+        beq :+                          ; if on button animation, return
+        rts
+:
         sei
 
         lda #0
@@ -1038,15 +1075,14 @@ end:
         cli
 
         jsr button_play_restore
-        ;jsr button_stop_save
-        ;jsr button_stop_plot
+        jsr button_stop_save
+        jsr button_stop_plot
 
         lda #LED_OFF_COLOR
         sta VIC_SPR2_COLOR
 
-        ; TODO do this in the next frame
-        ;jsr button_stop_restore
-        ;jsr button_play_save
+        lda #10
+        sta button_delay_counter
 
         rts
 .endproc
@@ -1798,6 +1834,7 @@ mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the but
 song_tick: .word 0                              ; word. incremented on each frame, when playing
 wheel_delay_count: .byte WHEEL_FF_DELAY         ; delay counter for wheel animation
 current_button: .byte $ff                       ; byte. current button when using keyboard (default: -1)
+button_delay_counter: .byte 0                   ; delay counter for button animations
 
 buttons_pos:
         .repeat 4, II
