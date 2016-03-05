@@ -1168,12 +1168,12 @@ end:
                           ;     song_tick < song_duration
 :
         lda #WHEEL_PLAY_DELAY
-        sta wheel_delay_count     ; set animation delay for playing
+        sta wheel_delay_counter   ; set animation delay for playing
 
         jsr do_next_song
 
         lda #WHEEL_FF_DELAY
-        sta wheel_delay_count     ; restore delay for FF
+        sta wheel_delay_counter   ; restore delay for FF
 end:
         rts
 .endproc
@@ -1260,7 +1260,7 @@ get_crunched_byte:
         dec ff_delay
         bne @cont
 
-        lda wheel_delay_count
+        lda wheel_delay_counter
         sta ff_delay
 
         php
@@ -1832,9 +1832,9 @@ current_song:           .byte 0                 ; selected song
 joy_button_already_pressed: .byte 0             ; boolean. don't trigger the button again if it is already pressed
 mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the button again if it is already pressed
 song_tick: .word 0                              ; word. incremented on each frame, when playing
-wheel_delay_count: .byte WHEEL_FF_DELAY         ; delay counter for wheel animation
 current_button: .byte $ff                       ; byte. current button when using keyboard (default: -1)
-button_delay_counter: .byte 0                   ; delay counter for button animations
+wheel_delay_counter:  .byte WHEEL_FF_DELAY      ; delay counter for wheel animation
+button_delay_counter: .byte 0                   ; delay counter for button animation
 
 buttons_pos:
         .repeat 4, II
