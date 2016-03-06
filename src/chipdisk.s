@@ -764,12 +764,12 @@ next_cell:                              ; this is needed because some cells
         sta $ff                         ; the solution is to reverse those cells (and its colors)
 
         ldy #7
-loop:
+loop_y:
         lda ($fe),y
         eor #$ff
         sta ($fe),y
         dey
-        bpl loop
+        bpl loop_y
 
         ;
         lda colors_lo,x
@@ -793,17 +793,31 @@ loop:
         bpl next_cell
 
         ; missing colors
-        
+       
         ldx #TOTAL_COLOR_FIXES-1        ; needed for authors names
-loop_colors:                            ; some cells are black on black
-        lda colors2_lo,x                ; so we have to put green on it
+next_cell_2:                            ; some cells are black on black
+                                        ; so we have to put green on it
+        lda cells2_lo,x
+        sta $fe
+        lda cells2_hi,x
+        sta $ff
+        lda #0
+        ldy #7
+loop_y_2:
+        sta ($fe),y                     ;
+        dey
+        bpl loop_y_2
+
+        lda colors2_lo,x
         sta $fe
         lda colors2_hi,x
         sta $ff
         lda #$50                        ; color: foreground: greee, background: black
-        sta ($fe),y                     ; assert: y=0
+        ldy #0
+        sta ($fe),y
+
         dex
-        bpl loop_colors
+        bpl next_cell_2
 
 
         rts
@@ -874,20 +888,19 @@ colors_hi:
         .byte >($6000 + 40 * 9 + 24)
 
 
+cells2_lo:
+        .byte <($4000 + 320 * 9 + 8 * 17)
+        .byte <($4000 + 320 *10 + 8 * 19)
+TOTAL_COLOR_FIXES = * - cells2_lo
+cells2_hi:
+        .byte >($4000 + 320 * 9 + 8 * 17)
+        .byte >($4000 + 320 *10 + 8 * 19)
 colors2_lo:
-;        .byte <($6000 + 40 * 7 + 13)
-;        .byte <($6000 + 40 * 8 + 15)
         .byte <($6000 + 40 * 9 + 17)
         .byte <($6000 + 40 *10 + 19)
-;        .byte <($6000 + 40 *11 + 21)
-TOTAL_COLOR_FIXES = * - colors2_lo
-
 colors2_hi:
-;        .byte >($6000 + 40 * 7 + 13)
-;        .byte >($6000 + 40 * 8 + 15)
         .byte >($6000 + 40 * 9 + 17)
         .byte >($6000 + 40 *10 + 19)
-;        .byte >($6000 + 40 *11 + 21)
 
 .endproc
 
@@ -1545,7 +1558,7 @@ tmp_mul8_lo: .byte 0
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_0
 
-        PLOT_ROWS 8, 0, 0, 0 
+        PLOT_ROWS 8, 0, 0, 0            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
         rts
 .endproc
@@ -1559,18 +1572,18 @@ tmp_mul8_lo: .byte 0
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_1
 
-        PLOT_ROWS 4, 0, 2, 4 
+        PLOT_ROWS 4, 0, 2, 4            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
         BITMAP_PREV_X
 
-        PLOT_ROWS 2, 4, 6, 0 
+        PLOT_ROWS 2, 4, 6, 0            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
         BITMAP_NEXT_Y
 
-        PLOT_ROWS 2, 6, 0, 2 
+        PLOT_ROWS 2, 6, 0, 2            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
-        BITMAP_NEXT_X                     ; restore
-        BITMAP_PREV_Y                     ; restore
+        BITMAP_NEXT_X                   ; restore
+        BITMAP_PREV_Y                   ; restore
 
         rts
 .endproc
@@ -1583,13 +1596,13 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_2
-        PLOT_ROWS 4, 0, 4, 0 
+        PLOT_ROWS 4, 0, 4, 0            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
         BITMAP_NEXT_Y
 
-        PLOT_ROWS 4, 4, 0, 4 
+        PLOT_ROWS 4, 4, 0, 4            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
-        BITMAP_PREV_Y                     ; restore
+        BITMAP_PREV_Y                   ; restore
 
         rts
 .endproc
@@ -1602,18 +1615,18 @@ tmp_mul8_lo: .byte 0
 ;       $fa,$fb: bitmap + 8
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_char_3
-        PLOT_ROWS 2, 0, 6, 4 
+        PLOT_ROWS 2, 0, 6, 4            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
         BITMAP_NEXT_Y
         
-        PLOT_ROWS 2, 2, 0, 6 
+        PLOT_ROWS 2, 2, 0, 6            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
         BITMAP_PREV_X
 
-        PLOT_ROWS 4, 4, 2, 0 
+        PLOT_ROWS 4, 4, 2, 0            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
-        BITMAP_NEXT_X                     ; restore
-        BITMAP_PREV_Y                     ; restore
+        BITMAP_NEXT_X                   ; restore
+        BITMAP_PREV_Y                   ; restore
 
         rts
 .endproc
