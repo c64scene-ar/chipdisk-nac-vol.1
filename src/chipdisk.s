@@ -40,6 +40,9 @@ WHEEL_PLAY_DELAY = 150
 LED_ON_COLOR  = 2
 LED_OFF_COLOR = 12
 
+WHITE_NOISE_INIT = $7400
+WHITE_NOISE_PLAY = $7403
+
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; Macros
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -236,7 +239,18 @@ main_loop:
 :
         lda sync_timer_irq
         beq :+
+        jsr play_music
+
+:       jmp main_loop
+
+
+play_music:
         dec sync_timer_irq
+
+        lda white_noise_counter         ; playing white noise ?
+        bne @do_white_noise             ; counter > 0 means playig white noise
+
+@play_real_song:
 .if (::DEBUG & 2)
         inc $d020
 .endif
@@ -244,12 +258,26 @@ main_loop:
 .if (::DEBUG & 2)
         dec $d020
 .endif
-
         inc song_tick                   ; update song_tick
         bne :+
         inc song_tick+1
+:       rts
 
-:       jmp main_loop
+@do_white_noise:
+        dec white_noise_counter         ; play white noise for only a few ticks
+        beq @stop_white_noise           ; already reached the limit ?
+.if (::DEBUG & 2)
+        inc $d020
+.endif
+        jsr WHITE_NOISE_PLAY            ; if not, play white noise
+.if (::DEBUG & 2)
+        dec $d020
+.endif
+        rts
+@stop_white_noise:                       ; limit reached ? transition to real song
+        jsr init_real_song              ; init the real song
+        jmp @play_real_song             ; and in the same frame, play it
+
 
 process_events:
         dec sync_raster_irq
@@ -1089,6 +1117,7 @@ end:
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; init_song
+; decrunches real song, and initializes white song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_song
         sei
@@ -1096,6 +1125,8 @@ end:
         lda #1
         sta is_playing                  ; is_playing = true
 
+        lda #1
+        sta is_already_loaded           ; is_already_loaded = true
 
         lda #$7f                        ; turn off cia interrups
         sta $dc0d
@@ -1107,13 +1138,7 @@ end:
         lda current_song                ; x = current_song * 2
         asl
         tax
-
-        lda song_PAL_frequencies,x
-        sta $dc04
-        lda song_PAL_frequencies+1,x
-        sta $dc05
-
-        jsr init_crunch_data
+        jsr init_crunch_data            ; requires x
 
         dec $01                         ; $34: RAM 100%
 
@@ -1121,20 +1146,48 @@ end:
 
         inc $01                         ; $35: RAM + IO ($D000-$DF00)
 
+
+        lda #<$4cc7                     ; init white noise
+        sta $dc04                       ; it plays at 50.125hz
+        lda #>$4cc7
+        sta $dc05
+
+        jsr WHITE_NOISE_INIT            ; init white noise sid
+
+        lda #50
+        sta white_noise_counter         ; play it for one second (50 frames)
+
+        lda #$81                        ; turn on cia interrups
+        sta $dc0d
+
+        cli
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; init_real_song
+; initializes the real song (not the white noise)
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc init_real_song
+        sei
+
+        lda current_song                ; x = current_song * 2
+        asl
+        tax
+
+        lda song_PAL_frequencies,x
+        sta $dc04
+        lda song_PAL_frequencies+1,x
+        sta $dc05
+
         lda #0
         tax
         tay
         jsr $1000                       ; init song
 
-        lda #1
-        sta is_already_loaded           ; is_already_loaded = true
-
         lda #0
         sta song_tick                   ; reset song tick
         sta song_tick+1
-
-        lda #$81                        ; turn on cia interrups
-        sta $dc0d
 
         cli
         rts
@@ -1835,6 +1888,7 @@ song_tick: .word 0                              ; word. incremented on each fram
 current_button: .byte $ff                       ; byte. current button when using keyboard (default: -1)
 wheel_delay_counter:  .byte WHEEL_FF_DELAY      ; delay counter for wheel animation
 button_delay_counter: .byte 0                   ; delay counter for button animation
+white_noise_counter:    .byte 0                 ; who many ticks white noise will be played
 
 buttons_pos:
         .repeat 4, II
@@ -1966,6 +2020,9 @@ bitmap:
 .segment "SIDMUSIC"
 ; $1000 - $2800 free are to copy the songs
 
+
+.segment "WHITENOISE"
+.incbin "ruido_blanco.sid",$7e
 
 .segment "MUSIC"
 song_1: .incbin "uct-balloon_country.exo"
