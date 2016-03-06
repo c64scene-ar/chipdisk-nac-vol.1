@@ -757,11 +757,11 @@ delay:
 
         ldx #TOTAL_BITMAP_FIXES-1
 
-next_cell:
-        lda cells_lo,x
-        sta $fe
-        lda cells_hi,x
-        sta $ff
+next_cell:                              ; this is needed because some cells
+        lda cells_lo,x                  ; are using the "inverted" pattern
+        sta $fe                         ; the foreground is the "background" and vice-versa
+        lda cells_hi,x                  ; so, when we plot on those cells, it will use the inverted colors
+        sta $ff                         ; the solution is to reverse those cells (and its colors)
 
         ldy #7
 loop:
@@ -794,14 +794,13 @@ loop:
 
         ; missing colors
         
-        ldx #TOTAL_COLOR_FIXES-1
-
-loop_colors:
-        lda colors2_lo,x
+        ldx #TOTAL_COLOR_FIXES-1        ; needed for authors names
+loop_colors:                            ; some cells are black on black
+        lda colors2_lo,x                ; so we have to put green on it
         sta $fe
         lda colors2_hi,x
         sta $ff
-        lda #$50
+        lda #$50                        ; color: foreground: greee, background: black
         sta ($fe),y                     ; assert: y=0
         dex
         bpl loop_colors
@@ -876,19 +875,19 @@ colors_hi:
 
 
 colors2_lo:
-        .byte <($6000 + 40 * 7 + 13)
-        .byte <($6000 + 40 * 8 + 15)
+;        .byte <($6000 + 40 * 7 + 13)
+;        .byte <($6000 + 40 * 8 + 15)
         .byte <($6000 + 40 * 9 + 17)
         .byte <($6000 + 40 *10 + 19)
-        .byte <($6000 + 40 *11 + 21)
+;        .byte <($6000 + 40 *11 + 21)
 TOTAL_COLOR_FIXES = * - colors2_lo
 
 colors2_hi:
-        .byte >($6000 + 40 * 7 + 13)
-        .byte >($6000 + 40 * 8 + 15)
+;        .byte >($6000 + 40 * 7 + 13)
+;        .byte >($6000 + 40 * 8 + 15)
         .byte >($6000 + 40 * 9 + 17)
         .byte >($6000 + 40 *10 + 19)
-        .byte >($6000 + 40 *11 + 21)
+;        .byte >($6000 + 40 *11 + 21)
 
 .endproc
 
@@ -1250,8 +1249,8 @@ end:
         lda song_names+1,x
         sta $fd
 
-OFFSET_Y_UPPER = 3
-OFFSET_X_UPPER = 14
+OFFSET_Y_UPPER = 4
+OFFSET_X_UPPER = 16
         ldx #<(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
         ldy #>(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
         jsr plot_name
@@ -1264,8 +1263,8 @@ OFFSET_X_UPPER = 14
         lda song_authors+1,x
         sta $fd
 
-OFFSET_Y_BOTTOM = 6
-OFFSET_X_BOTTOM = 11
+OFFSET_Y_BOTTOM = 8
+OFFSET_X_BOTTOM = 15
         ldx #<(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
         ldy #>(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
         jsr plot_name
@@ -1494,36 +1493,44 @@ tmp_mul8_lo: .byte 0
 loop:
         BITMAP_NEXT_X                   ; updates bitmap: $f8,$f9 / $fa,$fb
         lda ($fc),y
-        FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7. modifies A,X
+        cmp #$ff
+        bne :+
+        rts
+:       FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7. modifies A,X
         jsr plot_char_1
 
         inc tmp_counter
         ldy tmp_counter
         lda ($fc),y
-        FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7. modifies A,X
+        cmp #$ff
+        bne :+
+        rts
+:       FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7. modifies A,X
         jsr plot_char_2
 
         inc tmp_counter
         ldy tmp_counter
         BITMAP_NEXT_X                   ; updates bitmap: $f8/$f9, $fa/$fb
         lda ($fc),y
-        FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7. modifies A,X
+        cmp #$ff
+        bne :+
+        rts
+:       FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7. modifies A,X
         jsr plot_char_3
 
         inc tmp_counter
         ldy tmp_counter
         BITMAP_NEXT_Y                   ; updates bitmap: $f8/$f9, $fa/$fb
         lda ($fc),y
-        FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7, modifies A,X
+        cmp #$ff
+        bne :+
+        rts
+:       FETCH_NEXT_CHAR                 ; needs A. updates $f6/f7, modifies A,X
         jsr plot_char_0
 
         inc tmp_counter
         ldy tmp_counter
-        cpy #25
-        bcs end
         jmp loop
-end:
-        rts
 tmp_counter: .byte 0
 tmp_mul8_hi: .byte 0
 tmp_mul8_lo: .byte 0
@@ -1961,39 +1968,57 @@ song_durations:                                ; measured in "cycles ticks"
 ; w = w(
 ; W = W)
                 ;12345678901234567890123456789
+                ; Names must be as long as the longest name
+                ; must be $ff terminated
 song_1_name:
-        scrcode "      Balloon  Country      "
+        scrcode "  Balloon  Country  "
+        .byte $ff
 song_2_name:
-        scrcode "      Ryuuju No Dengon      "
+        scrcode "  Ryuuju No Dengon  "
+        .byte $ff
 song_3_name:
-        scrcode "        Yasashisa Ni        "
+        scrcode "    Yasashisa Ni    "
+        .byte $ff
 song_4_name:
-        scrcode "          Leetit 3          "
+        scrcode "      Leetit 3      "
+        .byte $ff
 song_5_name:
-        scrcode "        M'am&a  Killa       "
+        scrcode "    M'am&a Killa    "
+        .byte $ff
 song_6_name:
-        scrcode "            Turro           "
+        scrcode "       Turro        "
+        .byte $ff
 song_7_name:
-        scrcode "            Carito          "
+        scrcode "       Carito       "
+        .byte $ff
 song_8_name:
-        scrcode "     Que Hago En  M'anila   " 
+        scrcode " Que Hago En M'anila"
+        .byte $ff
 
 song_1_author:
-        scrcode "           Uctum&i          "
+        scrcode "   Uctum&i"
+        .byte $ff
 song_2_author:
-        scrcode "           Uctum&i          "
+        scrcode "   Uctum&i"
+        .byte $ff
 song_3_author:
-        scrcode "           Uctum&i          "
+        scrcode "   Uctum&i"
+        .byte $ff
 song_4_author:
-        scrcode "           CoM'u            "
+        scrcode "    CoM'u "
+        .byte $ff
 song_5_author:
-        scrcode "           CoM'u            "
+        scrcode "    CoM'u "
+        .byte $ff
 song_6_author:
-        scrcode "           Naku             "
+        scrcode "    Naku  "
+        .byte $ff
 song_7_author:
-        scrcode "           Uctum&i          "
+        scrcode "   Uctum&i"
+        .byte $ff
 song_8_author:
-        scrcode "           Uctum&i          "
+        scrcode "   Uctum&i"
+        .byte $ff
 
 counter_label:
         .byte $30, $30, $30     ; 000

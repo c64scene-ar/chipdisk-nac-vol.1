@@ -66,6 +66,6 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
 - [x] Soporte de teclado. En vez que las teclas muevan el cursor como si fuera un mouse, que cicle entre posiciones predefinidas como "Play", "Rew", ... (munshkr)
 - [ ] Fade In al comienzo. Usar la memoria de $1000 a $2800 para eso, para no quitar memoria del player
 - [ ] Que se mueva la panza del casette a medida que avanza la cinta
-- [ ] Ruido blanco antes de empezar a sonar el tema (riq)
+- [x] Ruido blanco antes de empezar a sonar el tema (riq)
 - [ ] Más información. Ya que la información sobre el autor y nombre del tema está muy limitada, tal vez se podría implementar que presionando la barra espaciadora, o cualquier otra cosa, se pase a una pantalla con información más detallada, tal vez una pequeña reseña del autor, o si es un cover, la información necesaria. Esto podría ser incluso diagramado como si fuera el booklet del casette escrito a mano.
 - [ ] Casette. Cuando uno presiona F.FWD y REW además de cambiar la información de tema y autor que cambie el color del casette. Esto no estoy tan convencido, pero por ahí queda bien.
