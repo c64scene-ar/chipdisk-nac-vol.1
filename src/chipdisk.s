@@ -261,7 +261,10 @@ play_music:
         inc song_tick                   ; update song_tick
         bne :+
         inc song_tick+1
-:       rts
+:       
+        jmp skip_song_if_ended          ; end of song ?
+                                        ; and return
+
 
 @do_white_noise:
         dec white_noise_counter         ; play white noise for only a few ticks
@@ -293,8 +296,6 @@ process_events:
 
         jsr read_joy2
         jsr process_joy
-
-        jsr skip_song_if_ended
 
         jsr do_raster_anims
 
@@ -1128,6 +1129,10 @@ end:
         lda #1
         sta is_already_loaded           ; is_already_loaded = true
 
+        lda #0
+        sta song_tick                   ; reset song tick
+        sta song_tick+1
+
         lda #$7f                        ; turn off cia interrups
         sta $dc0d
         lda #$00
@@ -1186,9 +1191,6 @@ end:
         tay
         jsr $1000                       ; init song
 
-        lda #0
-        sta song_tick                   ; reset song tick
-        sta song_tick+1
 
         cli
         rts
