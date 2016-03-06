@@ -224,6 +224,8 @@ ora_addr = *+1
         lda $dd0d
         asl $d019
 
+        jsr WHITE_NOISE_INIT            ; init white noise sid
+
         jsr do_play_song                ; start song 0 at the beginning
 
         cli
@@ -1158,7 +1160,7 @@ end:
         sta $dc05
 
         lda #0
-        jsr WHITE_NOISE_INIT            ; init white noise sid
+;        jsr WHITE_NOISE_INIT            ; init white noise sid
 
         lda #75
         sta white_noise_counter         ; play it for one second (50 frames)
