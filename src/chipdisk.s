@@ -1152,9 +1152,10 @@ end:
         lda #>$4cc7
         sta $dc05
 
+        lda #0
         jsr WHITE_NOISE_INIT            ; init white noise sid
 
-        lda #50
+        lda #75
         sta white_noise_counter         ; play it for one second (50 frames)
 
         lda #$81                        ; turn on cia interrups
