@@ -27,13 +27,13 @@
 ; Constants
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 DEBUG = 3                               ; rasterlines:1, music:2, all:3
-SPRITE0_POINTER = (__SPRITES_LOAD__ .MOD $4000) / 64
+SPRITE0_POINTER = <((__SPRITES_LOAD__ .MOD $4000) / 64)
 
 BORDER_LEFT = 32
 BORDER_TOP = 50
 
 WHEEL_FRAMES = 5
-WHEEL_BASE_FRAME = 144
+WHEEL_BASE_FRAME = SPRITE0_POINTER
 WHEEL_FF_DELAY   = 90
 WHEEL_PLAY_DELAY = 150
 
@@ -908,14 +908,15 @@ colors2_hi:
 ; init_sprites
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_sprites
-        lda #%11000111                  ; enable sprites
+        lda #%11011111                  ; enable sprites
         sta VIC_SPR_ENA
 
         lda #0
-        sta $d010                       ; no 8-bit on for sprites x
-        sta $d017                       ; no y double resolution
-        sta $d01d                       ; no x double resolution
-        sta $d01c                       ; no sprite multi-color. hi-res only
+        sta $d010                       ; 8-bit on for sprites x
+        sta $d01c                       ; sprite multi-color. hi-res only
+        sta $d017                       ; y double resolution
+        lda #%00011000
+        sta $d01d                       ; x double resolution
 
 
         ldx #7
@@ -936,17 +937,29 @@ l1:
 
         rts
 
+        ; sprite 0, 1: cursor + cursor overlay
+        ; sprite 2: LED
+        ; sprite 3, 4: artifact fixes
+        ; sprite 5: ---
+        ; sprite 6, 7: spinning casette wheels
 sprites_x_pos:
-        .byte 150, 150, 240,    0, 0, 0,     202, 146
+        .byte 150, 150, 240,    142+24, 184+24, 0,     202, 146
 
 sprites_y_pos:
-        .byte 150, 150, 218,    0, 0, 0,     120, 92
+        .byte 150, 150, 218,    32+50, 48+50, 0,     120, 92
 
 sprites_color:
-        .byte 0, 1, 2,   1, 1, 1,   12, 12
+        .byte 0, 1, 2,   9, 9, 0,   12, 12
 
 sprites_pointer:
-        .byte 161, 160, 151,   163, 164, 165,   148, 148
+        .byte SPRITE0_POINTER + 17      ; cursor
+        .byte SPRITE0_POINTER + 16      ; cursor
+        .byte SPRITE0_POINTER + 7       ; LED
+        .byte SPRITE0_POINTER + 8       ; artifact fix #1
+        .byte SPRITE0_POINTER + 9       ; artifact fix #2
+        .byte 0                         ; ---
+        .byte SPRITE0_POINTER + 4       ; casette wheel
+        .byte SPRITE0_POINTER + 4       ; casette wheel
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -1984,28 +1997,28 @@ song_durations:                                ; measured in "cycles ticks"
                 ; Names must be as long as the longest name
                 ; must be $ff terminated
 song_1_name:
-        scrcode "  Balloon  Country  "
+        scrcode "  Balloon  Country "
         .byte $ff
 song_2_name:
-        scrcode "  Ryuuju No Dengon  "
+        scrcode "  Ryuuju No Dengon "
         .byte $ff
 song_3_name:
-        scrcode "    Yasashisa Ni    "
+        scrcode "    Yasashisa Ni   "
         .byte $ff
 song_4_name:
-        scrcode "      Leetit 3      "
+        scrcode "      Leetit 3     "
         .byte $ff
 song_5_name:
-        scrcode "    M'am&a Killa    "
+        scrcode "    M'am&a Killa   "
         .byte $ff
 song_6_name:
-        scrcode "       Turro        "
+        scrcode "       Turro       "
         .byte $ff
 song_7_name:
-        scrcode "       Carito       "
+        scrcode "       Carito      "
         .byte $ff
 song_8_name:
-        scrcode " Que Hago En M'anila"
+        scrcode "Que Hago En M'anila"
         .byte $ff
 
 song_1_author:
