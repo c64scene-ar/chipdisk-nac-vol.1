@@ -55,65 +55,6 @@ WHITE_NOISE_PLAY = $7403
         .endrepeat
 .endmacro
 
-.macro BITMAP_NEXT_Y
-        clc
-        lda $f8                         ; $f8/$f9 += 320
-        adc #64
-        sta $f8
-        lda $f9
-        adc #1
-        sta $f9
-
-        clc                             ; $fa/$fb += 320
-        lda $fa
-        adc #64
-        sta $fa
-        lda $fb
-        adc #1
-        sta $fb
-.endmacro
-
-.macro BITMAP_PREV_Y
-        sec
-        lda $f8                         ; $f8/$f9 -= 320
-        sbc #64
-        sta $f8
-        lda $f9
-        sbc #1
-        sta $f9
-
-        sec                             ; $fa/$fb -= 320
-        lda $fa
-        sbc #64
-        sta $fa
-        lda $fb
-        sbc #1
-        sta $fb
-.endmacro
-
-.macro BITMAP_PREV_X
-        sec
-        lda $f8                         ; $f8/$f9 -= 8
-        sta $fa                         ; $fa/$fb = $f8/$f9 (which is the same as -=8)
-        sbc #8
-        sta $f8
-        lda $f9
-        sta $fb
-        sbc #0
-        sta $f9
-.endmacro
-
-.macro BITMAP_NEXT_X
-        clc
-        lda $fa                         ; $fa/$fb += 8
-        sta $f8                         ; $f8/$f9 = $fa/$fb (which is the same as +=8)
-        adc #8
-        sta $fa
-        lda $fb
-        sta $f9
-        adc #0
-        sta $fb
-.endmacro
 
 ; entry
 ;       A = byte to multiply
@@ -1371,57 +1312,6 @@ _crunched_byte_hi = * + 2
 ff_delay:
         .byte 5
 
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; memcpy
-; entry: $fb,$fc: destination
-;        $fd,$fe: source
-;        x,y:     size
-; Taken from here: https://github.com/cc65/cc65/blob/master/libsrc/common/memcpy.s
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc memcpy
-        cpy     #$00            ; Get high byte of n
-        beq     L2              ; Jump if zero
-
-        stx     copy_size
-        sty     copy_size+1
-        ldy     #$00
-        ldx     copy_size+1
-
-L1:     .repeat 2               ; Unroll this a bit to make it faster...
-        lda     ($fd),y         ; copy a byte
-        sta     ($fb),y
-        iny
-        .endrepeat
-        bne     L1
-        inc     $fd+1
-        inc     $fb+1
-        dex                     ; Next 256 byte block
-        bne     L1              ; Repeat if any
-
-        ldx     copy_size       ; x = <copy_size
-
-        ; the following section could be 10% faster if we were able to copy
-        ; back to front - unfortunately we are forced to copy strict from
-        ; low to high since this function is also used for
-        ; memmove and blocks could be overlapping!
-        ; {
-L2:                             ; assert Y = 0
-                                ; assert X = <copy_size
-        beq     done            ; something to copy
-
-L3:     lda     ($fd),y         ; copy a byte
-        sta     ($fb),y
-        iny
-        dex
-        bne     L3
-
-        ; }
-
-done:   rts
-
-copy_size: .byte $00, $00
-.endproc
-
 
 .segment "MORECODE"
 
@@ -1457,7 +1347,7 @@ copy_size: .byte $00, $00
         ldy tmp_counter
 
 loop:
-        BITMAP_NEXT_X                   ; updates bitmap: $f8,$f9 / $fa,$fb
+        jsr bitmap_next_x               ; updates bitmap: $f8,$f9 / $fa,$fb
         lda ($fc),y
         cmp #$ff
         bne :+
@@ -1476,7 +1366,7 @@ loop:
 
         inc tmp_counter
         ldy tmp_counter
-        BITMAP_NEXT_X                   ; updates bitmap: $f8/$f9, $fa/$fb
+        jsr bitmap_next_x               ; updates bitmap: $f8/$f9, $fa/$fb
         lda ($fc),y
         cmp #$ff
         bne :+
@@ -1486,7 +1376,7 @@ loop:
 
         inc tmp_counter
         ldy tmp_counter
-        BITMAP_NEXT_Y                   ; updates bitmap: $f8/$f9, $fa/$fb
+        jsr bitmap_next_y               ; updates bitmap: $f8/$f9, $fa/$fb
         lda ($fc),y
         cmp #$ff
         bne :+
@@ -1527,16 +1417,16 @@ tmp_mul8_lo: .byte 0
 
         PLOT_ROWS 4, 0, 2, 4            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
-        BITMAP_PREV_X
+        jsr bitmap_prev_x
 
         PLOT_ROWS 2, 4, 6, 0            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
-        BITMAP_NEXT_Y
+        jsr bitmap_next_y
 
         PLOT_ROWS 2, 6, 0, 2            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
-        BITMAP_NEXT_X                   ; restore
-        BITMAP_PREV_Y                   ; restore
+        jsr bitmap_next_x               ; restore
+        jsr bitmap_prev_y               ; restore
 
         rts
 .endproc
@@ -1551,11 +1441,11 @@ tmp_mul8_lo: .byte 0
 .proc plot_char_2
         PLOT_ROWS 4, 0, 4, 0            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
-        BITMAP_NEXT_Y
+        jsr bitmap_next_y
 
         PLOT_ROWS 4, 4, 0, 4            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
-        BITMAP_PREV_Y                   ; restore
+        jsr bitmap_prev_y               ; restore
 
         rts
 .endproc
@@ -1570,16 +1460,16 @@ tmp_mul8_lo: .byte 0
 .proc plot_char_3
         PLOT_ROWS 2, 0, 6, 4            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
-        BITMAP_NEXT_Y
+        jsr bitmap_next_y
         
         PLOT_ROWS 2, 2, 0, 6            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
-        BITMAP_PREV_X
+        jsr bitmap_prev_x
 
         PLOT_ROWS 4, 4, 2, 0            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
-        BITMAP_NEXT_X                   ; restore
-        BITMAP_PREV_Y                   ; restore
+        jsr bitmap_next_x               ; restore
+        jsr bitmap_prev_y               ; restore
 
         rts
 .endproc
@@ -1753,6 +1643,89 @@ tmp_mul8_lo: .byte 0
         rts
 .endproc
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; bitmap_next_y
+; $f8/$f9 += 320
+; $fa/$fb += 320
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc bitmap_next_y
+        clc
+        lda $f8                         ; $f8/$f9 += 320
+        adc #64
+        sta $f8
+        lda $f9
+        adc #1
+        sta $f9
+
+        clc                             ; $fa/$fb += 320
+        lda $fa
+        adc #64
+        sta $fa
+        lda $fb
+        adc #1
+        sta $fb
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; bitmap_prev_y
+; $f8/$f9 -= 320
+; $fa/$fb -= 320
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc bitmap_prev_y
+        sec
+        lda $f8                         ; $f8/$f9 -= 320
+        sbc #64
+        sta $f8
+        lda $f9
+        sbc #1
+        sta $f9
+
+        sec                             ; $fa/$fb -= 320
+        lda $fa
+        sbc #64
+        sta $fa
+        lda $fb
+        sbc #1
+        sta $fb
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; bitmap_prev_x
+; $f8/$f9 -= 8
+; $fa/$fb -= 8
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc bitmap_prev_x
+        sec
+        lda $f8                         ; $f8/$f9 -= 8
+        sta $fa                         ; $fa/$fb = $f8/$f9 (which is the same as -=8)
+        sbc #8
+        sta $f8
+        lda $f9
+        sta $fb
+        sbc #0
+        sta $f9
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; bitmap_next_x
+; $f8/$f9 += 8
+; $fa/$fb += 8
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc bitmap_next_x
+        clc
+        lda $fa                         ; $fa/$fb += 8
+        sta $f8                         ; $f8/$f9 = $fa/$fb (which is the same as +=8)
+        adc #8
+        sta $fa
+        lda $fb
+        sta $f9
+        adc #0
+        sta $fb
+        rts
+.endproc
 
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -1922,9 +1895,9 @@ song_durations:                                ; measured in "cycles ticks"
         .word 91 * 50
         .word 199 * 50
         .word 120 * 50
-        .word 10 * 50
-        .word 10 * 50
-        .word 10 * 50
+        .word 120 * 50                          ; FIXME
+        .word 120 * 50                          ; FIXME
+        .word 120 * 50                          ; FIXME
         .word 10 * 50
 
 
@@ -1949,13 +1922,13 @@ song_4_name:
         scrcode "      Leetit 3     "
         .byte $ff
 song_5_name:
-        scrcode "    M'am&a Killa   "
+        scrcode "Pop Goes The W)orld"
         .byte $ff
 song_6_name:
         scrcode "       Turro       "
         .byte $ff
 song_7_name:
-        scrcode "       Carito      "
+        scrcode "    Se Voce Jurar  "
         .byte $ff
 song_8_name:
         scrcode "Que Hago En M'anila"
@@ -1974,7 +1947,7 @@ song_4_author:
         scrcode "    CoM'u "
         .byte $ff
 song_5_author:
-        scrcode "    CoM'u "
+        scrcode "   Uctum&i"
         .byte $ff
 song_6_author:
         scrcode "    Naku  "
@@ -2030,13 +2003,13 @@ song_3_end_of_data:
 song_4: .incbin "leetit38580.exo"
 song_4_end_of_data:
 
-song_5: .incbin "pvm-mamakilla.exo"
+song_5: .incbin "uc-pop_goes_the_world.exo"
 song_5_end_of_data:
 
 song_6: .incbin "pvm5-turro.exo"
 song_6_end_of_data:
 
-song_7: .incbin "uct-carito.exo"
+song_7: .incbin "uc-se_voce_jurar.exo"
 song_7_end_of_data:
 
 song_8: .incbin "uct-que_hago_en_manila.exo"

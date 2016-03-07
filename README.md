@@ -57,6 +57,7 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
    - [x] cuando rebobina, las rueditas deberían animare al reves (munshkr)
    - [x] la animación de las rueditas debería ser un toque más lento, en el play sobre todo (munshkr)
    - [x] garabatos del renderer de fonts (riq)
+   - [ ] duración de cada canción: poner los frames que dura c/u
 
 ## Opcional
 
