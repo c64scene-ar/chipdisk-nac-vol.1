@@ -26,7 +26,7 @@
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; Constants
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-DEBUG = 3                               ; rasterlines:1, music:2, all:3
+DEBUG = 0                               ; rasterlines:1, music:2, all:3
 SPRITE0_POINTER = <((__SPRITES_LOAD__ .MOD $4000) / 64)
 
 BORDER_LEFT = 32
@@ -908,11 +908,12 @@ colors2_hi:
 ; init_sprites
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_sprites
-        lda #%11011111                  ; enable sprites
+        lda #%11111111                  ; enable sprites
         sta VIC_SPR_ENA
 
-        lda #0
+        lda #%00100000
         sta $d010                       ; 8-bit on for sprites x
+        lda #0
         sta $d01c                       ; sprite multi-color. hi-res only
         sta $d017                       ; y double resolution
         lda #%00011000
@@ -940,16 +941,16 @@ l1:
         ; sprite 0, 1: cursor + cursor overlay
         ; sprite 2: LED
         ; sprite 3, 4: artifact fixes
-        ; sprite 5: ---
+        ; sprite 5: counter
         ; sprite 6, 7: spinning casette wheels
 sprites_x_pos:
-        .byte 150, 150, 240,    142+24, 184+24, 0,     202, 146
+        .byte 150, 150, 240,    142+24, 184+24, <(232+24 .MOD 255),     202, 146
 
 sprites_y_pos:
-        .byte 150, 150, 218,    32+50, 48+50, 0,     120, 92
+        .byte 150, 150, 218,    32+50, 48+50, 141+50,     120, 92
 
 sprites_color:
-        .byte 0, 1, 2,   9, 9, 0,   12, 12
+        .byte 0, 1, 2,   9, 9,   6,   12, 12
 
 sprites_pointer:
         .byte SPRITE0_POINTER + 17      ; cursor
@@ -957,7 +958,7 @@ sprites_pointer:
         .byte SPRITE0_POINTER + 7       ; LED
         .byte SPRITE0_POINTER + 8       ; artifact fix #1
         .byte SPRITE0_POINTER + 9       ; artifact fix #2
-        .byte 0                         ; ---
+        .byte SPRITE0_POINTER + 5       ; counter
         .byte SPRITE0_POINTER + 4       ; casette wheel
         .byte SPRITE0_POINTER + 4       ; casette wheel
 .endproc
@@ -1297,21 +1298,11 @@ OFFSET_X_BOTTOM = 15
 
         ;
         ldx current_song 
-        inx
         txa
-        ora #$30
-        sta counter_label + 2           ; store song number in PETSCII format
-
-        lda #<counter_label
-        sta $fc
-        lda #>counter_label
-        sta $fd
-
-OFFSET_Y_COUNTER = 15
-OFFSET_X_COUNTER = 32
-        ldx #<(bitmap + OFFSET_Y_COUNTER * 8 * 40 + OFFSET_X_COUNTER * 8)
-        ldy #>(bitmap + OFFSET_Y_COUNTER * 8 * 40 + OFFSET_X_COUNTER * 8)
-        jmp plot_counter
+        clc
+        adc #SPRITE0_POINTER + 24
+        sta $63f8 + 5
+        rts
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -1433,57 +1424,6 @@ copy_size: .byte $00, $00
 
 
 .segment "MORECODE"
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; plot_counter
-; entry:
-;       x = LSB bitmap address
-;       y = MSB bitmap address
-;       $fc,$fd: pointer to string to print. Only 3 chars
-;       
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc plot_counter
-
-        stx $f8                         ; $f8,$f9: bitmap address
-        sty $f9
-
-        txa                             ; $fa,$fb points to bitmap address + 8
-        clc                             ; plot_char_odd / _event uses ($f8) and
-        adc #8                          ; ($fa) to plot the pixels
-        sta $fa 
-        tya
-        adc #0                          
-        sty $fb
-
-        ldy #0
-        sty tmp_counter
-
-        lda ($fc),y
-
-        FETCH_NEXT_CHAR                 ; updates $f6/$f7. modifies A,X
-;        jsr plot_char_odd
-
-        inc tmp_counter
-        ldy tmp_counter
-
-        lda ($fc),y
-        FETCH_NEXT_CHAR                 ; updates $f6/f7. modifies A,X
-;        jsr set_next_bitmap_even
-;        jsr plot_char_even
-
-        inc tmp_counter
-        ldy tmp_counter
-
-        lda ($fc),y
-        FETCH_NEXT_CHAR                 ; updates $f6/f7, modifies A,X
-;        jsr set_next_bitmap_odd
-;        jsr plot_char_odd
-        
-        rts
-tmp_counter: .byte 0
-tmp_mul8_hi: .byte 0
-tmp_mul8_lo: .byte 0
-.endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; plot_name
@@ -2045,9 +1985,6 @@ song_7_author:
 song_8_author:
         scrcode "   Uctum&i"
         .byte $ff
-
-counter_label:
-        .byte $30, $30, $30     ; 000
 
 
 .segment "IMAGES"

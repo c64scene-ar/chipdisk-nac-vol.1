@@ -42,7 +42,7 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
 - [x] Que detecte final de cancion y le de play a la siguiente. Detectar final de cancion se puede hacer que al cabo de N segundos toque la siguiente canción. Se usa una suerte de "ticks por canciíon"
 - [x] Que use los graficos de los botones apretados. Puede llegar a consumir mucha memoria. Hay que tener precaución al implementar esto.
 - [x] Que anime la ruedita con sprites: se necesitan nuevos sprites
-- [ ] Que el contador este en el lugar correcto. Probablemente se pueda hacer con sprites. Se puede hacer con bitmap también pero el gráfico para el contador debería ser un poco más grande
+- [x] Que el contador este en el lugar correcto. Probablemente se pueda hacer con sprites. Se puede hacer con bitmap también pero el gráfico para el contador debería ser un poco más grande
 - [x] Fonts: Asi no usamos el default.
 - [x] Led. Es rojo. En el monitor de tubo se ve casi negro. Por lo tanto cuando se le da Play a un tema tendría que cambiar a rosa para que haya una diferencia.
 - [x] Los botones emulen el compartamiento de una casettera. Play tiene que quedar apretado. Stop nunca queda apretado. etc.., etc..
