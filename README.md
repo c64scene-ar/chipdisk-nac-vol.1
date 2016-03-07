@@ -53,7 +53,7 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
    - [x] no se ve la animación del botón de Stop, creo que hay que retrasar la restauración de la imagen original uno o 2 de frames para que se note
    - [x] al darle Stop, a veces el sonido se queda colgado
    - [x] no se renderea bien la M y W (riq)
-   - [x] problemas de colores con font + fondo: naranja y negro. Debería ser solo un color. Lo mismo con el nombre del autor
+   - [ ] problemas de colores con font + fondo: naranja y negro. Todavía quedan algunos pixeles por fixear. hay que multiplexar los sprites, ya que nos quedamos sin.
    - [x] cuando rebobina, las rueditas deberían animare al reves (munshkr)
    - [x] la animación de las rueditas debería ser un toque más lento, en el play sobre todo (munshkr)
    - [x] garabatos del renderer de fonts (riq)
