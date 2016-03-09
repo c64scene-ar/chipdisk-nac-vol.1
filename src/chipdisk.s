@@ -1931,7 +1931,7 @@ song_7_name:
         scrcode "    Se Voce Jurar  "
         .byte $ff
 song_8_name:
-        scrcode "Que Hago En M'anila"
+        scrcode "       Carito      "
         .byte $ff
 
 song_1_author:
@@ -2012,7 +2012,7 @@ song_6_end_of_data:
 song_7: .incbin "uc-se_voce_jurar.exo"
 song_7_end_of_data:
 
-song_8: .incbin "uct-que_hago_en_manila.exo"
+song_8: .incbin "uct-carito.exo"
 song_8_end_of_data:
 
 .byte 0                 ; ignore
