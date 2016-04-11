@@ -2171,6 +2171,9 @@ peron_end_of_data:
 .incbin "vader.vsf.ip64h.exo"
 vader_end_of_data:
 
+.incbin "charset-leo.bin.exo"
+easteregg_charset_end_of_data:
+
 .byte 0                 ; ignore
 
 .segment "CHARSET"
