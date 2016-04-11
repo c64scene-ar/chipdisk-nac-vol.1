@@ -133,9 +133,9 @@ ora_addr = *+1
         sta $dd00
 
         lda #0
-        sta $d020                       ; border color
-        lda #0
-        sta $d021                       ; background color
+        sta $d020                       ; background color
+        sta $d021                       ; and border color
+        sta $d012                       ; raster MSB is off
 
         lda #%00001000                  ; no scroll, hires (mono color), 40-cols
         sta $d016
@@ -158,8 +158,6 @@ ora_addr = *+1
         stx $fffe
         sty $ffff
 
-        lda #$00
-        sta $d012
 
         lda $dc0d                       ; ack possible interrupts
         lda $dd0d
@@ -184,7 +182,8 @@ main_loop:
         beq :+
         jsr play_music
 
-:       jmp main_loop
+:
+        jmp main_loop
 
 
 play_music:
@@ -234,6 +233,8 @@ process_events:
         jsr read_keyboard
         jsr process_keyboard
 
+        jsr check_easteregg
+
         lda #%00111111                  ; enable joystick again
         sta $dc00
 
@@ -242,10 +243,127 @@ process_events:
 
         jsr do_raster_anims
 
+
         lda $d01e                       ; load / clear the collision bits
 
         rts
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; check_easteregg
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc check_easteregg
+        lda #%11111110                  ; row 0
+        sta $dc00
+        lda $dc01
+        and #%00010000                  ; colum 4
+        beq do_easteregg                ; F1 was pressed?
+        rts
+
+do_easteregg:
+        sei
+
+        lda #$00
+        sta $d418                       ; no volume
+
+        dec $01                         ; $34: RAM 100%
+
+        lda #<song_easter_egg_end_of_data   ; music address
+        sta _crunched_byte_lo
+        lda #>song_easter_egg_end_of_data
+        sta _crunched_byte_hi
+
+        jsr decrunch                    ; decrunch song
+
+        inc $01                         ; $35: RAM + IO ($D000-$DF00)
+
+        ; multicolor mode + extended color causes the bug that blanks the screen
+        lda #%01011011
+        sta $d011		                ; extended color mode: on
+        lda #%00011000
+        sta $d016		                ; turn on multicolor
+
+        lda #0                          ; disable all sprites
+        sta VIC_SPR_ENA                 ; after song was decrunched
+
+        dec $01                         ; $34: RAM 100%
+
+        lda #<vader_end_of_data         ; vader address
+        sta _crunched_byte_lo
+        lda #>vader_end_of_data
+        sta _crunched_byte_hi
+
+        jsr decrunch                    ; decrunch vader image
+
+        lda #<peron_end_of_data
+        sta _crunched_byte_lo
+        lda #>peron_end_of_data
+        sta _crunched_byte_hi
+
+        jsr decrunch                    ; decrunch peron image
+
+        inc $01                         ; $35: RAM + IO ($D000-$DF00)
+
+        ; restore
+        lda #%00111011                  ; bitmap mode, default scroll-Y position, 25-rows
+        sta $d011		                ; extended color mode: on
+        lda #%00001000                  ; no scroll, hires (mono color), 40-cols
+        sta $d016		                ; turn on multicolor
+
+        jsr $1000                       ; init song
+
+        ldx #<irq_easter                ; set irq for easter egg
+        ldy #>irq_easter
+        stx $fffe
+        sty $ffff
+
+        cli
+
+easter_mainloop:
+        jmp easter_mainloop
+
+irq_easter:
+        pha                             ; saves A, X, Y
+        txa
+        pha
+        tya
+        pha
+
+        asl $d019                       ; clears raster interrupt
+        bcs raster
+
+        lda $dc0d                       ; clears CIA interrupts, in particular timer A
+        jsr $1003
+        jmp end_irq
+
+raster:
+        dec counter
+        bne end_irq
+
+        lda #$20
+        sta counter
+
+        lda $dd00                       ; Vic bank 1: $4000-$7FFF
+        and #$fc
+        ora bank
+        sta $dd00
+
+        lda bank
+        eor #%00000011
+        sta bank
+
+end_irq:
+        pla                             ; restores A, X, Y
+        tay
+        pla
+        tax
+        pla
+        rti                             ; restores previous PC, status
+
+bank:
+    .byte %00000010                     ; VIC bank (0-3)
+counter:
+    .byte $10
+.endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_raster_anims
@@ -1891,7 +2009,7 @@ song_PAL_frequencies:
         .word $4cc8 - 1                         ; #3
         .word $4cc8 - 1                         ; #4
         .word $4cc8 - 1                         ; #5
-        .word $62ae                             ; #6
+        .word $4cc8 - 1                         ; #5
         .word $4cc8 - 1                         ; #7
         .word $4cc8 - 1                         ; #8
         .word $4cc8 - 1                         ; #9
@@ -1944,7 +2062,7 @@ song_8_name:
         scrcode "     M'atraca 3    "
         .byte $ff
 song_9_name:
-        scrcode "    Dragocum&bia   "
+        scrcode "    Drogacum&bia   "
         .byte $ff
 song_10_name:
         scrcode "      Juanelo      "
