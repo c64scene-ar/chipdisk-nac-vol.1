@@ -2044,6 +2044,14 @@ song_9_end_of_data:
 .incbin "juanelo.exo"
 song_10_end_of_data:
 
+.incbin "uctumi-marcha_imperial_peronista.exo"
+song_easter_egg_end_of_data:
+
+.incbin "peron.vsf.ip64h.exo"
+peron_end_of_data:
+
+.incbin "vader.vsf.ip64h.exo"
+vader_end_of_data:
 
 .byte 0                 ; ignore
 
