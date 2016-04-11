@@ -1238,11 +1238,11 @@ OFFSET_X_BOTTOM = 15
         jsr plot_name
 
         ;
-        ldx current_song 
+        ldx current_song                ; update sprite counter
         txa
         clc
-        adc #SPRITE0_POINTER + 24
-        sta $63f8 + 5
+        adc #SPRITE0_POINTER + 18
+        sta $63f8 + 5                   ; sprite 5
         rts
 .endproc
 
@@ -1846,8 +1846,6 @@ buttons_pos:
         .byte BORDER_LEFT + 18 + 28*II, BORDER_TOP + 145 + 14*II
         .endrepeat
 
-TOTAL_SONGS = 8
-
 song_names:
         .addr song_1_name
         .addr song_2_name
@@ -1857,6 +1855,10 @@ song_names:
         .addr song_6_name
         .addr song_7_name
         .addr song_8_name
+        .addr song_9_name
+        .addr song_10_name
+TOTAL_SONGS = (* - song_names) / 2
+
 
 song_authors:
         .addr song_1_author
@@ -1867,6 +1869,8 @@ song_authors:
         .addr song_6_author
         .addr song_7_author
         .addr song_8_author
+        .addr song_9_author
+        .addr song_10_author
 
 song_end_addrs:
         .addr song_1_end_of_data
@@ -1877,28 +1881,34 @@ song_end_addrs:
         .addr song_6_end_of_data
         .addr song_7_end_of_data
         .addr song_8_end_of_data
+        .addr song_9_end_of_data
+        .addr song_10_end_of_data
 
 
 song_PAL_frequencies:
-        .word $4cc8 - 1
-        .word $4cc8 - 1
-        .word $4cc8 - 1
-        .word $4cc8 - 1
-        .word $4cc8 - 1
-        .word $62ae
-        .word $4cc8 - 1
-        .word $4cc8 - 1
+        .word $4cc8 - 1                         ; #1
+        .word $4cc8 - 1                         ; #2
+        .word $4cc8 - 1                         ; #3
+        .word $4cc8 - 1                         ; #4
+        .word $4cc8 - 1                         ; #5
+        .word $62ae                             ; #6
+        .word $4cc8 - 1                         ; #7
+        .word $4cc8 - 1                         ; #8
+        .word $4cc8 - 1                         ; #9
+        .word $4cc8 - 1                         ; #10
 
 
-song_durations:                                ; measured in "cycles ticks"
-        .word 102 * 50                         ; 100s * 50hz
-        .word 91 * 50
-        .word 199 * 50
-        .word 120 * 50
-        .word 120 * 50                          ; FIXME
-        .word 120 * 50                          ; FIXME
-        .word 120 * 50                          ; FIXME
-        .word 10 * 50
+song_durations:                                 ; measured in "cycles ticks"
+        .word 102 * 50                          ; #1
+        .word 91 * 50                           ; #2
+        .word 199 * 50                          ; #3
+        .word 120 * 50                          ; #4
+        .word 120 * 50                          ; #5 FIXME
+        .word 120 * 50                          ; #6 FIXME
+        .word 120 * 50                          ; #7 FIXME
+        .word 120 * 50                          ; #8 FIXME
+        .word 120 * 50                          ; #9 FIXME
+        .word 120 * 50                          ; #10 FIXME
 
 
 ; M, m, w and W uses two chars to render
@@ -1925,14 +1935,21 @@ song_5_name:
         scrcode "Pop Goes The W)orld"
         .byte $ff
 song_6_name:
-        scrcode "       Turro       "
-        .byte $ff
-song_7_name:
         scrcode "    Se Voce Jurar  "
         .byte $ff
-song_8_name:
-        scrcode "       Carito      "
+song_7_name:
+        scrcode "    M'ongolongo    "
         .byte $ff
+song_8_name:
+        scrcode "     M'atraca 3    "
+        .byte $ff
+song_9_name:
+        scrcode "    Dragocum&bia   "
+        .byte $ff
+song_10_name:
+        scrcode "      Juanelo      "
+        .byte $ff
+
 
 song_1_author:
         scrcode "   Uctum&i"
@@ -1950,13 +1967,19 @@ song_5_author:
         scrcode "   Uctum&i"
         .byte $ff
 song_6_author:
-        scrcode "    Naku  "
+        scrcode "   Uctum&i"
         .byte $ff
 song_7_author:
-        scrcode "   Uctum&i"
+        scrcode "    Naku  "
         .byte $ff
 song_8_author:
-        scrcode "   Uctum&i"
+        scrcode "    Naku  "
+        .byte $ff
+song_9_author:
+        scrcode "    Naku  "
+        .byte $ff
+song_10_author:
+        scrcode "    Naku  "
         .byte $ff
 
 
@@ -1991,29 +2014,36 @@ bitmap:
 .incbin "ruido_blanco.sid",$7e
 
 .segment "MUSIC"
-song_1: .incbin "uct-balloon_country.exo"
+.incbin "uct-balloon_country.exo"
 song_1_end_of_data:
 
-song_2: .incbin "uc-ryuuju_no_dengon.exo"
+.incbin "uc-ryuuju_no_dengon.exo"
 song_2_end_of_data:
 
-song_3: .incbin "uc-yasashisa_ni.exo"
+.incbin "uc-yasashisa_ni.exo"
 song_3_end_of_data:
 
-song_4: .incbin "leetit38580.exo"
+.incbin "leetit38580.exo"
 song_4_end_of_data:
 
-song_5: .incbin "uc-pop_goes_the_world.exo"
+.incbin "uc-pop_goes_the_world.exo"
 song_5_end_of_data:
 
-song_6: .incbin "pvm5-turro.exo"
+.incbin "uc-se_voce_jurar.exo"
 song_6_end_of_data:
 
-song_7: .incbin "uc-se_voce_jurar.exo"
+.incbin "mongolongo.exo"
 song_7_end_of_data:
 
-song_8: .incbin "uct-carito.exo"
+.incbin "matraca3.exo"
 song_8_end_of_data:
+
+.incbin "dragocumbia.exo"
+song_9_end_of_data:
+
+.incbin "juanelo.exo"
+song_10_end_of_data:
+
 
 .byte 0                 ; ignore
 
