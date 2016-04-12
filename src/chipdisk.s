@@ -1,12 +1,12 @@
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ;
-; chipdisk 
+; chipdisk
 ; http://pungas.space
 ;
 ; code: riq/PVM, munshkr/PVM
 ; Some code snippets were taken from different places.
 ; Credit added in those snippets.
-;       
+;
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 
 
@@ -62,7 +62,7 @@ WHITE_NOISE_PLAY = $7403
         ldx #0                          ; could use a table to multiply by 8
         stx tmp_mul8_hi                 ; but plotting the name doesn't require speed (at least not now)
                                         ; so it is better to trade speed for space in this case
-        asl           
+        asl
         rol tmp_mul8_hi
         asl
         rol tmp_mul8_hi
@@ -139,7 +139,7 @@ ora_addr = *+1
 
         lda #%00001000                  ; no scroll, hires (mono color), 40-cols
         sta $d016
-        
+
         lda #%00111011                  ; bitmap mode, default scroll-Y position, 25-rows
         sta $d011
 
@@ -203,7 +203,7 @@ play_music:
         inc song_tick                   ; update song_tick
         bne :+
         inc song_tick+1
-:       
+:
         jmp skip_song_if_ended          ; end of song ?
                                         ; and return
 
@@ -247,123 +247,6 @@ process_events:
         lda $d01e                       ; load / clear the collision bits
 
         rts
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; check_easteregg
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc check_easteregg
-        lda #%11111110                  ; row 0
-        sta $dc00
-        lda $dc01
-        and #%00010000                  ; colum 4
-        beq do_easteregg                ; F1 was pressed?
-        rts
-
-do_easteregg:
-        sei
-
-        lda #$00
-        sta $d418                       ; no volume
-
-        dec $01                         ; $34: RAM 100%
-
-        lda #<song_easter_egg_end_of_data   ; music address
-        sta _crunched_byte_lo
-        lda #>song_easter_egg_end_of_data
-        sta _crunched_byte_hi
-
-        jsr decrunch                    ; decrunch song
-
-        inc $01                         ; $35: RAM + IO ($D000-$DF00)
-
-        ; multicolor mode + extended color causes the bug that blanks the screen
-        lda #%01011011
-        sta $d011		                ; extended color mode: on
-        lda #%00011000
-        sta $d016		                ; turn on multicolor
-
-        lda #0                          ; disable all sprites
-        sta VIC_SPR_ENA                 ; after song was decrunched
-
-        dec $01                         ; $34: RAM 100%
-
-        lda #<vader_end_of_data         ; vader address
-        sta _crunched_byte_lo
-        lda #>vader_end_of_data
-        sta _crunched_byte_hi
-
-        jsr decrunch                    ; decrunch vader image
-
-        lda #<peron_end_of_data
-        sta _crunched_byte_lo
-        lda #>peron_end_of_data
-        sta _crunched_byte_hi
-
-        jsr decrunch                    ; decrunch peron image
-
-        inc $01                         ; $35: RAM + IO ($D000-$DF00)
-
-        ; restore
-        lda #%00111011                  ; bitmap mode, default scroll-Y position, 25-rows
-        sta $d011		                ; extended color mode: on
-        lda #%00001000                  ; no scroll, hires (mono color), 40-cols
-        sta $d016		                ; turn on multicolor
-
-        jsr $1000                       ; init song
-
-        ldx #<irq_easter                ; set irq for easter egg
-        ldy #>irq_easter
-        stx $fffe
-        sty $ffff
-
-        cli
-
-easter_mainloop:
-        jmp easter_mainloop
-
-irq_easter:
-        pha                             ; saves A, X, Y
-        txa
-        pha
-        tya
-        pha
-
-        asl $d019                       ; clears raster interrupt
-        bcs raster
-
-        lda $dc0d                       ; clears CIA interrupts, in particular timer A
-        jsr $1003
-        jmp end_irq
-
-raster:
-        dec counter
-        bne end_irq
-
-        lda #$20
-        sta counter
-
-        lda $dd00                       ; Vic bank 1: $4000-$7FFF
-        and #$fc
-        ora bank
-        sta $dd00
-
-        lda bank
-        eor #%00000011
-        sta bank
-
-end_irq:
-        pla                             ; restores A, X, Y
-        tay
-        pla
-        tax
-        pla
-        rti                             ; restores previous PC, status
-
-bank:
-    .byte %00000010                     ; VIC bank (0-3)
-counter:
-    .byte $10
-.endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_raster_anims
@@ -517,7 +400,7 @@ ret_x_value = * + 1
         ldx #00                         ; self modifying
 ;        lda tmp_dc02
 ;        sta $dc02
-        
+
         lda $dc01                       ; ready joy #1 for button: bit 4
         asl
         asl
@@ -555,7 +438,7 @@ opoty: .byte $00
         beq     @L2                     ;   if (a != 0)
         ldy     new_value               ;     y = NewValue
         rts                             ;   return
- 
+
 @L1:    ora     #%11000000              ; else or in high order bits
         cmp     #$ff                    ; if (a != -1)
         beq     @L2
@@ -564,7 +447,7 @@ opoty: .byte $00
         dex                             ;   high byte = -1 (X = $FF)
         ldy     new_value
         rts
-                                                                               
+
 @L2:    txa                             ; A = $00
         rts
 
@@ -852,7 +735,7 @@ loop_y:
         bpl next_cell
 
         ; missing colors
-       
+
         ldx #TOTAL_COLOR_FIXES-1        ; needed for authors names
 next_cell_2:                            ; some cells are black on black
                                         ; so we have to put green on it
@@ -1439,7 +1322,7 @@ ff_delay:
 ;       x = LSB bitmap address
 ;       y = MSB bitmap address
 ;       $fc,$fd: pointer to string to print. terminated with $ff
-;       
+;
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc plot_name
         stx $f8                         ; $f8,$f9: bitmap address
@@ -1448,9 +1331,9 @@ ff_delay:
         txa                             ; $fa,$fb points to bitmap address + 8
         clc                             ; plot_char_odd / _event uses ($f8) and
         adc #8                          ; ($fa) to plot the pixels
-        sta $fa 
+        sta $fa
         tya
-        adc #0                          
+        adc #0
         sty $fb
 
         ldy #0
@@ -1579,7 +1462,7 @@ tmp_mul8_lo: .byte 0
         PLOT_ROWS 2, 0, 6, 4            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
         jsr bitmap_next_y
-        
+
         PLOT_ROWS 2, 2, 0, 6            ; number_of_rows, char_y_offset, cell_y_offset, cell_x_offset
 
         jsr bitmap_prev_x
@@ -1625,7 +1508,7 @@ tmp_mul8_lo: .byte 0
                 asl
                 adc #0
         .endrepeat
-        
+
         tax                             ; save for next value
         PLOT_BYTE $f8, %00000011
 
@@ -1943,6 +1826,148 @@ tmp_mul8_lo: .byte 0
 
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; check_easteregg
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc check_easteregg
+        lda #%11111110                  ; row 0
+        sta $dc00
+        lda $dc01
+        and #%00010000                  ; colum 4
+        beq do_easteregg                ; F1 was pressed?
+        rts
+
+do_easteregg:
+        sei
+
+        lda #$00
+        sta $d418                       ; no volume
+
+        dec $01                         ; $34: RAM 100%
+
+        lda #<song_easter_egg_end_of_data   ; music address
+        sta _crunched_byte_lo
+        lda #>song_easter_egg_end_of_data
+        sta _crunched_byte_hi
+
+        jsr decrunch                    ; decrunch song
+
+        inc $01                         ; $35: RAM + IO ($D000-$DF00)
+
+                                        ; multicolor mode + extended color causes
+        lda #%01011011                  ; the bug that blanks the screen
+        sta $d011		                ; extended color mode: on
+        lda #%00011000
+        sta $d016		                ; turn on multicolor
+
+        lda #0                          ; disable all sprites
+        sta VIC_SPR_ENA                 ; after song was decrunched
+
+        dec $01                         ; $34: RAM 100%
+
+        ldx #<vader_end_of_data         ; vader address
+        ldy #>vader_end_of_data
+        stx _crunched_byte_lo
+        sty _crunched_byte_hi
+
+        jsr decrunch                    ; decrunch vader image
+
+        ldx #<peron_end_of_data
+        ldy #>peron_end_of_data
+        stx _crunched_byte_lo
+        sty _crunched_byte_hi
+
+        jsr decrunch                    ; decrunch peron image
+
+        ldx #<easteregg_charset_end_of_data
+        ldy #>easteregg_charset_end_of_data
+        stx _crunched_byte_lo
+        sty _crunched_byte_hi
+
+        jsr decrunch                    ; decrunch peron image
+
+        inc $01                         ; $35: RAM + IO ($D000-$DF00)
+
+        lda #1                          ; color RAM is white
+        ldx #0
+l0:     sta $d800,x
+        sta $d900,x
+        sta $da00,x
+        sta $dae8,x
+        inx
+        bne l0
+
+        lda #0
+        ldx #0
+l1:     sta $4800 + 40*15,x             ; clean bottom part of vader
+        sta $4800 + 40*15 + 144,x
+        sta $4c00 + 40*15,x             ; clean bottom part of peron
+        sta $4c00 + 40*15 + 144,x
+        inx
+        bne l1
+
+                                        ; turn VIC on again
+        lda #%00011011                  ; charset mode, default scroll-Y position, 25-rows
+        sta $d011		                ; extended color mode: on
+        lda #%00001000                  ; no scroll, hires (mono color), 40-cols
+        sta $d016		                ; turn off multicolor
+
+        lda #%00100000                  ; video matrix = $0800 (%0010xxxx)
+        sta $d018                       ; charset = $0000 (%xxxx000x)
+
+        jsr $1000                       ; init song
+
+        ldx #<irq_easter                ; set irq for easter egg
+        ldy #>irq_easter
+        stx $fffe
+        sty $ffff
+
+        cli
+
+easter_mainloop:
+        jmp easter_mainloop
+
+irq_easter:
+        pha                             ; saves A, X, Y
+        txa
+        pha
+        tya
+        pha
+
+        asl $d019                       ; clears raster interrupt
+        bcs raster
+
+        lda $dc0d                       ; clears CIA interrupts, in particular timer A
+        jsr $1003
+        jmp end_irq
+
+raster:
+        dec counter
+        bne end_irq
+
+        lda #$20
+        sta counter
+
+        lda charset_addr
+        sta $d018
+
+        eor #%00010000
+        sta charset_addr
+
+end_irq:
+        pla                             ; restores A, X, Y
+        tay
+        pla
+        tax
+        pla
+        rti                             ; restores previous PC, status
+
+charset_addr:
+    .byte %00110000                     ; charset addr
+counter:
+    .byte $10
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; global variables
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 sync_raster_irq:        .byte 0                 ; boolean
@@ -2165,13 +2190,13 @@ song_10_end_of_data:
 .incbin "uctumi-marcha_imperial_peronista.exo"
 song_easter_egg_end_of_data:
 
-.incbin "peron.vsf.ip64h.exo"
+.incbin "peron-map.prg.exo"
 peron_end_of_data:
 
-.incbin "vader.vsf.ip64h.exo"
+.incbin "vader-map.prg.exo"
 vader_end_of_data:
 
-.incbin "charset-leo.bin.exo"
+.incbin "easteregg-charset.prg.exo"
 easteregg_charset_end_of_data:
 
 .byte 0                 ; ignore
