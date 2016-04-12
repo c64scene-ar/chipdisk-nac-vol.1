@@ -1833,10 +1833,10 @@ tmp_mul8_lo: .byte 0
         sta $dc00
         lda $dc01
         and #%00010000                  ; colum 4
-        beq do_easteregg                ; F1 was pressed?
+        beq setup_easteregg                ; F1 was pressed?
         rts
 
-do_easteregg:
+setup_easteregg:
         sei
 
         lda #$00
@@ -1889,7 +1889,13 @@ do_easteregg:
         jsr decrunch                    ; decrunch peron image
 
         inc $01                         ; $35: RAM + IO ($D000-$DF00)
+        jmp init_easteregg
+.endproc
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; init_easteregg
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc init_easteregg
         lda #1                          ; color RAM is white
         ldx #0
 l0:     sta $d800,x
@@ -1908,6 +1914,14 @@ l1:     sta $4800 + 40*15,x             ; clean bottom part of vader
         inx
         bne l1
 
+        ldy #119                        ; "r" is 127
+                                        ; print "Juan Domingo Vader"
+l2:     tya
+        sta $4800 + 40 * 17 + 15 - 119,y
+        iny
+        cpy #128
+        bne l2
+
                                         ; turn VIC on again
         lda #%00011011                  ; charset mode, default scroll-Y position, 25-rows
         sta $d011		                ; extended color mode: on
@@ -1919,6 +1933,9 @@ l1:     sta $4800 + 40*15,x             ; clean bottom part of vader
         sta $d018                       ; charset = $0000 (%xxxx000x)
 
         jsr $1000                       ; init song
+
+        lda #40
+        sta $d012
 
         ldx #<irq_easter_a              ; set irq for easter egg
         ldy #>irq_easter_a
@@ -1937,6 +1954,8 @@ easter_mainloop:
         jsr scroll_easter
         jsr switch_peron_vader
 
+        inc easter_d020
+
         jmp easter_mainloop
 .endproc
 
@@ -1950,7 +1969,13 @@ easter_mainloop:
         tya
         pha
 
-        asl $d019                       ; clears raster interrupt
+        lda $d012
+:       cmp $d012
+        beq :-
+
+        lda easter_d020
+        sta $d020
+        sta $d021
 
         lda #%00001000                  ; no scrolling, 40 cols
         sta $d016
@@ -1965,6 +1990,10 @@ easter_mainloop:
         ldy #>irq_easter_b
         stx $fffe
         sty $ffff
+
+        inc easter_sync_irq
+
+        asl $d019                       ; clears raster interrupt
 
         pla                             ; restores A, X, Y
         tay
@@ -1984,13 +2013,44 @@ easter_mainloop:
         tya
         pha
 
-        asl $d019                       ; clears raster interrupt
+        lda $d012
+:       cmp $d012
+        beq :-
 
-        lda easter_scroll_x
-        sta $d016
+        lda #0
+        sta $d020
+        sta $d021
 
         lda #%00100000
         sta $d018                       ; screen addr
+
+        lda #234
+        sta $d012
+
+        ldx #<irq_easter_c              ; set irq for easter egg
+        ldy #>irq_easter_c
+        stx $fffe
+        sty $ffff
+
+        asl $d019                       ; clears raster interrupt
+
+        pla                             ; restores A, X, Y
+        tay
+        pla
+        tax
+        pla
+        rti                             ; restores previous PC, status
+.endproc
+
+.proc irq_easter_c
+        pha                             ; saves A, X, Y
+        txa
+        pha
+        tya
+        pha
+
+        lda easter_scroll_x
+        sta $d016
 
         lda #40
         sta $d012
@@ -2000,7 +2060,7 @@ easter_mainloop:
         stx $fffe
         sty $ffff
 
-        inc easter_sync_irq
+        asl $d019                       ; clears raster interrupt
 
         pla                             ; restores A, X, Y
         tay
@@ -2042,7 +2102,7 @@ counter:
         and #07
         sta easter_scroll_x
 
-        cmp #06
+        cmp #07
         beq @dothescroll
         rts
 
@@ -2079,11 +2139,18 @@ endscroll:
 lines_scrolled:
             .byte 0
 scroll_text:
-    scrcode "holaaaaaaaa amiguitos.... aqui les habla juan domingo darth vader. les mando un fuerte abrazo, los quiero mucho"
+    scrcode "holaaaaaaaa amiguitos.... aqui les habla juan domingo vader. les mando un fuerte abrazo, los quiero mucho"
     scrcode " chau."
     .byte $ff
-
 .endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; easter egg global variables
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+easter_sync_irq:        .byte 0                 ; boolean
+easter_scroll_x:        .byte 0                 ; 0-7. smooth scroll
+easter_screen_addr:     .byte %00110000         ; charset addr for easter egg
+easter_d020:            .byte 0
 
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -2091,19 +2158,16 @@ scroll_text:
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 sync_raster_irq:        .byte 0                 ; boolean
 sync_timer_irq:         .byte 0                 ; boolean
-easter_sync_irq:        .byte 0                 ; boolean
-easter_scroll_x:        .byte 0                 ; 0-7. smooth scroll
-easter_screen_addr:     .byte %00110000         ; charset addr for easter egg
 is_playing:             .byte 0
 is_already_loaded:      .byte 0                 ; boolean. whether current song has already been loaded (init)
 is_rewinding:           .byte 0                 ; boolean
 current_song:           .byte 0                 ; selected song
 joy_button_already_pressed: .byte 0             ; boolean. don't trigger the button again if it is already pressed
 mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the button again if it is already pressed
-song_tick: .word 0                              ; word. incremented on each frame, when playing
-current_button: .byte $ff                       ; byte. current button when using keyboard (default: -1)
-wheel_delay_counter:  .byte WHEEL_FF_DELAY      ; delay counter for wheel animation
-button_delay_counter: .byte 0                   ; delay counter for button animation
+song_tick:              .word 0                 ; word. incremented on each frame, when playing
+current_button:         .byte $ff               ; byte. current button when using keyboard (default: -1)
+wheel_delay_counter:    .byte WHEEL_FF_DELAY    ; delay counter for wheel animation
+button_delay_counter:   .byte 0                 ; delay counter for button animation
 white_noise_counter:    .byte 0                 ; who many ticks white noise will be played
 
 buttons_pos:
