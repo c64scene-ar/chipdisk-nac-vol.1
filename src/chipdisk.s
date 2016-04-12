@@ -2241,7 +2241,7 @@ endscroll:
 lines_scrolled:
             .byte 0
 scroll_text:
-        scrcode "hola amiguitos.... aqui les habla juan domingo vader. les mando un fuerte abrazo, los quiero mucho. "
+        scrcode "hola amiguitos.... pasenme el texto para el scroll... les mando un abrazo desde el lado oscuro..... "
         scrcode ""
         .byte $ff
 .endproc
