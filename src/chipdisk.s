@@ -679,7 +679,7 @@ end:
         lda #3
         sta delay
 
-:       dec $63f8 + 6                   ; sprite pointer for sprite #0
+        dec $63f8 + 6                   ; sprite pointer for sprite #0
         lda $63f8 + 6                   ; sprite pointer for sprite #0
         cmp #(WHEEL_BASE_FRAME - 1)
         bne :+
@@ -1842,6 +1842,9 @@ do_easteregg:
         lda #$00
         sta $d418                       ; no volume
 
+        lda #$7f                        ; turn off cia interrups
+        sta $dc0d
+
         dec $01                         ; $34: RAM 100%
 
         lda #<song_easter_egg_end_of_data   ; music address
@@ -1908,6 +1911,7 @@ l1:     sta $4800 + 40*15,x             ; clean bottom part of vader
                                         ; turn VIC on again
         lda #%00011011                  ; charset mode, default scroll-Y position, 25-rows
         sta $d011		                ; extended color mode: on
+
         lda #%00001000                  ; no scroll, hires (mono color), 40-cols
         sta $d016		                ; turn off multicolor
 
@@ -1916,17 +1920,30 @@ l1:     sta $4800 + 40*15,x             ; clean bottom part of vader
 
         jsr $1000                       ; init song
 
-        ldx #<irq_easter                ; set irq for easter egg
-        ldy #>irq_easter
+        ldx #<irq_easter_a              ; set irq for easter egg
+        ldy #>irq_easter_a
         stx $fffe
         sty $ffff
 
         cli
 
 easter_mainloop:
-        jmp easter_mainloop
+        lda easter_sync_irq
+        beq easter_mainloop
 
-irq_easter:
+        dec easter_sync_irq
+
+        jsr $1003
+        jsr scroll_easter
+        jsr switch_peron_vader
+
+        jmp easter_mainloop
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; irq_easter_a
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc irq_easter_a
         pha                             ; saves A, X, Y
         txa
         pha
@@ -1934,44 +1951,149 @@ irq_easter:
         pha
 
         asl $d019                       ; clears raster interrupt
-        bcs raster
 
-        lda $dc0d                       ; clears CIA interrupts, in particular timer A
-        jsr $1003
-        jmp end_irq
+        lda #%00001000                  ; no scrolling, 40 cols
+        sta $d016
 
-raster:
-        dec counter
-        bne end_irq
+        lda easter_screen_addr
+        sta $d018                       ; charset addr
 
-        lda #$20
-        sta counter
+        lda #180
+        sta $d012
 
-        lda charset_addr
-        sta $d018
+        ldx #<irq_easter_b              ; set irq for easter egg
+        ldy #>irq_easter_b
+        stx $fffe
+        sty $ffff
 
-        eor #%00010000
-        sta charset_addr
-
-end_irq:
         pla                             ; restores A, X, Y
         tay
         pla
         tax
         pla
         rti                             ; restores previous PC, status
-
-charset_addr:
-    .byte %00110000                     ; charset addr
-counter:
-    .byte $10
 .endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; irq_easter_b
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc irq_easter_b
+        pha                             ; saves A, X, Y
+        txa
+        pha
+        tya
+        pha
+
+        asl $d019                       ; clears raster interrupt
+
+        lda easter_scroll_x
+        sta $d016
+
+        lda #%00100000
+        sta $d018                       ; screen addr
+
+        lda #40
+        sta $d012
+
+        ldx #<irq_easter_a              ; set irq for easter egg
+        ldy #>irq_easter_a
+        stx $fffe
+        sty $ffff
+
+        inc easter_sync_irq
+
+        pla                             ; restores A, X, Y
+        tay
+        pla
+        tax
+        pla
+        rti                             ; restores previous PC, status
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; switch_peron_vader
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc switch_peron_vader
+        dec counter
+        bne end
+
+        lda #$20
+        sta counter
+
+        lda easter_screen_addr
+        eor #%00010000
+        sta easter_screen_addr
+
+end:
+        rts
+
+counter:
+    .byte $20
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; scroll_easter
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc scroll_easter
+        ; speed control
+        ldx easter_scroll_x
+        dex
+        txa
+        and #07
+        sta easter_scroll_x
+
+        cmp #06
+        beq @dothescroll
+        rts
+
+@dothescroll:
+
+        ; move the chars to the left
+        ldx #0
+@loop:	lda $4800 + 40*24+1,x
+        sta $4800 + 40*24,x
+        inx
+        cpx #39
+        bne @loop
+
+        ; put next char in column 40
+        ldx lines_scrolled
+        lda scroll_text,x
+        cmp #$ff
+        bne @printchar
+
+        ; reached $ff ? Then start from the beginning
+        ldx #0
+        stx lines_scrolled
+        lda scroll_text
+
+@printchar:
+        ora #192
+        sta $4800 + 40*24 +39
+        inx
+        stx lines_scrolled
+
+endscroll:
+        rts
+
+lines_scrolled:
+            .byte 0
+scroll_text:
+    scrcode "holaaaaaaaa amiguitos.... aqui les habla juan domingo darth vader. les mando un fuerte abrazo, los quiero mucho"
+    scrcode " chau."
+    .byte $ff
+
+.endproc
+
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; global variables
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 sync_raster_irq:        .byte 0                 ; boolean
 sync_timer_irq:         .byte 0                 ; boolean
+easter_sync_irq:        .byte 0                 ; boolean
+easter_scroll_x:        .byte 0                 ; 0-7. smooth scroll
+easter_screen_addr:     .byte %00110000         ; charset addr for easter egg
 is_playing:             .byte 0
 is_already_loaded:      .byte 0                 ; boolean. whether current song has already been loaded (init)
 is_rewinding:           .byte 0                 ; boolean
