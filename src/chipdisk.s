@@ -1307,7 +1307,7 @@ get_crunched_byte:
 _crunched_byte_lo = * + 1
 _crunched_byte_hi = * + 2
         lda song_end_addrs              ; self-modyfing. needs to be set correctly before
-	rts			        ; decrunch_file is called.
+        rts                             ; decrunch_file is called.
 ; end_of_data needs to point to the address just after the address
 ; of the last byte of crunched data.
 ff_delay:
@@ -1833,7 +1833,7 @@ tmp_mul8_lo: .byte 0
         sta $dc00
         lda $dc01
         and #%00010000                  ; colum 4
-        beq setup_easteregg                ; F1 was pressed?
+        beq setup_easteregg             ; F1 was pressed?
         rts
 
 setup_easteregg:
@@ -1858,9 +1858,9 @@ setup_easteregg:
 
                                         ; multicolor mode + extended color causes
         lda #%01011011                  ; the bug that blanks the screen
-        sta $d011		                ; extended color mode: on
+        sta $d011                       ; extended color mode: on
         lda #%00011000
-        sta $d016		                ; turn on multicolor
+        sta $d016                       ; turn on multicolor
 
         lda #0                          ; disable all sprites
         sta VIC_SPR_ENA                 ; after song was decrunched
@@ -1896,11 +1896,15 @@ setup_easteregg:
 ; init_easteregg
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_easteregg
-        lda #1                          ; color RAM is white
         ldx #0
-l0:     sta $d800,x
+l0:
+        lda #0                          ; color RAM: black for vader image
+        sta $d800,x                     ; it will be faded-in
         sta $d900,x
-        sta $da00,x
+        sta $d9d0,x
+
+        lda #1                          ; white for the bottom part
+        sta $dad0,x
         sta $dae8,x
         inx
         bne l0
@@ -1924,10 +1928,10 @@ l2:     tya
 
                                         ; turn VIC on again
         lda #%00011011                  ; charset mode, default scroll-Y position, 25-rows
-        sta $d011		                ; extended color mode: on
+        sta $d011                               ; extended color mode: on
 
         lda #%00001000                  ; no scroll, hires (mono color), 40-cols
-        sta $d016		                ; turn off multicolor
+        sta $d016                               ; turn off multicolor
 
         lda #%00100000                  ; video matrix = $0800 (%0010xxxx)
         sta $d018                       ; charset = $0000 (%xxxx000x)
@@ -1951,10 +1955,10 @@ easter_mainloop:
         dec easter_sync_irq
 
         jsr $1003
-        jsr scroll_easter
-        jsr switch_peron_vader
 
-        inc easter_d020
+        jsr do_easter_effect
+
+        jsr scroll_easter
 
         jmp easter_mainloop
 .endproc
@@ -1968,14 +1972,6 @@ easter_mainloop:
         pha
         tya
         pha
-
-        lda $d012
-:       cmp $d012
-        beq :-
-
-        lda easter_d020
-        sta $d020
-        sta $d021
 
         lda #%00001000                  ; no scrolling, 40 cols
         sta $d016
@@ -2012,14 +2008,6 @@ easter_mainloop:
         pha
         tya
         pha
-
-        lda $d012
-:       cmp $d012
-        beq :-
-
-        lda #0
-        sta $d020
-        sta $d021
 
         lda #%00100000
         sta $d018                       ; screen addr
@@ -2071,9 +2059,52 @@ easter_mainloop:
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; switch_peron_vader
+; do_easter_effect
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc switch_peron_vader
+.proc do_easter_effect
+        jmp easter_effect_wait          ; self-modyfing code
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; set_next_easter_effect
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc set_next_easter_effect
+        inc easter_effect_idx
+        lda easter_effect_idx
+        asl
+        tax
+
+        lda easter_effects,x
+        sta do_easter_effect + 1
+        lda easter_effects + 1,x
+        sta do_easter_effect + 2
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; easter_effect_wait
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc easter_effect_wait
+        dec counter
+        bne :+
+        lda #$f0
+        sta counter
+        bne set_next_easter_effect
+:       rts
+counter:        .byte $f0
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; easter_effect_loop
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc easter_effect_loop
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; easter_effect_switch_peron_vader
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc easter_effect_switch_peron_vader
         dec counter
         bne end
 
@@ -2089,6 +2120,77 @@ end:
 
 counter:
     .byte $20
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; easter_effect_fadein_image
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc easter_effect_fadein_image
+
+        dec delay
+        beq init_fade
+        rts
+
+init_fade:
+        lda #8
+        sta delay
+
+        ldx fade_idx
+        cpx #EASTER_TOTAL_COLORS
+        bne do_fade
+        jmp set_next_easter_effect
+
+do_fade:
+        lda easter_fade_palette,x
+
+        ldx #0
+l0:
+        sta $d800,x
+        sta $d900,x
+        sta $d958,x
+        inx
+        bne l0
+
+        inc fade_idx
+        rts
+
+delay:              .byte 8
+fade_idx:           .byte 0
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; easter_effect_fadein_name
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc easter_effect_fadein_name
+
+        dec delay
+        beq init_fade
+        rts
+
+init_fade:
+        lda #8
+        sta delay
+
+        ldx fade_idx
+        cpx #EASTER_TOTAL_COLORS
+        bne do_fade
+        jmp set_next_easter_effect
+
+do_fade:
+        lda easter_fade_palette,x
+
+        ldx #8
+l0:
+        sta $d800 + 17 * 40,x
+        inx
+        cpx #32
+        bne l0
+
+        inc fade_idx
+        rts
+
+delay:              .byte 8
+fade_idx:           .byte 0
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -2110,7 +2212,7 @@ counter:
 
         ; move the chars to the left
         ldx #0
-@loop:	lda $4800 + 40*24+1,x
+@loop:  lda $4800 + 40*24+1,x
         sta $4800 + 40*24,x
         inx
         cpx #39
@@ -2139,9 +2241,9 @@ endscroll:
 lines_scrolled:
             .byte 0
 scroll_text:
-    scrcode "holaaaaaaaa amiguitos.... aqui les habla juan domingo vader. les mando un fuerte abrazo, los quiero mucho"
-    scrcode " chau."
-    .byte $ff
+        scrcode "hola amiguitos.... aqui les habla juan domingo vader. les mando un fuerte abrazo, los quiero mucho. "
+        scrcode ""
+        .byte $ff
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -2150,7 +2252,19 @@ scroll_text:
 easter_sync_irq:        .byte 0                 ; boolean
 easter_scroll_x:        .byte 0                 ; 0-7. smooth scroll
 easter_screen_addr:     .byte %00110000         ; charset addr for easter egg
-easter_d020:            .byte 0
+easter_effects:
+        .addr easter_effect_wait
+        .addr easter_effect_fadein_image
+        .addr easter_effect_wait
+        .addr easter_effect_wait
+        .addr easter_effect_wait
+        .addr easter_effect_wait
+        .addr easter_effect_wait
+        .addr easter_effect_fadein_name
+        .addr easter_effect_switch_peron_vader
+easter_effect_idx:      .byte 0
+easter_fade_palette:    .byte $00,$0b,$0c,$0f,$01
+EASTER_TOTAL_COLORS = * - easter_fade_palette
 
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
