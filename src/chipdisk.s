@@ -158,6 +158,10 @@ ora_addr = *+1
         stx $fffe
         sty $ffff
 
+        lda #<$4cc7                     ; init timer
+        sta $dc04                       ; it plays at 50.125hz
+        lda #>$4cc7                     ; sync with PAL
+        sta $dc05
 
         lda $dc0d                       ; ack possible interrupts
         lda $dd0d
@@ -1122,11 +1126,6 @@ end:
         inc $01                         ; $35: RAM + IO ($D000-$DF00)
 
 
-        lda #<$4cc7                     ; init white noise
-        sta $dc04                       ; it plays at 50.125hz
-        lda #>$4cc7
-        sta $dc05
-
         lda #0
 ;        jsr WHITE_NOISE_INIT            ; init white noise sid
 
@@ -1150,11 +1149,6 @@ end:
         lda current_song                ; x = current_song * 2
         asl
         tax
-
-        lda song_PAL_frequencies,x
-        sta $dc04
-        lda song_PAL_frequencies+1,x
-        sta $dc05
 
         lda #0
         tax
@@ -1232,8 +1226,8 @@ OFFSET_X_UPPER = 16
         lda song_authors+1,x
         sta $fd
 
-OFFSET_Y_BOTTOM = 8
-OFFSET_X_BOTTOM = 15
+OFFSET_Y_BOTTOM = 7
+OFFSET_X_BOTTOM = 13
         ldx #<(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
         ldy #>(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
         jsr plot_name
@@ -1312,6 +1306,75 @@ _crunched_byte_hi = * + 2
 ; of the last byte of crunched data.
 ff_delay:
         .byte 5
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; check_easteregg
+; easteregg bootstrap: Do no compress it
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc check_easteregg
+        lda #%11111110                  ; row 0
+        sta $dc00
+        lda $dc01
+        and #%00010000                  ; colum 4
+        beq setup_easteregg             ; F1 was pressed?
+        rts
+
+setup_easteregg:
+        sei
+
+        lda #$00
+        sta $d418                       ; no volume
+
+        lda #$7f                        ; turn off cia interrups
+        sta $dc0d
+
+        dec $01                         ; $34: RAM 100%
+
+        lda #<song_easter_egg_end_of_data   ; music address
+        sta _crunched_byte_lo
+        lda #>song_easter_egg_end_of_data
+        sta _crunched_byte_hi
+
+        jsr decrunch                    ; decrunch song
+
+        inc $01                         ; $35: RAM + IO ($D000-$DF00)
+
+                                        ; multicolor mode + extended color causes
+        lda #%01011011                  ; the bug that blanks the screen
+        sta $d011                       ; extended color mode: on
+        lda #%00011000
+        sta $d016                       ; turn on multicolor
+
+        lda #0                          ; disable all sprites
+        sta VIC_SPR_ENA                 ; after song was decrunched
+
+        dec $01                         ; $34: RAM 100%
+
+        ldx #<vader_end_of_data         ; vader address
+        ldy #>vader_end_of_data
+        stx _crunched_byte_lo
+        sty _crunched_byte_hi
+
+        jsr decrunch                    ; decrunch vader image
+
+        ldx #<peron_end_of_data
+        ldy #>peron_end_of_data
+        stx _crunched_byte_lo
+        sty _crunched_byte_hi
+
+        jsr decrunch                    ; decrunch peron image
+
+        ldx #<easteregg_charset_end_of_data
+        ldy #>easteregg_charset_end_of_data
+        stx _crunched_byte_lo
+        sty _crunched_byte_hi
+
+        jsr decrunch                    ; decrunch peron image
+
+        inc $01                         ; $35: RAM + IO ($D000-$DF00)
+        jmp init_easteregg
+.endproc
+
 
 
 .segment "MORECODE"
@@ -1826,74 +1889,8 @@ tmp_mul8_lo: .byte 0
 
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; check_easteregg
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc check_easteregg
-        lda #%11111110                  ; row 0
-        sta $dc00
-        lda $dc01
-        and #%00010000                  ; colum 4
-        beq setup_easteregg             ; F1 was pressed?
-        rts
-
-setup_easteregg:
-        sei
-
-        lda #$00
-        sta $d418                       ; no volume
-
-        lda #$7f                        ; turn off cia interrups
-        sta $dc0d
-
-        dec $01                         ; $34: RAM 100%
-
-        lda #<song_easter_egg_end_of_data   ; music address
-        sta _crunched_byte_lo
-        lda #>song_easter_egg_end_of_data
-        sta _crunched_byte_hi
-
-        jsr decrunch                    ; decrunch song
-
-        inc $01                         ; $35: RAM + IO ($D000-$DF00)
-
-                                        ; multicolor mode + extended color causes
-        lda #%01011011                  ; the bug that blanks the screen
-        sta $d011                       ; extended color mode: on
-        lda #%00011000
-        sta $d016                       ; turn on multicolor
-
-        lda #0                          ; disable all sprites
-        sta VIC_SPR_ENA                 ; after song was decrunched
-
-        dec $01                         ; $34: RAM 100%
-
-        ldx #<vader_end_of_data         ; vader address
-        ldy #>vader_end_of_data
-        stx _crunched_byte_lo
-        sty _crunched_byte_hi
-
-        jsr decrunch                    ; decrunch vader image
-
-        ldx #<peron_end_of_data
-        ldy #>peron_end_of_data
-        stx _crunched_byte_lo
-        sty _crunched_byte_hi
-
-        jsr decrunch                    ; decrunch peron image
-
-        ldx #<easteregg_charset_end_of_data
-        ldy #>easteregg_charset_end_of_data
-        stx _crunched_byte_lo
-        sty _crunched_byte_hi
-
-        jsr decrunch                    ; decrunch peron image
-
-        inc $01                         ; $35: RAM + IO ($D000-$DF00)
-        jmp init_easteregg
-.endproc
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; init_easteregg
+; FIXME: should be compressed
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_easteregg
         ldx #0
@@ -2328,26 +2325,13 @@ song_end_addrs:
         .addr song_10_end_of_data
 
 
-song_PAL_frequencies:
-        .word $4cc8 - 1                         ; #1
-        .word $4cc8 - 1                         ; #2
-        .word $4cc8 - 1                         ; #3
-        .word $4cc8 - 1                         ; #4
-        .word $4cc8 - 1                         ; #5
-        .word $4cc8 - 1                         ; #5
-        .word $4cc8 - 1                         ; #7
-        .word $4cc8 - 1                         ; #8
-        .word $4cc8 - 1                         ; #9
-        .word $4cc8 - 1                         ; #10
-
-
 song_durations:                                 ; measured in "cycles ticks"
         .word 102 * 50                          ; #1
         .word 91 * 50                           ; #2
         .word 199 * 50                          ; #3
         .word 120 * 50                          ; #4
-        .word 120 * 50                          ; #5 FIXME
-        .word 120 * 50                          ; #6 FIXME
+        .word 210 * 50                          ; #5
+        .word 95 * 50                           ; #6 
         .word 120 * 50                          ; #7 FIXME
         .word 120 * 50                          ; #8 FIXME
         .word 120 * 50                          ; #9 FIXME
@@ -2395,34 +2379,34 @@ song_10_name:
 
 
 song_1_author:
-        scrcode "   Uctum&i"
+        scrcode "       Uctum&i    "
         .byte $ff
 song_2_author:
-        scrcode "   Uctum&i"
+        scrcode "       Uctum&i    "
         .byte $ff
 song_3_author:
-        scrcode "   Uctum&i"
+        scrcode "       Uctum&i    "
         .byte $ff
 song_4_author:
-        scrcode "    CoM'u "
+        scrcode "        CoM'u     "
         .byte $ff
 song_5_author:
-        scrcode "   Uctum&i"
+        scrcode "       Uctum&i    "
         .byte $ff
 song_6_author:
-        scrcode "   Uctum&i"
+        scrcode "       Uctum&i    "
         .byte $ff
 song_7_author:
-        scrcode "    Naku  "
+        scrcode "  Los Pat M'oritas"
         .byte $ff
 song_8_author:
-        scrcode "    Naku  "
+        scrcode "  Los Pat M'oritas"
         .byte $ff
 song_9_author:
-        scrcode "    Naku  "
+        scrcode "  Los Pat M'oritas"
         .byte $ff
 song_10_author:
-        scrcode "    Naku  "
+        scrcode "  Los Pat M'oritas"
         .byte $ff
 
 
