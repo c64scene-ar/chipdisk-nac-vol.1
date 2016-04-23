@@ -39,6 +39,9 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
 ## Necesario
 
 - [ ] Los temas! Definir que temás van. Creo que solo hay 4 o 5 de temas de los temas oficiales (el resto de los temas que estan, son de prueba). Y ver si se pueden poner más de 8 temas.
+   - [ ] Quedarían dos temas nuevos (uno de @comu y confirmar @munshkr?)
+   - [ ] reorganizar la memoria para entren los 2 temas nuevos
+   - [ ] El orden de temas lo decidimos intercalados entre músicos para que vaya variando, el orden de músicos es poco importante, se puede sortear.
 - [x] Que detecte final de cancion y le de play a la siguiente. Detectar final de cancion se puede hacer que al cabo de N segundos toque la siguiente canción. Se usa una suerte de "ticks por canciíon"
 - [x] Que use los graficos de los botones apretados. Puede llegar a consumir mucha memoria. Hay que tener precaución al implementar esto.
 - [x] Que anime la ruedita con sprites: se necesitan nuevos sprites
@@ -54,16 +57,30 @@ Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los arc
    - [x] al darle Stop, a veces el sonido se queda colgado
    - [x] no se renderea bien la M y W (riq)
    - [ ] problemas de colores con font + fondo: naranja y negro. Todavía quedan algunos pixeles por fixear. hay que multiplexar los sprites, ya que nos quedamos sin.
+        - [ ] Determinamos que no hace falta OK - fixear los posibles pixels negros/marrones que aparecerían con los nombres largos
    - [x] cuando rebobina, las rueditas deberían animare al reves (munshkr)
    - [x] la animación de las rueditas debería ser un toque más lento, en el play sobre todo (munshkr)
    - [x] garabatos del renderer de fonts (riq)
-   - [ ] duración de cada canción: poner los frames que dura c/u
+   - [x] "Naku" -> "Los Pat Moritas" 
+   - [x] "Balloon Country " -> "Balloon Country Bursts"
+   - [x] "Yasashisa Ni" -> "Yasashisa Ni Tsutsumareta Nara"
+   - [ ] Poner el tiempo de duración de los últimos 7 temas. Ahora estan harcodeados a 1:30 creo.
+        - [ ] Leetit 3
+        - [x] Pop Goes The World
+        - [x] Se Voce Jurar
+        - [ ] Mongolongo
+        - [ ] Matraca 3
+        - [ ] Drogacumbia
+        - [ ] Juanelo
+   - [ ] Bug found: se desincroniza los canales del sid una vez que empieza a playear de nuevo luego. Esta bueno igual pero hay que avisar que esta programado o fixear o que termine luego de la primer edicion
+
 
 ## Opcional
 
-- [ ] Easter Egg: definir que tiene que hacer, y hacerlo
-  - [ ] Idea 1: Si uno le dio play a todos los temas y luego aprieta eject, va al easter egg. etc.
-  - [ ] Idea 2: Bonus track: cuando termina de sonar el último tema, el display se borra o tira un "[NO DATA]", pero las rueditas siguen girando. Si esperas N segundos/ ticks, empieza a sonar un tema oculto.
+- [x] Easter Egg: definir que tiene que hacer, y hacerlo
+   - [ ] que el estear egg aparezca en el ultimo tema o combinacion de teclas
+   - [ ] texto para el scroller del easter egg: @Arlek mandará un preview en lo próximo
+   - [ ] que en el medio de entre peron y darth vader, aparezca darth vader con las manos de peron. Es posible?
 - [x] Soporte de teclado. En vez que las teclas muevan el cursor como si fuera un mouse, que cicle entre posiciones predefinidas como "Play", "Rew", ... (munshkr)
 - [ ] Fade In al comienzo. Usar la memoria de $1000 a $2800 para eso, para no quitar memoria del player
 - [ ] Que se mueva la panza del casette a medida que avanza la cinta
