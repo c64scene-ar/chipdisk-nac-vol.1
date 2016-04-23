@@ -124,7 +124,7 @@ ora_addr = *+1
         lda #$35                        ; no basic, no kernal
         sta $01
 
-        jsr fix_bitmap                  ; FIXME: fix THE bitmap, instead of adding code
+;        jsr fix_bitmap                  ; FIXME: fix THE bitmap, instead of adding code
         jsr init_sprites                ; init sprites
 
         lda $dd00                       ; Vic bank 1: $4000-$7FFF
