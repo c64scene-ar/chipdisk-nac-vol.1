@@ -1057,8 +1057,8 @@ end:
         lda song_names+1,x
         sta $fd
 
-OFFSET_Y_UPPER = 4
-OFFSET_X_UPPER = 16
+OFFSET_Y_UPPER = 3
+OFFSET_X_UPPER = 14
         ldx #<(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
         ldy #>(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
         jsr plot_name
@@ -2176,7 +2176,7 @@ song_durations:                                 ; measured in "cycles ticks"
         .word 199 * 50                          ; #3
         .word 120 * 50                          ; #4
         .word 210 * 50                          ; #5
-        .word 95 * 50                           ; #6 
+        .word 95 * 50                           ; #6
         .word 120 * 50                          ; #7 FIXME
         .word 120 * 50                          ; #8 FIXME
         .word 120 * 50                          ; #9 FIXME
@@ -2192,51 +2192,52 @@ song_durations:                                 ; measured in "cycles ticks"
                 ; Names must be as long as the longest name
                 ; must be $ff terminated
 song_1_name:
-        scrcode "  Balloon  Country "
+        scrcode "   Balloon Country Bursts"
         .byte $ff
 song_2_name:
-        scrcode "  Ryuuju No Dengon "
+        scrcode "      Ryuuju No Dengon      "
         .byte $ff
 song_3_name:
-        scrcode "    Yasashisa Ni   "
+        ;Yasashisa Ni Tsutsumareta Nara
+        scrcode "Yasashisa Ni Tsutsum&areta.."
         .byte $ff
 song_4_name:
-        scrcode "      Leetit 3     "
+        scrcode "          Leetit 3          "
         .byte $ff
 song_5_name:
-        scrcode "Pop Goes The W)orld"
+        scrcode "    Pop Goes  The W)orld"
         .byte $ff
 song_6_name:
-        scrcode "    Se Voce Jurar  "
+        scrcode "        Se Voce Jurar   "
         .byte $ff
 song_7_name:
-        scrcode "    M'ongolongo    "
+        scrcode "        M'ongolongo  "
         .byte $ff
 song_8_name:
-        scrcode "     M'atraca 3    "
+        scrcode "         M'atraca 3 "
         .byte $ff
 song_9_name:
-        scrcode "    Drogacum&bia   "
+        scrcode "        Drogacum&bia"
         .byte $ff
 song_10_name:
-        scrcode "      Juanelo      "
+        scrcode "          Juanelo   "
         .byte $ff
 
 
 song_1_author:
-        scrcode "       Uctum&i    "
+        scrcode "       Uctum&i"
         .byte $ff
 song_2_author:
-        scrcode "       Uctum&i    "
+        scrcode "       Uctum&i"
         .byte $ff
 song_3_author:
-        scrcode "       Uctum&i    "
+        scrcode "       Uctum&i"
         .byte $ff
 song_4_author:
-        scrcode "        CoM'u     "
+        scrcode "        CoM'u "
         .byte $ff
 song_5_author:
-        scrcode "       Uctum&i    "
+        scrcode "       Uctum&i"
         .byte $ff
 song_6_author:
         scrcode "       Uctum&i    "
