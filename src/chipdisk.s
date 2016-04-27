@@ -1172,6 +1172,7 @@ setup_easteregg:
 
         lda #$7f                        ; turn off cia interrups
         sta $dc0d
+        sta $dd0d
 
         dec $01                         ; $34: RAM 100%
 
@@ -1733,9 +1734,238 @@ tmp_mul8_lo: .byte 0
 .endproc
 
 
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; global variables
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+sync_raster_irq:        .byte 0                 ; boolean
+sync_timer_irq:         .byte 0                 ; boolean
+is_playing:             .byte 0
+is_already_loaded:      .byte 0                 ; boolean. whether current song has already been loaded (init)
+is_rewinding:           .byte 0                 ; boolean
+current_song:           .byte 0                 ; selected song
+joy_button_already_pressed: .byte 0             ; boolean. don't trigger the button again if it is already pressed
+mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the button again if it is already pressed
+song_tick:              .word 0                 ; word. incremented on each frame, when playing
+current_button:         .byte $ff               ; byte. current button when using keyboard (default: -1)
+wheel_delay_counter:    .byte WHEEL_FF_DELAY    ; delay counter for wheel animation
+button_delay_counter:   .byte 0                 ; delay counter for button animation
+white_noise_counter:    .byte 0                 ; who many ticks white noise will be played
+
+buttons_pos:
+        .repeat 4, II
+        .byte BORDER_LEFT + 18 + 28*II, BORDER_TOP + 145 + 14*II
+        .endrepeat
+
+song_names:
+        .addr song_1_name
+        .addr song_2_name
+        .addr song_3_name
+        .addr song_4_name
+        .addr song_5_name
+        .addr song_6_name
+        .addr song_7_name
+        .addr song_8_name
+        .addr song_9_name
+        .addr song_10_name
+TOTAL_SONGS = (* - song_names) / 2
+
+
+song_authors:
+        .addr song_1_author
+        .addr song_2_author
+        .addr song_3_author
+        .addr song_4_author
+        .addr song_5_author
+        .addr song_6_author
+        .addr song_7_author
+        .addr song_8_author
+        .addr song_9_author
+        .addr song_10_author
+
+song_end_addrs:
+        .addr song_1_end_of_data
+        .addr song_2_end_of_data
+        .addr song_3_end_of_data
+        .addr song_4_end_of_data
+        .addr song_5_end_of_data
+        .addr song_6_end_of_data
+        .addr song_7_end_of_data
+        .addr song_8_end_of_data
+        .addr song_9_end_of_data
+        .addr song_10_end_of_data
+
+
+song_durations:                                 ; measured in "cycles ticks"
+        .word 102 * 50                          ; #1 1:42
+        .word 91 * 50                           ; #2 1:31
+        .word 199 * 50                          ; #3 3:19
+        .word (60*2+2) * 50                     ; #4 2:02
+        .word 210 * 50                          ; #5 3:30
+        .word 95 * 50                           ; #6 1:35
+        .word 120 * 50                          ; #7 FIXME
+        .word 120 * 50                          ; #8 FIXME
+        .word 120 * 50                          ; #9 FIXME
+        .word 120 * 50                          ; #10 FIXME
+
+
+; M, m, w and W uses two chars to render
+; M = M'
+; m = m&
+; w = w(
+; W = W)
+                ;12345678901234567890123456789
+                ; Names must be as long as the longest name
+                ; must be $ff terminated
+song_1_name:
+        scrcode "   Balloon Country Bursts"
+        .byte $ff
+song_2_name:
+        scrcode "      Ryuuju No Dengon      "
+        .byte $ff
+song_3_name:
+        ;Yasashisa Ni Tsutsumareta Nara
+        scrcode "Yasashisa Ni Tsutsum&areta.."
+        .byte $ff
+song_4_name:
+        scrcode "          Leet it 3         "
+        .byte $ff
+song_5_name:
+        scrcode "    Pop Goes  The W)orld"
+        .byte $ff
+song_6_name:
+        scrcode "        Se Voce Jurar   "
+        .byte $ff
+song_7_name:
+        scrcode "        M'ongolongo  "
+        .byte $ff
+song_8_name:
+        scrcode "         M'atraca 3 "
+        .byte $ff
+song_9_name:
+        scrcode "        Drogacum&bia"
+        .byte $ff
+song_10_name:
+        scrcode "          Juanelo   "
+        .byte $ff
+
+
+song_1_author:
+        scrcode "       Uctum&i"
+        .byte $ff
+song_2_author:
+        scrcode "       Uctum&i"
+        .byte $ff
+song_3_author:
+        scrcode "       Uctum&i"
+        .byte $ff
+song_4_author:
+        scrcode "        CoM'u "
+        .byte $ff
+song_5_author:
+        scrcode "       Uctum&i"
+        .byte $ff
+song_6_author:
+        scrcode "       Uctum&i    "
+        .byte $ff
+song_7_author:
+        scrcode "  Los Pat M'oritas"
+        .byte $ff
+song_8_author:
+        scrcode "  Los Pat M'oritas"
+        .byte $ff
+song_9_author:
+        scrcode "  Los Pat M'oritas"
+        .byte $ff
+song_10_author:
+        scrcode "  Los Pat M'oritas"
+        .byte $ff
+
+
+.segment "IMAGES"
+img_button_play:
+.incbin "button_play.raw"
+img_button_rew:
+.incbin "button_rew.raw"
+img_button_ff:
+.incbin "button_ff.raw"
+img_button_stop:
+.incbin "button_stop.raw"
+tmp_img_button:
+.res 441, 0       ; reserved for temporary storing
+                  ; button bitmap before being pressed
+
+.segment "BITMAP"
+bitmap:
+.incbin "datasette.bitmap"
+
+.segment "COLORMAP"
+.incbin "datasette.colormap"
+
+.segment "SPRITES"
+.incbin "sprites.bin"
+
+.segment "SIDMUSIC"
+; $1000 - $2800 free are to copy the songs
+
+
+.segment "WHITENOISE"
+.incbin "ruido_blanco.sid",$7e
+
+.segment "MUSIC"
+.incbin "uct-balloon_country.exo"
+song_1_end_of_data:
+
+.incbin "uc-ryuuju_no_dengon.exo"
+song_2_end_of_data:
+
+.incbin "uc-yasashisa_ni.exo"
+song_3_end_of_data:
+
+.incbin "leetit38580.exo"
+song_4_end_of_data:
+
+.incbin "uc-pop_goes_the_world.exo"
+song_5_end_of_data:
+
+.incbin "uc-se_voce_jurar.exo"
+song_6_end_of_data:
+
+.incbin "mongolongo.exo"
+song_7_end_of_data:
+
+.incbin "matraca3.exo"
+song_8_end_of_data:
+
+.incbin "dragocumbia.exo"
+song_9_end_of_data:
+
+.incbin "juanelo.exo"
+song_10_end_of_data:
+
+.incbin "uctumi-marcha_imperial_peronista.exo"
+song_easter_egg_end_of_data:
+
+.incbin "peron-map.prg.exo"
+peron_end_of_data:
+
+.incbin "vader-map.prg.exo"
+vader_end_of_data:
+
+.incbin "easteregg-charset.prg.exo"
+easteregg_charset_end_of_data:
+
+.byte 0                 ; ignore
+
+.segment "CHARSET"
+charset:
+.incbin "names-charset.bin"
+
+
+.segment "EASTEREGG"
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; init_easteregg
-; FIXME: should be compressed
+; FIXME: starting from here, the easter egg code should be compressed
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_easteregg
         ldx #0
@@ -1752,7 +1982,7 @@ l0:
         bne l0
 
         lda #0
-        ldx #0
+        tax                             ; A,X = 0
 l1:     sta $4800 + 40*15,x             ; clean bottom part of vader
         sta $4800 + 40*15 + 144,x
         sta $4c00 + 40*15,x             ; clean bottom part of peron
@@ -1770,7 +2000,7 @@ l2:     tya
 
                                         ; turn VIC on again
         lda #%00011011                  ; charset mode, default scroll-Y position, 25-rows
-        sta $d011                               ; extended color mode: on
+        sta $d011                       ; extended color mode: on
 
         lda #%00001000                  ; no scroll, hires (mono color), 40-cols
         sta $d016                               ; turn off multicolor
@@ -1799,16 +2029,47 @@ easter_mainloop:
         jsr $1003
 
         jsr do_easter_effect
-
         jsr scroll_easter
+        jsr easter_check_song
 
         jmp easter_mainloop
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; easter_check_song
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc easter_check_song
+SONG_DURATION = 120 * 50
+
+        inc song_tick                   ; inc tick
+        bne :+
+        inc song_tick+1
+:
+
+        lda song_tick+1                 ; compare high bytes
+        cmp #>SONG_DURATION
+        bcc end                         ; if MSB(song_tick) < MSB(song_duration) then
+
+        lda song_tick                   ; compare low bytes
+        cmp #<SONG_DURATION
+        bcc end                         ; if LSB(song_tick) < LSB(song_duration) then
+                                        ;     song_tick < song_duration
+
+        lda #0
+        sta song_tick
+        sta song_tick+1
+        jsr $1000                       ; re-init after song is finished
+                                        ; this is supposed to fix a bug
+end:
+        rts
+
+song_tick: .word 0
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; irq_easter_a
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc irq_easter_a
+irq_easter_a:
         pha                             ; saves A, X, Y
         txa
         pha
@@ -1831,20 +2092,19 @@ easter_mainloop:
 
         inc easter_sync_irq
 
+exit_irq:
         asl $d019                       ; clears raster interrupt
-
         pla                             ; restores A, X, Y
         tay
         pla
         tax
         pla
         rti                             ; restores previous PC, status
-.endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; irq_easter_b
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc irq_easter_b
+irq_easter_b:
         pha                             ; saves A, X, Y
         txa
         pha
@@ -1862,17 +2122,12 @@ easter_mainloop:
         stx $fffe
         sty $ffff
 
-        asl $d019                       ; clears raster interrupt
+        jmp exit_irq
 
-        pla                             ; restores A, X, Y
-        tay
-        pla
-        tax
-        pla
-        rti                             ; restores previous PC, status
-.endproc
-
-.proc irq_easter_c
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; irq_easter_c
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+irq_easter_c:
         pha                             ; saves A, X, Y
         txa
         pha
@@ -1890,15 +2145,7 @@ easter_mainloop:
         stx $fffe
         sty $ffff
 
-        asl $d019                       ; clears raster interrupt
-
-        pla                             ; restores A, X, Y
-        tay
-        pla
-        tax
-        pla
-        rti                             ; restores previous PC, status
-.endproc
+        jmp exit_irq
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_easter_effect
@@ -2107,231 +2354,3 @@ easter_effects:
 easter_effect_idx:      .byte 0
 easter_fade_palette:    .byte $00,$0b,$0c,$0f,$01
 EASTER_TOTAL_COLORS = * - easter_fade_palette
-
-
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; global variables
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-sync_raster_irq:        .byte 0                 ; boolean
-sync_timer_irq:         .byte 0                 ; boolean
-is_playing:             .byte 0
-is_already_loaded:      .byte 0                 ; boolean. whether current song has already been loaded (init)
-is_rewinding:           .byte 0                 ; boolean
-current_song:           .byte 0                 ; selected song
-joy_button_already_pressed: .byte 0             ; boolean. don't trigger the button again if it is already pressed
-mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the button again if it is already pressed
-song_tick:              .word 0                 ; word. incremented on each frame, when playing
-current_button:         .byte $ff               ; byte. current button when using keyboard (default: -1)
-wheel_delay_counter:    .byte WHEEL_FF_DELAY    ; delay counter for wheel animation
-button_delay_counter:   .byte 0                 ; delay counter for button animation
-white_noise_counter:    .byte 0                 ; who many ticks white noise will be played
-
-buttons_pos:
-        .repeat 4, II
-        .byte BORDER_LEFT + 18 + 28*II, BORDER_TOP + 145 + 14*II
-        .endrepeat
-
-song_names:
-        .addr song_1_name
-        .addr song_2_name
-        .addr song_3_name
-        .addr song_4_name
-        .addr song_5_name
-        .addr song_6_name
-        .addr song_7_name
-        .addr song_8_name
-        .addr song_9_name
-        .addr song_10_name
-TOTAL_SONGS = (* - song_names) / 2
-
-
-song_authors:
-        .addr song_1_author
-        .addr song_2_author
-        .addr song_3_author
-        .addr song_4_author
-        .addr song_5_author
-        .addr song_6_author
-        .addr song_7_author
-        .addr song_8_author
-        .addr song_9_author
-        .addr song_10_author
-
-song_end_addrs:
-        .addr song_1_end_of_data
-        .addr song_2_end_of_data
-        .addr song_3_end_of_data
-        .addr song_4_end_of_data
-        .addr song_5_end_of_data
-        .addr song_6_end_of_data
-        .addr song_7_end_of_data
-        .addr song_8_end_of_data
-        .addr song_9_end_of_data
-        .addr song_10_end_of_data
-
-
-song_durations:                                 ; measured in "cycles ticks"
-        .word 102 * 50                          ; #1
-        .word 91 * 50                           ; #2
-        .word 199 * 50                          ; #3
-        .word 120 * 50                          ; #4
-        .word 210 * 50                          ; #5
-        .word 95 * 50                           ; #6
-        .word 120 * 50                          ; #7 FIXME
-        .word 120 * 50                          ; #8 FIXME
-        .word 120 * 50                          ; #9 FIXME
-        .word 120 * 50                          ; #10 FIXME
-
-
-; M, m, w and W uses two chars to render
-; M = M'
-; m = m&
-; w = w(
-; W = W)
-                ;12345678901234567890123456789
-                ; Names must be as long as the longest name
-                ; must be $ff terminated
-song_1_name:
-        scrcode "   Balloon Country Bursts"
-        .byte $ff
-song_2_name:
-        scrcode "      Ryuuju No Dengon      "
-        .byte $ff
-song_3_name:
-        ;Yasashisa Ni Tsutsumareta Nara
-        scrcode "Yasashisa Ni Tsutsum&areta.."
-        .byte $ff
-song_4_name:
-        scrcode "          Leetit 3          "
-        .byte $ff
-song_5_name:
-        scrcode "    Pop Goes  The W)orld"
-        .byte $ff
-song_6_name:
-        scrcode "        Se Voce Jurar   "
-        .byte $ff
-song_7_name:
-        scrcode "        M'ongolongo  "
-        .byte $ff
-song_8_name:
-        scrcode "         M'atraca 3 "
-        .byte $ff
-song_9_name:
-        scrcode "        Drogacum&bia"
-        .byte $ff
-song_10_name:
-        scrcode "          Juanelo   "
-        .byte $ff
-
-
-song_1_author:
-        scrcode "       Uctum&i"
-        .byte $ff
-song_2_author:
-        scrcode "       Uctum&i"
-        .byte $ff
-song_3_author:
-        scrcode "       Uctum&i"
-        .byte $ff
-song_4_author:
-        scrcode "        CoM'u "
-        .byte $ff
-song_5_author:
-        scrcode "       Uctum&i"
-        .byte $ff
-song_6_author:
-        scrcode "       Uctum&i    "
-        .byte $ff
-song_7_author:
-        scrcode "  Los Pat M'oritas"
-        .byte $ff
-song_8_author:
-        scrcode "  Los Pat M'oritas"
-        .byte $ff
-song_9_author:
-        scrcode "  Los Pat M'oritas"
-        .byte $ff
-song_10_author:
-        scrcode "  Los Pat M'oritas"
-        .byte $ff
-
-
-.segment "IMAGES"
-img_button_play:
-.incbin "button_play.raw"
-img_button_rew:
-.incbin "button_rew.raw"
-img_button_ff:
-.incbin "button_ff.raw"
-img_button_stop:
-.incbin "button_stop.raw"
-tmp_img_button:
-.res 441, 0       ; reserved for temporary storing
-                  ; button bitmap before being pressed
-
-.segment "BITMAP"
-bitmap:
-.incbin "datasette.bitmap"
-
-.segment "COLORMAP"
-.incbin "datasette.colormap"
-
-.segment "SPRITES"
-.incbin "sprites.bin"
-
-.segment "SIDMUSIC"
-; $1000 - $2800 free are to copy the songs
-
-
-.segment "WHITENOISE"
-.incbin "ruido_blanco.sid",$7e
-
-.segment "MUSIC"
-.incbin "uct-balloon_country.exo"
-song_1_end_of_data:
-
-.incbin "uc-ryuuju_no_dengon.exo"
-song_2_end_of_data:
-
-.incbin "uc-yasashisa_ni.exo"
-song_3_end_of_data:
-
-.incbin "leetit38580.exo"
-song_4_end_of_data:
-
-.incbin "uc-pop_goes_the_world.exo"
-song_5_end_of_data:
-
-.incbin "uc-se_voce_jurar.exo"
-song_6_end_of_data:
-
-.incbin "mongolongo.exo"
-song_7_end_of_data:
-
-.incbin "matraca3.exo"
-song_8_end_of_data:
-
-.incbin "dragocumbia.exo"
-song_9_end_of_data:
-
-.incbin "juanelo.exo"
-song_10_end_of_data:
-
-.incbin "uctumi-marcha_imperial_peronista.exo"
-song_easter_egg_end_of_data:
-
-.incbin "peron-map.prg.exo"
-peron_end_of_data:
-
-.incbin "vader-map.prg.exo"
-vader_end_of_data:
-
-.incbin "easteregg-charset.prg.exo"
-easteregg_charset_end_of_data:
-
-.byte 0                 ; ignore
-
-.segment "CHARSET"
-charset:
-.incbin "names-charset.bin"
-
