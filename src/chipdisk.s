@@ -1943,6 +1943,7 @@ song_9_end_of_data:
 .incbin "juanelo.exo"
 song_10_end_of_data:
 
+
 .incbin "uctumi-marcha_imperial_peronista.exo"
 song_easter_egg_end_of_data:
 
@@ -1961,8 +1962,13 @@ easteregg_charset_end_of_data:
 charset:
 .incbin "names-charset.bin"
 
-
 .segment "EASTEREGG"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; EasterEgg Notes:
+; Peron-map should be exported to $4800
+; Vader-map should be exported to $4c00
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; init_easteregg
 ; FIXME: starting from here, the easter egg code should be compressed
@@ -2068,6 +2074,7 @@ song_tick: .word 0
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; irq_easter_a
+; no scroll. switch screen addr
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 irq_easter_a:
         pha                             ; saves A, X, Y
@@ -2103,6 +2110,7 @@ exit_irq:
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; irq_easter_b
+; fixed screen addr
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 irq_easter_b:
         pha                             ; saves A, X, Y
@@ -2126,6 +2134,7 @@ irq_easter_b:
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; irq_easter_c
+; scroll
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 irq_easter_c:
         pha                             ; saves A, X, Y
@@ -2176,7 +2185,7 @@ irq_easter_c:
 .proc easter_effect_wait
         dec counter
         bne :+
-        lda #$f0
+        lda #$e6
         sta counter
         bne set_next_easter_effect
 :       rts
@@ -2232,12 +2241,87 @@ init_fade:
 do_fade:
         lda easter_fade_palette,x
 
-        ldx #0
+        ldx #14
 l0:
-        sta $d800,x
-        sta $d900,x
-        sta $d958,x
+        .repeat 13,YY
+            sta $d850 + 40*YY,x
+        .endrepeat
         inx
+        cpx #24
+        bne l0
+
+        inc fade_idx
+        rts
+
+delay:              .byte 8
+fade_idx:           .byte 0
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; easter_effect_fadein_lefthand
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc easter_effect_fadein_lefthand
+
+        dec delay
+        beq init_fade
+        rts
+
+init_fade:
+        lda #8
+        sta delay
+
+        ldx fade_idx
+        cpx #EASTER_TOTAL_COLORS
+        bne do_fade
+        jmp set_next_easter_effect
+
+do_fade:
+        lda easter_fade_palette,x
+
+        ldx #8
+l0:
+        .repeat 7,YY
+            sta $d800 + 40*YY,x
+        .endrepeat
+        inx
+        cpx #14
+        bne l0
+
+        inc fade_idx
+        rts
+
+delay:              .byte 8
+fade_idx:           .byte 0
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; easter_effect_fadein_righthand
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc easter_effect_fadein_righthand
+
+        dec delay
+        beq init_fade
+        rts
+
+init_fade:
+        lda #8
+        sta delay
+
+        ldx fade_idx
+        cpx #EASTER_TOTAL_COLORS
+        bne do_fade
+        jmp set_next_easter_effect
+
+do_fade:
+        lda easter_fade_palette,x
+
+        ldx #27
+l0:
+        .repeat 7,YY
+            sta $d800 + 40*YY,x
+        .endrepeat
+        inx
+        cpx #32
         bne l0
 
         inc fade_idx
@@ -2347,10 +2431,13 @@ easter_effects:
         .addr easter_effect_wait
         .addr easter_effect_wait
         .addr easter_effect_wait
+        .addr easter_effect_fadein_lefthand
         .addr easter_effect_wait
+        .addr easter_effect_fadein_righthand
         .addr easter_effect_wait
         .addr easter_effect_fadein_name
         .addr easter_effect_switch_peron_vader
 easter_effect_idx:      .byte 0
 easter_fade_palette:    .byte $00,$0b,$0c,$0f,$01
 EASTER_TOTAL_COLORS = * - easter_fade_palette
+
