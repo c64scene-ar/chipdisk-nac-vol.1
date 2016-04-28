@@ -971,11 +971,16 @@ end:
         inc $01                         ; $35: RAM + IO ($D000-$DF00)
 
 
-        lda #0
+;        lda #0
 ;        jsr WHITE_NOISE_INIT            ; init white noise sid
 
         lda #75
         sta white_noise_counter         ; play it for one second (50 frames)
+
+        ldx #<$4cc7                     ; init timer
+        ldy #>$4cc7                     ; sync with PAL
+        stx $dc04                       ; it plays at 50.125hz
+        sty $dc05                       ; we have to call this everytime
 
         lda #$81                        ; turn on cia interrups
         sta $dc0d
@@ -991,15 +996,10 @@ end:
 .proc init_real_song
         sei
 
-        lda current_song                ; x = current_song * 2
-        asl
-        tax
-
         lda #0
         tax
         tay
         jsr $1000                       ; init song
-
 
         cli
         rts
@@ -1974,35 +1974,21 @@ charset:
 ; FIXME: starting from here, the easter egg code should be compressed
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_easteregg
-        ldx #0
-l0:
-        lda #0                          ; color RAM: black for vader image
-        sta $d800,x                     ; it will be faded-in
-        sta $d900,x
-        sta $d9d0,x
 
-        lda #1                          ; white for the bottom part
-        sta $dad0,x
-        sta $dae8,x
+        ldx #<$4cc7                     ; init timer
+        ldy #>$4cc7                     ; sync with PAL
+        stx $dc04                       ; it plays at 50.125hz
+        sty $dc05                       ; we have to call this everytime
+
+        jsr easter_init_screen
+
+        lda #0                          ; clear last line in the two screens
+        tax                             ; easter_init_screen doesn't clear them
+l0:     sta $4800 + 40*24,x             ; because that function will be called again
+        sta $4c00 + 40*24,x             ; when the song ends
         inx
+        cpx #40
         bne l0
-
-        lda #0
-        tax                             ; A,X = 0
-l1:     sta $4800 + 40*15,x             ; clean bottom part of vader
-        sta $4800 + 40*15 + 144,x
-        sta $4c00 + 40*15,x             ; clean bottom part of peron
-        sta $4c00 + 40*15 + 144,x
-        inx
-        bne l1
-
-        ldy #119                        ; "r" is 127
-                                        ; print "Juan Domingo Vader"
-l2:     tya
-        sta $4800 + 40 * 17 + 15 - 119,y
-        iny
-        cpy #128
-        bne l2
 
                                         ; turn VIC on again
         lda #%00011011                  ; charset mode, default scroll-Y position, 25-rows
@@ -2014,6 +2000,7 @@ l2:     tya
         lda #%00100000                  ; video matrix = $0800 (%0010xxxx)
         sta $d018                       ; charset = $0000 (%xxxx000x)
 
+        lda #0
         jsr $1000                       ; init song
 
         lda #40
@@ -2042,6 +2029,44 @@ easter_mainloop:
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; easter_init_screen
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc easter_init_screen
+        ldx #0
+l0:
+        lda #0                          ; color RAM: black for vader image
+        sta $d800,x                     ; it will be faded-in
+        sta $d900,x
+        sta $d9d0,x
+
+        lda #1                          ; white for the bottom part
+        sta $dad0,x
+        sta $dae8,x
+        inx
+        bne l0
+
+        lda #0
+        tax                             ; A,X = 0
+l1:     sta $4800 + 40*15,x             ; clean bottom part of vader
+        sta $4800 + 40*15 + 104,x
+        sta $4c00 + 40*15,x             ; clean bottom part of peron
+        sta $4c00 + 40*15 + 104,x
+        inx
+        bne l1
+
+        ldy #119                        ; "r" is 127
+                                        ; print "Juan Domingo Vader"
+l2:     tya
+        sta $4800 + 40 * 17 + 15 - 119,y
+        iny
+        cpy #128
+        bne l2
+
+        rts
+.endproc
+
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; easter_check_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc easter_check_song
@@ -2061,10 +2086,17 @@ SONG_DURATION = 120 * 50
         bcc end                         ; if LSB(song_tick) < LSB(song_duration) then
                                         ;     song_tick < song_duration
 
+        sei
+        jsr easter_init_screen
+        lda #$ff
+        sta easter_effect_idx
+        jsr set_next_easter_effect
+
         lda #0
         sta song_tick
         sta song_tick+1
         jsr $1000                       ; re-init after song is finished
+        cli
                                         ; this is supposed to fix a bug
 end:
         rts
@@ -2236,6 +2268,8 @@ init_fade:
         ldx fade_idx
         cpx #EASTER_TOTAL_COLORS
         bne do_fade
+        lda #0
+        sta fade_idx
         jmp set_next_easter_effect
 
 do_fade:
@@ -2273,6 +2307,8 @@ init_fade:
         ldx fade_idx
         cpx #EASTER_TOTAL_COLORS
         bne do_fade
+        lda #0
+        sta fade_idx
         jmp set_next_easter_effect
 
 do_fade:
@@ -2310,6 +2346,8 @@ init_fade:
         ldx fade_idx
         cpx #EASTER_TOTAL_COLORS
         bne do_fade
+        lda #0
+        sta fade_idx
         jmp set_next_easter_effect
 
 do_fade:
@@ -2347,6 +2385,8 @@ init_fade:
         ldx fade_idx
         cpx #EASTER_TOTAL_COLORS
         bne do_fade
+        lda #0
+        sta fade_idx
         jmp set_next_easter_effect
 
 do_fade:
