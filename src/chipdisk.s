@@ -1975,11 +1975,6 @@ charset:
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_easteregg
 
-        ldx #<$4cc7                     ; init timer
-        ldy #>$4cc7                     ; sync with PAL
-        stx $dc04                       ; it plays at 50.125hz
-        sty $dc05                       ; we have to call this everytime
-
         jsr easter_init_screen
 
         lda #0                          ; clear last line in the two screens
