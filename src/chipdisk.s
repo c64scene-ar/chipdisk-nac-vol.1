@@ -1965,6 +1965,7 @@ charset:
 .segment "EASTEREGG"
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; EasterEgg Notes:
+; Charset should be exproted to $4000
 ; Peron-map should be exported to $4800
 ; Vader-map should be exported to $4c00
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -2052,7 +2053,7 @@ l1:     sta $4800 + 40*15,x             ; clean bottom part of vader
         ldy #119                        ; "r" is 127
                                         ; print "Juan Domingo Vader"
 l2:     tya
-        sta $4800 + 40 * 17 + 15 - 119,y
+        sta $4800 + 40 * 17 + 16 - 119,y
         iny
         cpy #128
         bne l2
@@ -2270,13 +2271,13 @@ init_fade:
 do_fade:
         lda easter_fade_palette,x
 
-        ldx #14
+        ldx #15
 l0:
         .repeat 13,YY
             sta $d850 + 40*YY,x
         .endrepeat
         inx
-        cpx #24
+        cpx #25
         bne l0
 
         inc fade_idx
@@ -2309,13 +2310,13 @@ init_fade:
 do_fade:
         lda easter_fade_palette,x
 
-        ldx #8
+        ldx #9
 l0:
         .repeat 7,YY
             sta $d800 + 40*YY,x
         .endrepeat
         inx
-        cpx #14
+        cpx #15
         bne l0
 
         inc fade_idx
