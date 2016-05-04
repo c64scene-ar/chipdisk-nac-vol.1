@@ -1804,10 +1804,10 @@ song_durations:                                 ; measured in "cycles ticks"
         .word (60*2+2) * 50                     ; #4 2:02
         .word 210 * 50                          ; #5 3:30
         .word 95 * 50                           ; #6 1:35
-        .word (3*60+22) * 50                    ; #7 03:22
-        .word (2*60+57) * 50                    ; #8 02:57
-        .word (2*60+27) * 50                    ; #9 02:27
-        .word (2*60+23) * 50                    ; #10 02:23
+        .word (3*60+22) * 98                    ; #7 03:22. Mongolongo: 98hz
+        .word (2*60+57) * 64                    ; #8 02:57. Matraca: 64hz
+        .word (2*60+27) * 25                    ; #9 02:27. Dragocumbia: 25hz
+        .word (2*60+23) * 53                    ; #10 02:23. Juanelo: 53hz
 
 
 ; M, m, w and W uses two chars to render
