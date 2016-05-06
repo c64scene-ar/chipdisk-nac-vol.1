@@ -22,6 +22,7 @@
 .import __SPRITES_LOAD__
 .import decrunch                        ; exomizer decrunch
 .import init_easteregg
+.import intro_main
 .export get_crunched_byte               ; needed for exomizer decruncher
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -120,6 +121,7 @@ ora_addr = *+1
 
 
 .segment "CODE"
+        jsr intro_main
         sei
 
         lda #$35                        ; no basic, no kernal
