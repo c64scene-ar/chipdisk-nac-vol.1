@@ -473,6 +473,7 @@ fade_idx:           .byte 0
 
         ; put next char in column 40
         ldx lines_scrolled
+scroll_addr = *+2
         lda scroll_text,x
         cmp #$ff
         bne @printchar
@@ -480,6 +481,9 @@ fade_idx:           .byte 0
         ; reached $ff ? Then start from the beginning
         ldx #0
         stx lines_scrolled
+        lda #>scroll_text
+        sta scroll_addr
+
         lda scroll_text
 
 @printchar:
@@ -487,6 +491,8 @@ fade_idx:           .byte 0
         sta $4800 + 40*24 +39
         inx
         stx lines_scrolled
+        bne endscroll
+        inc scroll_addr
 
 endscroll:
         rts
@@ -494,8 +500,13 @@ endscroll:
 lines_scrolled:
             .byte 0
 scroll_text:
-        scrcode "hola amiguitos.... pasenme el texto para el scroll... les mando un abrazo desde el lado oscuro..... "
-        scrcode ""
+        scrcode "in our twentieth anniversary pvm brings you a music disk full of 8 bit sounds for your ears. press play and enjoy like in the old times. "
+        scrcode "this couldn't have been possible without the esoteric and intimate code of riq; triangle and square waves domestication of uctumi, "
+        scrcode "naku/los pat moritas and co mu; picassian brush strokes and hieroglyph charsets of alakran and arlequin; "
+        scrcode "arachnic bugfixes of munshkr and telepathic collaboration from the rest of the pungas. "
+        scrcode "stay tuned for new pvm releases and don't hesitate to contact us at pungas.space if you are a talented human waste eager to participate in future releases"
+                ;12345678901234567890123456789
+        scrcode "                             "
         .byte $ff
 .endproc
 

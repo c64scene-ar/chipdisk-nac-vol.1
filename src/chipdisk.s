@@ -564,7 +564,7 @@ no_button:
 
         CHECK_PRESSED_BUTTON 36     , 180     , do_play_song
         CHECK_PRESSED_BUTTON 36+28  , 180+14  , do_prev_song
-        CHECK_PRESSED_BUTTON 36+28*2, 180+14*2, do_ff_song
+        CHECK_PRESSED_BUTTON 36+28*2, 180+14*2, user_ff_song
         CHECK_PRESSED_BUTTON 36+28*3, 180+14*3, do_stop_song
 
         rts
@@ -818,8 +818,6 @@ end:
 end:
         rts
 .endproc
-
-
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_prev_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -855,6 +853,15 @@ end:
 
         rts
 .endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; user_ff_song
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc user_ff_song
+        lda #0
+        sta enable_easter_egg
+        jmp do_ff_song
+.endproc
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_ff_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -878,7 +885,6 @@ end:
 
         rts
 .endproc
-
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_next_song
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -890,9 +896,16 @@ end:
         ldx current_song                ; current_song = min(7, current_song + 1)
         inx
         cpx #TOTAL_SONGS
-        bne :+
-        ldx #TOTAL_SONGS-1
-:       stx current_song
+        bne next_song
+
+        lda enable_easter_egg           ; last song finished... play easter egg?
+        beq first_song                  ; no.
+        jmp setup_easteregg             ; yes.
+
+first_song:
+        ldx #0
+next_song:
+        stx current_song
 
         lda #0
         sta is_already_loaded           ; is_already_loaded = false
@@ -1166,8 +1179,9 @@ ff_delay:
         and #%00010000                  ; colum 4
         beq setup_easteregg             ; F1 was pressed?
         rts
+.endproc
 
-setup_easteregg:
+.proc setup_easteregg
         sei
 
         lda #$00
@@ -1754,62 +1768,65 @@ current_button:         .byte $ff               ; byte. current button when usin
 wheel_delay_counter:    .byte WHEEL_FF_DELAY    ; delay counter for wheel animation
 button_delay_counter:   .byte 0                 ; delay counter for button animation
 white_noise_counter:    .byte 0                 ; who many ticks white noise will be played
+enable_easter_egg:      .byte 1                 ; boolean. enabled by default. if key is pressed, disable
 
 buttons_pos:
         .repeat 4, II
         .byte BORDER_LEFT + 18 + 28*II, BORDER_TOP + 145 + 14*II
         .endrepeat
 
+; song order
+; 1, 8, 3, 4, 2, 7, 5, 10, 6, 9
 song_names:
         .addr song_1_name
-        .addr song_2_name
+        .addr song_8_name
         .addr song_3_name
         .addr song_4_name
-        .addr song_5_name
-        .addr song_6_name
+        .addr song_2_name
         .addr song_7_name
-        .addr song_8_name
-        .addr song_9_name
+        .addr song_5_name
         .addr song_10_name
+        .addr song_6_name
+        .addr song_9_name
 TOTAL_SONGS = (* - song_names) / 2
 
 
 song_authors:
         .addr song_1_author
-        .addr song_2_author
+        .addr song_8_author
         .addr song_3_author
         .addr song_4_author
-        .addr song_5_author
-        .addr song_6_author
+        .addr song_2_author
         .addr song_7_author
-        .addr song_8_author
-        .addr song_9_author
+        .addr song_5_author
         .addr song_10_author
+        .addr song_6_author
+        .addr song_9_author
 
 song_end_addrs:
         .addr song_1_end_of_data
-        .addr song_2_end_of_data
+        .addr song_8_end_of_data
         .addr song_3_end_of_data
         .addr song_4_end_of_data
-        .addr song_5_end_of_data
-        .addr song_6_end_of_data
+        .addr song_2_end_of_data
         .addr song_7_end_of_data
-        .addr song_8_end_of_data
-        .addr song_9_end_of_data
+        .addr song_5_end_of_data
         .addr song_10_end_of_data
+        .addr song_6_end_of_data
+        .addr song_9_end_of_data
 
 
 song_durations:                                 ; measured in "cycles ticks"
         .word 102 * 50                          ; #1 1:42
-        .word 91 * 50                           ; #2 1:31
+        .word (2*60+57) * 64                    ; #8 02:57. Matraca: 64hz
         .word 199 * 50                          ; #3 3:19
         .word (60*2+2) * 50                     ; #4 2:02
-        .word 210 * 50                          ; #5 3:30
-        .word 95 * 50                           ; #6 1:35
+        .word 91 * 50                           ; #2 1:31
         .word (3*60+22) * 98                    ; #7 03:22. Mongolongo: 98hz
-        .word (2*60+57) * 64                    ; #8 02:57. Matraca: 64hz
-        .word (2*60+27) * 25                    ; #9 02:27. Dragocumbia: 25hz
+        .word 210 * 50                          ; #5 3:30
         .word (2*60+23) * 53                    ; #10 02:23. Juanelo: 53hz
+        .word 95 * 50                           ; #6 1:35
+        .word (2*60+27) * 25                    ; #9 02:27. Dragocumbia: 25hz
 
 
 ; M, m, w and W uses two chars to render
@@ -1823,8 +1840,8 @@ song_durations:                                 ; measured in "cycles ticks"
 song_1_name:
         scrcode "   Balloon Country Bursts"
         .byte $ff
-song_2_name:
-        scrcode "      Ryuuju No Dengon      "
+song_8_name:
+        scrcode "         M'atraca 3         "
         .byte $ff
 song_3_name:
         ;Yasashisa Ni Tsutsumareta Nara
@@ -1833,54 +1850,54 @@ song_3_name:
 song_4_name:
         scrcode "          Leet it 3         "
         .byte $ff
+song_2_name:
+        scrcode "      Ryuuju No Dengon"
+        .byte $ff
+song_7_name:
+        scrcode "        M'ongolongo     "
+        .byte $ff
 song_5_name:
         scrcode "    Pop Goes  The W)orld"
         .byte $ff
+song_10_name:
+        scrcode "          Juanelo       "
+        .byte $ff
 song_6_name:
-        scrcode "        Se Voce Jurar   "
-        .byte $ff
-song_7_name:
-        scrcode "        M'ongolongo  "
-        .byte $ff
-song_8_name:
-        scrcode "         M'atraca 3 "
+        scrcode "        Se Voce Jurar"
         .byte $ff
 song_9_name:
-        scrcode "        Drogacum&bia"
-        .byte $ff
-song_10_name:
-        scrcode "          Juanelo   "
+        scrcode "        Drogacum&bia "
         .byte $ff
 
 
 song_1_author:
-        scrcode "       Uctum&i"
+        scrcode "       Uctum&i    "
         .byte $ff
-song_2_author:
-        scrcode "       Uctum&i"
+song_8_author:
+        scrcode "  Los Pat M'oritas"
         .byte $ff
 song_3_author:
-        scrcode "       Uctum&i"
+        scrcode "       Uctum&i    "
         .byte $ff
 song_4_author:
         scrcode "        CoM'u "
         .byte $ff
-song_5_author:
-        scrcode "       Uctum&i"
-        .byte $ff
-song_6_author:
+song_2_author:
         scrcode "       Uctum&i    "
         .byte $ff
 song_7_author:
         scrcode "  Los Pat M'oritas"
         .byte $ff
-song_8_author:
-        scrcode "  Los Pat M'oritas"
-        .byte $ff
-song_9_author:
-        scrcode "  Los Pat M'oritas"
+song_5_author:
+        scrcode "       Uctum&i    "
         .byte $ff
 song_10_author:
+        scrcode "  Los Pat M'oritas"
+        .byte $ff
+song_6_author:
+        scrcode "       Uctum&i    "
+        .byte $ff
+song_9_author:
         scrcode "  Los Pat M'oritas"
         .byte $ff
 

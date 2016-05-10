@@ -99,7 +99,7 @@ l:      lda logo_label + $0000,x
 l0:     ldx #0
 l1:     ldy #0
 
-l2:     
+l2:
         lda #%01111111                  ; space ?
         sta CIA1_PRA                    ; row 7
         lda CIA1_PRB
@@ -116,12 +116,98 @@ l2:
         bne l0
 
 end:
-        rts
+        jmp fade_out
 
 delay:
         .byte 0
-
 .endproc
+
+.proc fade_out
+
+loop:
+        lda $d020
+        and #$0f
+        tax
+        lda fade_colors_hires,x
+        sta $d020
+        sta $d021
+
+        lda $d022
+        and #$0f
+        tax
+        lda fade_colors_hires,x
+        sta $d022
+
+        lda $d023
+        and #$0f
+        tax
+        lda fade_colors_hires,x
+        sta $d023
+
+        ldy #0
+l0:     lda $d800,y
+        and #$0f
+        tax
+        lda fade_colors_mc,x
+        sta $d800,y
+
+        lda $d900,y
+        and #$0f
+        tax
+        lda fade_colors_mc,x
+        sta $d900,y
+
+        lda $da00,y
+        and #$0f
+        tax
+        lda fade_colors_mc,x
+        sta $da00,y
+
+        dey
+        bne l0
+
+l1:     lda $db00,y
+        and #$0f
+        tax
+        lda fade_colors_mc,x
+        sta $db00,y
+        iny
+        cpy #$e8
+        bne l1
+
+        jsr fade_delay
+
+        dec iters
+        bne loop
+        rts
+iters:
+        .byte 16
+.endproc
+
+.proc fade_delay
+        ldy #4
+l1:     ldx #0
+l0:     dex
+        bne l0
+        dey
+        bne l1
+        rts
+.endproc
+
+
+fade_colors_hires:
+        ;       0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
+        .byte $00,$0d,$0b,$0f,$02,$0a,$00,$03,$04,$06,$0e,$09,$08,$07,$0c,$05
+;       .byte $01,$0d,$07,$03,$0f,$05,$0a,$0e,$0c,$08,$04,$02,$0b,$09,$06,$00
+
+fade_colors_mc:
+        ;       0   1   2   3   4   5   6   7
+        ;       8   9   a   b   c   d   e   f
+        .byte $00,$07,$06,$05,$02,$04,$00,$03
+        .byte $08,$0f,$0e,$0d,$0a,$0c,$08,$0b
+
+;       .byte $0d,$0f,$0a,$0e,$0c,$08,$0b,$09,$00
+;       .byte $01,$07,$03,$05,$04,$02,$06,$00,$00
 
 logo_attrib_data:
         .incbin "octavo-arlequin-pvmlogoc64_1m_remix-colors.bin"
