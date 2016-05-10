@@ -1177,8 +1177,26 @@ ff_delay:
         sta $dc00
         lda $dc01
         and #%00010000                  ; colum 4
-        beq setup_easteregg             ; F1 was pressed?
+        beq :+                          ; F1 was pressed?
+        lda #0
+        sta f1_pressed                  ; set F1 as released
         rts
+:
+        lda f1_pressed                  ; already pressed? wait for release
+        bne end
+
+        lda #1
+        sta f1_pressed
+        dec f1_count                    ; 5 times ?
+        beq setup_easteregg
+
+end:
+        rts
+
+f1_count:
+        .byte 5
+f1_pressed:
+        .byte 0
 .endproc
 
 .proc setup_easteregg
