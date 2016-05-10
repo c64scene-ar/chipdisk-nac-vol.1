@@ -8,7 +8,7 @@
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; EasterEgg Notes:
-; Charset should be exproted to $4000
+; Charset should be exported to $4000
 ; Peron-map should be exported to $4800
 ; Vader-map should be exported to $4c00
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -504,9 +504,10 @@ scroll_text:
         scrcode "this couldn't have been possible without the esoteric and intimate code of riq; triangle and square waves domestication of uctumi, "
         scrcode "naku/los pat moritas and co mu; picassian brush strokes and hieroglyph charsets of alakran and arlequin; "
         scrcode "arachnic bugfixes of munshkr and telepathic collaboration from the rest of the pungas. "
-        scrcode "stay tuned for new pvm releases and don't hesitate to contact us at pungas.space if you are a talented human waste eager to participate in future releases"
-                ;12345678901234567890123456789
-        scrcode "                             "
+        scrcode "stay tuned for new pvm releases and don't hesitate to contact us at pungas.space if you are a talented human waste "
+        scrcode "eager to participate in future releases"
+                ;1234567890123456789001234567890123456789
+        scrcode "                                        "
         .byte $ff
 .endproc
 
