@@ -58,40 +58,44 @@
         lda #0                          ; black for background color
         sta $d020
         sta $d021
-        lda #14                         ; multicolor #1
         sta $d022
-        lda #11
-        sta $d023                       ; multicolor #2
+        sta $d023
 
 
-
-        ldx #$00                        ; set colors for logo
-l:      lda logo_label + $0000,x
+        ldx #$00
+l:      lda logo_label + $0000,x        ; paint logo
         sta $0400 + $0000,x
         tay
         lda logo_attrib_data,y
-        sta $d800,x                     ; colors for the chars
+        and #%00001000                  ; only 0 or 8. both are black in MC mode
+        sta $d800,x
 
         lda logo_label + $0100,x
         sta $0400 + $0100,x
         tay
         lda logo_attrib_data,y
-        sta $d800 + $0100,x             ; colors for the chars
+        and #%00001000                  ; only 0 or 8. both are black in MC mode
+        sta $d900,x
 
         lda logo_label + $0200,x
         sta $0400 + $0200,x
         tay
         lda logo_attrib_data,y
-        sta $d800 + $0200,x             ; colors for the chars
+        and #%00001000                  ; only 0 or 8. both are black in MC mode
+        sta $da00,x
 
         lda logo_label + $02e8,x
         sta $0400 + $02e8,x
         tay
         lda logo_attrib_data,y
-        sta $d800 + $02e8,x             ; colors for the chars
+        and #%00001000                  ; only 0 or 8. both are black in MC mode
+        sta $dae8,x
 
         inx
         bne l
+
+
+        jsr fade_in
 
         cli
 
@@ -125,45 +129,150 @@ delay:
         .byte 0
 .endproc
 
+.proc fade_in
+        jsr fade_in_logo
+        jmp fade_in_chars
+.endproc
+
+.proc fade_in_logo
+loop:
+        lda $d022
+        and #$0f
+        cmp #14
+        beq next0
+        tax
+        lda fade_in_colors_hires,x
+        sta $d022
+
+next0:
+        lda $d023
+        and #$0f
+        cmp #11
+        beq next1
+        tax
+        lda fade_in_colors_hires,x
+        sta $d023
+next1:
+
+        ldy #0
+l0:     lda $d800,y
+        and #$0f
+        pha
+        lda $0400,y
+        tax
+        pla
+        cmp logo_attrib_data,x
+        beq next2
+        tax
+        lda fade_in_colors_mc,x
+        sta $d800,y
+
+next2:
+        lda $d900,y
+        and #$0f
+        pha
+        lda $0500,y
+        tax
+        pla
+        cmp logo_attrib_data,x
+        beq next3
+        tax
+        lda fade_in_colors_mc,x
+        sta $d900,y
+
+next3:
+        dey
+        bne l0
+
+        jsr fade_delay_2
+
+        dec iters
+        beq end
+        jmp loop
+end:
+        rts
+iters:
+        .byte 16
+.endproc
+
+.proc fade_in_chars
+
+loop:
+        ldy #0
+l0:
+        lda $da00,y
+        and #$0f
+        pha
+        lda $0600,y
+        tax
+        pla
+        cmp logo_attrib_data,x
+        beq next0
+        tax
+        lda fade_in_colors_mc,x
+        sta $da00,y
+next0:
+        iny
+        bne l0
+
+l1:     lda $db00,y
+        and #$0f
+        pha
+        lda $0700,y
+        tax
+        pla
+        cmp logo_attrib_data,x
+        beq next1
+        tax
+        lda fade_in_colors_mc,x
+        sta $db00,y
+next1:
+
+        iny
+        cpy #$e8
+        bne l1
+
+        jsr fade_delay_2
+
+        dec iters
+        bne loop
+        rts
+iters:
+        .byte 16
+.endproc
+
 .proc fade_out
 
 loop:
-        lda $d020
-        and #$0f
-        tax
-        lda fade_colors_hires,x
-        sta $d020
-        sta $d021
-
         lda $d022
         and #$0f
         tax
-        lda fade_colors_hires,x
+        lda fade_out_colors_hires,x
         sta $d022
 
         lda $d023
         and #$0f
         tax
-        lda fade_colors_hires,x
+        lda fade_out_colors_hires,x
         sta $d023
 
         ldy #0
 l0:     lda $d800,y
         and #$0f
         tax
-        lda fade_colors_mc,x
+        lda fade_out_colors_mc,x
         sta $d800,y
 
         lda $d900,y
         and #$0f
         tax
-        lda fade_colors_mc,x
+        lda fade_out_colors_mc,x
         sta $d900,y
 
         lda $da00,y
         and #$0f
         tax
-        lda fade_colors_mc,x
+        lda fade_out_colors_mc,x
         sta $da00,y
 
         dey
@@ -172,7 +281,7 @@ l0:     lda $d800,y
 l1:     lda $db00,y
         and #$0f
         tax
-        lda fade_colors_mc,x
+        lda fade_out_colors_mc,x
         sta $db00,y
         iny
         cpy #$e8
@@ -197,13 +306,35 @@ l0:     dex
         rts
 .endproc
 
+.proc fade_delay_2
+        ldy #20
+l1:     ldx #0
+l0:     dex
+        bne l0
+        dey
+        bne l1
+        rts
+.endproc
 
-fade_colors_hires:
+fade_in_colors_hires:
+        ;       0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
+        .byte $06,$01,$04,$07,$08,$0f,$09,$0d,$0c,$0b,$05,$02,$0e,$01,$0a,$03
+;       .byte $00,$06,$09,$0b,$02,$04,$08,$0c,$0e,$0a,$05,$0f,$03,$07,$0d,$01
+
+fade_in_colors_mc:
+        ;       0   1   2   3   4   5   6   7
+        ;       8   9   a   b   c   d   e   f
+        .byte $06,$01,$04,$07,$05,$03,$02,$01
+        .byte $0e,$09,$0c,$0f,$0d,$0b,$0a,$09
+
+        ;     $00,$06,$02,$04,$05,$03,$07,$01
+
+fade_out_colors_hires:
         ;       0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
         .byte $00,$0d,$0b,$0f,$02,$0a,$00,$03,$04,$06,$0e,$09,$08,$07,$0c,$05
 ;       .byte $01,$0d,$07,$03,$0f,$05,$0a,$0e,$0c,$08,$04,$02,$0b,$09,$06,$00
 
-fade_colors_mc:
+fade_out_colors_mc:
         ;       0   1   2   3   4   5   6   7
         ;       8   9   a   b   c   d   e   f
         .byte $00,$07,$06,$05,$02,$04,$00,$03
