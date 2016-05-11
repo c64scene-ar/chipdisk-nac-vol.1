@@ -626,7 +626,7 @@ scroll_text_en:
         scrcode "in our twentieth anniversary pvm brings you a music disk full of 8 bit sounds for your ears. press play and enjoy like in the old times. "
         scrcode "this couldn't have been possible without the esoteric and intimate code by riq; the taming of triangle and square waves by uctumi, "
         scrcode "naku/los pat moritaas and co mu; picassian brush strokes and hieroglyph charsets by alakran and arlequin; "
-        scrcode "arachnic bugfixes by munshkr and telepathic collaboration from the rest by the pungas. "
+        scrcode "arachnic bugfixes by munshkr and telepathic collaboration from the rest of the pungas. "
         scrcode "stay tuned for new pvm releases and don't hesitate to contact us at pungas.space if you are a talented human waste "
         scrcode "eager to participate in future releases."
                 ;1234567890123456789001234567890123456789
