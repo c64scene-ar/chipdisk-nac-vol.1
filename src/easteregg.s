@@ -624,9 +624,9 @@ lines_scrolled_en:      .byte 0
 lines_scrolled_sp:      .byte 0
 scroll_text_en:
         scrcode "in our twentieth anniversary pvm brings you a music disk full of 8 bit sounds for your ears. press play and enjoy like in the old times. "
-        scrcode "this couldn't have been possible without the esoteric and intimate code of riq; triangle and square waves domestication of uctumi, "
-        scrcode "naku/los pat moritas and co mu; picassian brush strokes and hieroglyph charsets of alakran and arlequin; "
-        scrcode "arachnic bugfixes of munshkr and telepathic collaboration from the rest of the pungas. "
+        scrcode "this couldn't have been possible without the esoteric and intimate code by riq; the taming of triangle and square waves by uctumi, "
+        scrcode "naku/los pat moritaas and co mu; picassian brush strokes and hieroglyph charsets by alakran and arlequin; "
+        scrcode "arachnic bugfixes by munshkr and telepathic collaboration from the rest by the pungas. "
         scrcode "stay tuned for new pvm releases and don't hesitate to contact us at pungas.space if you are a talented human waste "
         scrcode "eager to participate in future releases."
                 ;1234567890123456789001234567890123456789
@@ -634,6 +634,9 @@ scroll_text_en:
         .byte $ff
 
 scroll_text_sp:
+                ;1234567890123456789001234567890123456789
+        scrcode "                                        "
+        scrcode "                                        "
         scrcode "en nuestro veinteavo aniversario pvm trae a tus oi'dos un compilado "
         scrcode "de mu'sica lleno de sonidos 8 bits. presiona play y disfruta como en los viejos tiempos. "
         scrcode "esta entrega no hubiera sido posible sin el i'ntimo y esote'rico co'digo de manos de riq; "
@@ -642,8 +645,6 @@ scroll_text_sp:
         scrcode "la ara'cnida correccio'n de defectos de munshkr y la colaboracio'n telepa'tica del resto de los pungas. "
         scrcode "estate atento a nuevas entregas de pvm y no dudes en contactarnos en pungas.space si te consideras "
         scrcode "un desperdicio humano con talento y deseos de participar en nuestras producciones futuras."
-                ;1234567890123456789001234567890123456789
-        scrcode "                                        "
         .byte $ff
 
 easter_sync_irq:        .byte 0                 ; boolean
