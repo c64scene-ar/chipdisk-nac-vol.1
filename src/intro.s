@@ -94,6 +94,9 @@ l:      lda logo_label + $0000,x        ; paint logo
         inx
         bne l
 
+:       jsr fade_delay_2                ; delay
+        dec delay_in_idx
+        bne :-
 
         jsr fade_in
 
@@ -123,10 +126,20 @@ l2:
         bne l0
 
 end:
-        jmp fade_out
+        jsr fade_out_logo
+
+:       jsr fade_delay_2                ; delay
+        dec delay_out_idx
+        bne :-
+
+        rts
 
 delay:
         .byte 0
+delay_in_idx:
+        .byte 20
+delay_out_idx:
+        .byte 20
 .endproc
 
 .proc fade_in
@@ -135,7 +148,6 @@ delay:
 .endproc
 
 .proc fade_in_logo
-loop:
         ldx fade_in_colors_d022_idx
         lda fade_in_colors_d022,x
         sta $d022
@@ -180,7 +192,7 @@ next3:
 
         dec iters
         beq end
-        jmp loop
+        jmp fade_in_logo
 end:
         rts
 iters:
@@ -188,8 +200,6 @@ iters:
 .endproc
 
 .proc fade_in_chars
-
-loop:
         ldy #0
 l0:
         lda $da00,y
@@ -227,26 +237,24 @@ next1:
         jsr fade_delay_2
 
         dec iters
-        bne loop
+        bne fade_in_chars
         rts
 iters:
         .byte 16
 .endproc
 
-.proc fade_out
+.proc fade_out_logo
 
-loop:
-        lda $d022
-        and #$0f
-        tax
-        lda fade_out_colors_hires,x
+        dec fade_in_colors_d022_idx
+        ldx fade_in_colors_d022_idx             ; reuse fade_in palette
+        lda fade_in_colors_d022,x               ; from back to front
         sta $d022
 
-        lda $d023
-        and #$0f
-        tax
-        lda fade_out_colors_hires,x
+        dec fade_in_colors_d023_idx
+        ldx fade_in_colors_d023_idx             ; reuse fade_in palette
+        lda fade_in_colors_d023,x               ; from back to front
         sta $d023
+
 
         ldy #0
 l0:     lda $d800,y
@@ -282,10 +290,10 @@ l1:     lda $db00,y
         jsr fade_delay
 
         dec iters
-        bne loop
+        bne fade_out_logo
         rts
 iters:
-        .byte 16
+        .byte 8
 .endproc
 
 .proc fade_delay
@@ -322,11 +330,6 @@ fade_in_colors_mc:
         .byte $0e,$09,$0c,$0f,$0d,$0b,$0a,$09
 
         ;     $00,$06,$02,$04,$05,$03,$07,$01
-
-fade_out_colors_hires:
-        ;       0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
-        .byte $00,$0d,$0b,$0f,$02,$0a,$00,$03,$04,$06,$0e,$09,$08,$07,$0c,$05
-;       .byte $01,$0d,$07,$03,$0f,$05,$0a,$0e,$0c,$08,$04,$02,$0b,$09,$06,$00
 
 fade_out_colors_mc:
         ;       0   1   2   3   4   5   6   7
