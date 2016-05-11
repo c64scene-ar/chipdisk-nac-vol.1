@@ -136,23 +136,15 @@ delay:
 
 .proc fade_in_logo
 loop:
-        lda $d022
-        and #$0f
-        cmp #14
-        beq next0
-        tax
-        lda fade_in_colors_hires,x
+        ldx fade_in_colors_d022_idx
+        lda fade_in_colors_d022,x
         sta $d022
+        inc fade_in_colors_d022_idx
 
-next0:
-        lda $d023
-        and #$0f
-        cmp #11
-        beq next1
-        tax
-        lda fade_in_colors_hires,x
+        ldx fade_in_colors_d023_idx
+        lda fade_in_colors_d023,x
         sta $d023
-next1:
+        inc fade_in_colors_d023_idx
 
         ldy #0
 l0:     lda $d800,y
@@ -192,7 +184,7 @@ next3:
 end:
         rts
 iters:
-        .byte 16
+        .byte 8
 .endproc
 
 .proc fade_in_chars
@@ -316,10 +308,12 @@ l0:     dex
         rts
 .endproc
 
-fade_in_colors_hires:
-        ;       0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
-        .byte $06,$01,$04,$07,$08,$0f,$09,$0d,$0c,$0b,$05,$02,$0e,$01,$0a,$03
-;       .byte $00,$06,$09,$0b,$02,$04,$08,$0c,$0e,$0a,$05,$0f,$03,$07,$0d,$01
+fade_in_colors_d022_idx: .byte 0
+fade_in_colors_d023_idx: .byte 0
+fade_in_colors_d022:
+        .byte $00,$09,$0b,$02,$04,$08,$0c,$0e
+fade_in_colors_d023:
+        .byte $00,$00,$00,$06,$06,$09,$09,$0b
 
 fade_in_colors_mc:
         ;       0   1   2   3   4   5   6   7
