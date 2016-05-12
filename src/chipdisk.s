@@ -937,6 +937,10 @@ next_song:
         lda #$00
         sta $d418                       ; no volume
 
+        lda $dc0d                       ; ack possible interrupts
+        lda $dd0d
+        asl $d019
+
         cli
 
         jsr button_play_restore
