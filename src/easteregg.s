@@ -634,15 +634,16 @@ scroll_text_en:
         .byte $ff
 
 scroll_text_sp:
+        ; á = !, é = ", í = #, ó = $, ú = %
                 ;1234567890123456789001234567890123456789
         scrcode "                                        "
         scrcode "                                        "
-        scrcode "en nuestro veinteavo aniversario pvm trae a tus oi'dos un compilado "
-        scrcode "de mu'sica lleno de sonidos 8 bits. presiona play y disfruta como en los viejos tiempos. "
-        scrcode "esta entrega no hubiera sido posible sin el i'ntimo y esote'rico co'digo de manos de riq; "
-        scrcode "la domesticacio'n de las ondas triangulares y cuadradas por parte de uctumi, naku/los pat moritas y co mu; "
-        scrcode "los trazos picassescos y los juegos de caracteres jerogli'ficos de alakra'n y arlequi'n; "
-        scrcode "la ara'cnida correccio'n de defectos de munshkr y la colaboracio'n telepa'tica del resto de los pungas. "
+        scrcode "en nuestro veinteavo aniversario pvm trae a tus o#dos un compilado "
+        scrcode "de m%sica lleno de sonidos 8 bits. presiona play y disfruta como en los viejos tiempos. "
+        scrcode "esta entrega no hubiera sido posible sin el #ntimo y esot", '"', "rico c$digo de manos de riq; "
+        scrcode "la domesticaci$n de las ondas triangulares y cuadradas por parte de uctumi, naku/los pat moritas y co mu; "
+        scrcode "los trazos picassescos y los juegos de caracteres jerogl#ficos de alakr!n y arlequ#n; "
+        scrcode "la ar!cnida correcci$n de defectos de munshkr y la colaboraci$n telep!tica del resto de los pungas. "
         scrcode "estate atento a nuevas entregas de pvm y no dudes en contactarnos en pungas.space si te consideras "
         scrcode "un desperdicio humano con talento y deseos de participar en nuestras producciones futuras."
         .byte $ff
