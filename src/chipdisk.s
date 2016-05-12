@@ -225,8 +225,9 @@ play_music:
         dec $d020
 .endif
         rts
-@stop_white_noise:                       ; limit reached ? transition to real song
+@stop_white_noise:                      ; limit reached ? transition to real song
         jsr init_real_song              ; init the real song
+        jsr print_names
         jmp @play_real_song             ; and in the same frame, play it
 
 
@@ -973,7 +974,7 @@ next_song:
         lda #$00
         sta $d418                       ; no volume
 
-        jsr print_names
+        jsr print_names_empty
 
         lda current_song                ; x = current_song * 2
         asl
@@ -1056,6 +1057,36 @@ next_song:
         lda #WHEEL_FF_DELAY
         sta wheel_delay_counter   ; restore delay for FF
 end:
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; print_names_empty
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc print_names_empty
+
+        lda #<song_name_empty
+        sta $fc
+        lda #>song_name_empty
+        sta $fd
+
+OFFSET_Y_UPPER = 3
+OFFSET_X_UPPER = 14
+        ldx #<(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
+        ldy #>(bitmap + OFFSET_Y_UPPER * 8 * 40 + OFFSET_X_UPPER * 8)
+        jsr plot_name
+
+        lda #<song_author_empty
+        sta $fc
+        lda #>song_author_empty
+        sta $fd
+
+OFFSET_Y_BOTTOM = 7
+OFFSET_X_BOTTOM = 13
+        ldx #<(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
+        ldy #>(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
+        jsr plot_name
+
         rts
 .endproc
 
@@ -1847,6 +1878,13 @@ song_durations:                                 ; measured in "cycles ticks"
         .word (2*60+27) * 25                    ; #9 02:27. Dragocumbia: 25hz
 
 
+song_name_empty:
+        scrcode "                            "
+        .byte $ff
+song_author_empty:
+        scrcode "                  "
+        .byte $ff
+
 ; M, m, w and W uses two chars to render
 ; M = M'
 ; m = m&
@@ -1859,26 +1897,26 @@ song_1_name:
         scrcode "   Balloon Country Bursts"
         .byte $ff
 song_8_name:
-        scrcode "         M'atraca 3         "
+        scrcode "         M'atraca 3"
         .byte $ff
 song_3_name:
         ;Yasashisa Ni Tsutsumareta Nara
         scrcode "Yasashisa Ni Tsutsum&areta.."
         .byte $ff
 song_4_name:
-        scrcode "          Leet it 3         "
+        scrcode "          Leet it 3"
         .byte $ff
 song_2_name:
         scrcode "      Ryuuju No Dengon"
         .byte $ff
 song_7_name:
-        scrcode "        M'ongolongo     "
+        scrcode "        M'ongolongo"
         .byte $ff
 song_5_name:
         scrcode "    Pop Goes  The W)orld"
         .byte $ff
 song_10_name:
-        scrcode "          Juanelo       "
+        scrcode "          Juanelo"
         .byte $ff
 song_6_name:
         scrcode "        Se Voce Jurar"
@@ -1889,31 +1927,31 @@ song_9_name:
 
 
 song_1_author:
-        scrcode "       Uctum&i    "
+        scrcode "       Uctum&i"
         .byte $ff
 song_8_author:
         scrcode "  Los Pat M'oritas"
         .byte $ff
 song_3_author:
-        scrcode "       Uctum&i    "
+        scrcode "       Uctum&i"
         .byte $ff
 song_4_author:
-        scrcode "        CoM'u "
+        scrcode "        CoM'u"
         .byte $ff
 song_2_author:
-        scrcode "       Uctum&i    "
+        scrcode "       Uctum&i"
         .byte $ff
 song_7_author:
         scrcode "  Los Pat M'oritas"
         .byte $ff
 song_5_author:
-        scrcode "       Uctum&i    "
+        scrcode "       Uctum&i"
         .byte $ff
 song_10_author:
         scrcode "  Los Pat M'oritas"
         .byte $ff
 song_6_author:
-        scrcode "       Uctum&i    "
+        scrcode "       Uctum&i"
         .byte $ff
 song_9_author:
         scrcode "  Los Pat M'oritas"
