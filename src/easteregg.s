@@ -624,9 +624,9 @@ lines_scrolled_en:      .byte 0
 lines_scrolled_sp:      .byte 0
 scroll_text_en:
         scrcode "in our twentieth anniversary pvm brings you a music disk full of 8 bit sounds for your ears. press play and enjoy like in the old times. "
-        scrcode "this couldn't have been possible without the esoteric and intimate code by riq; the taming of triangle and square waves by uctumi, "
-        scrcode "naku/los pat moritaas and co mu; picassian brush strokes and hieroglyph charsets by alakran and arlequin; "
-        scrcode "arachnic bugfixes by munshkr and telepathic collaboration from the rest of the pungas. "
+        scrcode "this couldn't have been possible without the esoteric and intimate code of riq and munshkr; the taming of triangle and square waves by uctumi, "
+        scrcode "naku/los pat moritas and co mu; picassian brush strokes and hieroglyph charsets of alakran and arlequin; "
+        scrcode "dope petsciis of acid and telepathic collaboration from the rest of the pungas. "
         scrcode "stay tuned for new pvm releases and don't hesitate to contact us at pungas.space if you are a talented human waste "
         scrcode "eager to participate in future releases."
                 ;1234567890123456789001234567890123456789
@@ -640,12 +640,12 @@ scroll_text_sp:
         scrcode "                                        "
         scrcode "en nuestro veinteavo aniversario pvm trae a tus o#dos un compilado "
         scrcode "de m%sica lleno de sonidos 8 bits. presiona play y disfruta como en los viejos tiempos. "
-        scrcode "esta entrega no hubiera sido posible sin el #ntimo y esot", '"', "rico c$digo de manos de riq; "
+        scrcode "esta entrega no hubiera sido posible sin el #ntimo y esot",'"',"rico c$digo de manos de riq y munshkr; "
         scrcode "la domesticaci$n de las ondas triangulares y cuadradas por parte de uctumi, naku/los pat moritas y co mu; "
-        scrcode "los trazos picassescos y los juegos de caracteres jerogl#ficos de alakr!n y arlequ#n; "
-        scrcode "la ar!cnida correcci$n de defectos de munshkr y la colaboraci$n telep!tica del resto de los pungas. "
-        scrcode "estate atento a nuevas entregas de pvm y no dudes en contactarnos en pungas.space si te consideras "
-        scrcode "un desperdicio humano con talento y deseos de participar en nuestras producciones futuras."
+        scrcode "los trazos picassescos y los juegos de caracteres jerogl#ficos de alakr!n y arlequ#n; los petsciis drogados de acid y "
+        scrcode "la colaboraci$n telep!tica del resto de los pungas. "
+        scrcode "estate atento a nuevas entregas de pvm y no dudes en contactarnos en pungas.space si te consideras un desperdicio "
+        scrcode "humano con talento y deseos de participar en nuestras producciones futuras."
         .byte $ff
 
 easter_sync_irq:        .byte 0                 ; boolean
