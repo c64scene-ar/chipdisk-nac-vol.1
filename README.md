@@ -1,6 +1,6 @@
 # Chipdisk
 
-Se recomiendo correrlo en una Commodore de norma PAL-B y SID 8580.
+Se recomienda correrlo en una Commodore 64 de norma PAL-B y SID 8580.
 
 ## Cómo compilarlo
 
