@@ -1,5 +1,7 @@
 # Chipdisk
 
+Se recomiendo correrlo en una Commodore de norma PAL-B y SID 8580.
+
 ## Cómo compilarlo
 
 - Bajarse [cc65](http://cc65.github.io/cc65/) y ponerlo en el path
@@ -8,6 +10,14 @@
 
 Y luego darle `make`
 
+## Tracks originales
+
+En el directorio [res/orig](res/orig) se encuentran los archivos originales de
+algunos de los .SIDs presentes en este chipdisk.  Las extensiones corresponden
+a los siguientes trackers:
+
+- `.ct`: CheeseCutter
+- `.sng`/`.swm`: SID-Wizard
 
 ## Internals
 
