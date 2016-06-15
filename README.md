@@ -17,7 +17,8 @@ algunos de los .SIDs presentes en este chipdisk.  Las extensiones corresponden
 a los siguientes trackers:
 
 - `.ct`: CheeseCutter
-- `.sng`/`.swm`: SID-Wizard
+- `.sng`: GoatTracker
+- `.swm`: SID-Wizard
 
 ## Internals
 
