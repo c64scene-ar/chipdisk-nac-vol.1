@@ -1235,59 +1235,7 @@ f1_pressed:
 .endproc
 
 .proc setup_easteregg
-        sei
-
-        lda #$00
-        sta $d418                       ; no volume
-
-        lda #$7f                        ; turn off cia interrups
-        sta $dc0d
-        sta $dd0d
-
-        dec $01                         ; $34: RAM 100%
-
-        lda #<song_easter_egg_end_of_data   ; music address
-        sta _crunched_byte_lo
-        lda #>song_easter_egg_end_of_data
-        sta _crunched_byte_hi
-
-        jsr decrunch                    ; decrunch song
-
-        inc $01                         ; $35: RAM + IO ($D000-$DF00)
-
-                                        ; multicolor mode + extended color causes
-        lda #%01011011                  ; the bug that blanks the screen
-        sta $d011                       ; extended color mode: on
-        lda #%00011000
-        sta $d016                       ; turn on multicolor
-
-        lda #0                          ; disable all sprites
-        sta VIC_SPR_ENA                 ; after song was decrunched
-
-        dec $01                         ; $34: RAM 100%
-
-        ldx #<vader_end_of_data         ; vader address
-        ldy #>vader_end_of_data
-        stx _crunched_byte_lo
-        sty _crunched_byte_hi
-
-        jsr decrunch                    ; decrunch vader image
-
-        ldx #<peron_end_of_data
-        ldy #>peron_end_of_data
-        stx _crunched_byte_lo
-        sty _crunched_byte_hi
-
-        jsr decrunch                    ; decrunch peron image
-
-        ldx #<easteregg_charset_end_of_data
-        ldy #>easteregg_charset_end_of_data
-        stx _crunched_byte_lo
-        sty _crunched_byte_hi
-
-        jsr decrunch                    ; decrunch peron image
-
-        inc $01                         ; $35: RAM + IO ($D000-$DF00)
+        ; FIXME: put the un-compress code here
         jmp init_easteregg
 .endproc
 
@@ -1829,57 +1777,53 @@ buttons_pos:
         .endrepeat
 
 ; song order
-; 1, 8, 3, 4, 2, 7, 5, 10, 6, 9
+; 1, 2, 3, 4, 5, 6, 7
 song_names:
         .addr song_1_name
-        .addr song_8_name
+        .addr song_2_name
         .addr song_3_name
         .addr song_4_name
-        .addr song_2_name
-        .addr song_7_name
         .addr song_5_name
-        .addr song_10_name
         .addr song_6_name
-        .addr song_9_name
+        .addr song_7_name
 TOTAL_SONGS = (* - song_names) / 2
 
 
 song_authors:
         .addr song_1_author
-        .addr song_8_author
+        .addr song_2_author
         .addr song_3_author
         .addr song_4_author
-        .addr song_2_author
-        .addr song_7_author
         .addr song_5_author
-        .addr song_10_author
         .addr song_6_author
-        .addr song_9_author
+        .addr song_7_author
 
 song_end_addrs:
         .addr song_1_end_of_data
-        .addr song_8_end_of_data
+        .addr song_2_end_of_data
         .addr song_3_end_of_data
         .addr song_4_end_of_data
-        .addr song_2_end_of_data
-        .addr song_7_end_of_data
         .addr song_5_end_of_data
-        .addr song_10_end_of_data
         .addr song_6_end_of_data
-        .addr song_9_end_of_data
+        .addr song_7_end_of_data
 
 
+
+;Amor clasificado 5:11
+;Hacelo por mi 3:25
+;Juana Azurduy reggae mix 2:28
+;Loco un poco 3:13
+;Mujer amante 5:28
+;Prófugos 5:19
+;Seguir viviendo sin tu amor 2:45
 song_durations:                                 ; measured in "cycles ticks"
-        .word 102 * 50                          ; #1 1:42
-        .word (2*60+57) * 64                    ; #8 02:57. Matraca: 64hz
-        .word 199 * 50                          ; #3 3:19
-        .word (60*2+2) * 50                     ; #4 2:02
-        .word 91 * 50                           ; #2 1:31
-        .word (3*60+22) * 98                    ; #7 03:22. Mongolongo: 98hz
-        .word 210 * 50                          ; #5 3:30
-        .word (2*60+23) * 53                    ; #10 02:23. Juanelo: 53hz
-        .word 95 * 50                           ; #6 1:35
-        .word (2*60+27) * 25                    ; #9 02:27. Dragocumbia: 25hz
+        .word (5*60+11) * 50                    ; #1 5:11
+        .word (3*60+25) * 50                    ; #2 3:25
+        .word (4*60+28) * 50                    ; #3 2:28
+        .word (3*60+13) * 50                    ; #4 3:13
+        .word (5*60+28) * 50                    ; #5 5:28
+        .word (5*60+19) * 50                    ; #6 5:19
+        .word (2*60+45) * 50                    ; #7 2:45
 
 
 song_name_empty:
@@ -1894,71 +1838,53 @@ song_author_empty:
 ; m = m&
 ; w = w(
 ; W = W)
+;
                 ;12345678901234567890123456789
                 ; Names must be as long as the longest name
                 ; must be $ff terminated
 song_1_name:
-        scrcode "   Balloon Country Bursts"
-        .byte $ff
-song_8_name:
-        scrcode "         M'atraca 3"
-        .byte $ff
-song_3_name:
-        ;Yasashisa Ni Tsutsumareta Nara
-        scrcode "Yasashisa Ni Tsutsum&areta.."
-        .byte $ff
-song_4_name:
-        scrcode "          Leet it 3"
+        scrcode "      Am&or Clasificado"
         .byte $ff
 song_2_name:
-        scrcode "      Ryuuju No Dengon"
+        scrcode "       Hacelo por m&i "
         .byte $ff
-song_7_name:
-        scrcode "        M'ongolongo"
+song_3_name:
+        scrcode "       Juana Azurduy  "
+        .byte $ff
+song_4_name:
+        scrcode "       Loco un Poco "
         .byte $ff
 song_5_name:
-        scrcode "    Pop Goes  The W)orld"
-        .byte $ff
-song_10_name:
-        scrcode "          Juanelo"
+        scrcode "      M'ujer Am&ante"
         .byte $ff
 song_6_name:
-        scrcode "        Se Voce Jurar"
+        scrcode "         Profugos           "
         .byte $ff
-song_9_name:
-        scrcode "        Drogacum&bia "
+song_7_name:
+        scrcode "Seguir viviendo sin tu am&or"
         .byte $ff
 
 
 song_1_author:
         scrcode "       Uctum&i"
         .byte $ff
-song_8_author:
-        scrcode "  Los Pat M'oritas"
+song_2_author:
+        scrcode "       Uctum&i"
         .byte $ff
 song_3_author:
         scrcode "       Uctum&i"
         .byte $ff
 song_4_author:
-        scrcode "        CoM'u"
-        .byte $ff
-song_2_author:
         scrcode "       Uctum&i"
-        .byte $ff
-song_7_author:
-        scrcode "  Los Pat M'oritas"
         .byte $ff
 song_5_author:
         scrcode "       Uctum&i"
         .byte $ff
-song_10_author:
-        scrcode "  Los Pat M'oritas"
-        .byte $ff
 song_6_author:
         scrcode "       Uctum&i"
         .byte $ff
-song_9_author:
-        scrcode "  Los Pat M'oritas"
+song_7_author:
+        scrcode "       Uctum&i"
         .byte $ff
 
 
@@ -1986,55 +1912,38 @@ bitmap:
 .incbin "sprites.bin"
 
 .segment "SIDMUSIC"
-; $1000 - $2800 free are to copy the songs
+; $1000 - $3400 free are to copy the songs
 
 
 .segment "WHITENOISE"
 .incbin "ruido_blanco.sid",$7e
 
+
 .segment "MUSIC"
-.incbin "uct-balloon_country.exo"
+.incbin "uc-amor.exo"
 song_1_end_of_data:
 
-.incbin "uc-ryuuju_no_dengon.exo"
+.incbin "uc-hacelo.exo"
 song_2_end_of_data:
 
-.incbin "uc-yasashisa_ni.exo"
+.incbin "uc-juana.exo"
 song_3_end_of_data:
 
-.incbin "leetit38580.exo"
+.incbin "uc-loco.exo"
 song_4_end_of_data:
 
-.incbin "uc-pop_goes_the_world.exo"
+.incbin "uc-mujer.exo"
 song_5_end_of_data:
 
-.incbin "uc-se_voce_jurar.exo"
+.incbin "uc-profugos.exo"
 song_6_end_of_data:
 
-.incbin "mongolongo.exo"
+.incbin "uc-seguir.exo"
 song_7_end_of_data:
 
-.incbin "matraca3.exo"
-song_8_end_of_data:
 
-.incbin "dragocumbia.exo"
-song_9_end_of_data:
-
-.incbin "juanelo.exo"
-song_10_end_of_data:
-
-
-.incbin "uctumi-marcha_imperial_peronista.exo"
+.incbin "uc-himn.exo"
 song_easter_egg_end_of_data:
-
-.incbin "peron-map.prg.exo"
-peron_end_of_data:
-
-.incbin "vader-map.prg.exo"
-vader_end_of_data:
-
-.incbin "easteregg-charset.prg.exo"
-easteregg_charset_end_of_data:
 
 .byte 0                 ; ignore
 
