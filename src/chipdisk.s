@@ -1819,7 +1819,7 @@ song_end_addrs:
 song_durations:                                 ; measured in "cycles ticks"
         .word (5*60+11) * 50                    ; #1 5:11
         .word (3*60+25) * 50                    ; #2 3:25
-        .word (4*60+28) * 50                    ; #3 2:28
+        .word (2*60+28) * 50                    ; #3 2:28
         .word (3*60+13) * 50                    ; #4 3:13
         .word (5*60+28) * 50                    ; #5 5:28
         .word (5*60+19) * 50                    ; #6 5:19
