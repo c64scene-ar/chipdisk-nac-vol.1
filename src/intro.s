@@ -349,3 +349,7 @@ logo_label:
 
 .segment "INTROCHARSET"
         .incbin "octavo-arlequin-pvmlogoc64_1m_remix-charset.bin"
+
+.segment "EASTEREGG1"
+        .incbin "sol_screen.exo"
+        .incbin "sol_color.exo"
