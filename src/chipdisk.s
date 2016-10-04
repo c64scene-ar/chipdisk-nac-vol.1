@@ -21,8 +21,8 @@
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .import __SPRITES_LOAD__
 .import decrunch                        ; exomizer decrunch
-.import init_easteregg
 .import intro_main
+.import EASTEREGG_SIZE
 .export get_crunched_byte               ; needed for exomizer decruncher
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -121,7 +121,10 @@ ora_addr = *+1
 
 
 .segment "CODE"
-        jsr intro_main
+        jmp intro_main
+
+.export player_main
+.proc player_main
         sei
 
         lda #$35                        ; no basic, no kernal
@@ -254,6 +257,7 @@ process_events:
         lda $d01e                       ; load / clear the collision bits
 
         rts
+.endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; do_raster_anims
@@ -1234,12 +1238,51 @@ f1_pressed:
         .byte 0
 .endproc
 
-.proc setup_easteregg
-        ; FIXME: put the un-compress code here
-        jmp init_easteregg
+.export setup_easteregg
+.proc setup_easteregg 
+        sei
+
+        lda #0
+        sta VIC_SPR_ENA
+                                        ; multicolor mode + extended color causes
+        lda #%01011011                  ; the bug that blanks the screen
+        sta $d011                       ; extended color mode: on
+        lda #%00011000
+        sta $d016                       ; turn on multicolor
+
+        lda #$7f                        ; turn off cia interrups
+        sta $dc0d
+
+        lda #$00
+        sta $d418                       ; no volume
+
+        dec $01
+        ; easter egg code
+        ldx #<($140 + EASTEREGG_SIZE)
+        ldy #>($140 + EASTEREGG_SIZE)
+        stx _crunched_byte_lo
+        sty _crunched_byte_hi
+
+        jsr decrunch
+
+        ; easter egg song
+        ldx #<song_easter_egg_end_of_data
+        ldy #>song_easter_egg_end_of_data
+        stx _crunched_byte_lo
+        sty _crunched_byte_hi
+
+        jsr decrunch
+
+        inc $01
+
+        ldx #$ff
+        tsx
+
+        cli
+
+        jmp $7800                               ; easter egg start address
+
 .endproc
-
-
 
 .segment "MORECODE"
 
@@ -1950,3 +1993,7 @@ song_easter_egg_end_of_data:
 .segment "CHARSET"
 charset:
 .incbin "names-charset.bin"
+
+.segment "EASTEREGG2"
+init_easteregg:
+        nop

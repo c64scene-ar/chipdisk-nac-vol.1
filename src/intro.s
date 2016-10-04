@@ -16,6 +16,8 @@
 .macpack cbm                            ; adds support for scrcode
 .include "c64.inc"                      ; c64 constants
 
+.import player_main
+
 .segment "INTROCODE"
 
 ; INTRO SCREEN  $1c00
@@ -132,7 +134,12 @@ end:
         dec delay_out_idx
         bne :-
 
-        rts
+        ldx #$3f                        ; only use 64 bytes of stack
+        txs
+
+        jsr save_easteregg
+
+        jmp player_main
 
 delay:
         .byte 0
@@ -316,6 +323,30 @@ l0:     dex
         rts
 .endproc
 
+.proc save_easteregg
+        ldx #0
+
+l0:
+        lda easter_egg_bundle_begin,x
+        sta $140,x
+        lda easter_egg_bundle_begin + $0100,x
+        sta $240,x
+        lda easter_egg_bundle_begin + $0200,x
+        sta $340,x
+        lda easter_egg_bundle_begin + $0300,x
+        sta $440,x
+        lda easter_egg_bundle_begin + $0400,x
+        sta $540,x
+        lda easter_egg_bundle_begin + $0500,x
+        sta $640,x
+        lda easter_egg_bundle_begin + $05c0,x
+        sta $700,x
+        inx
+        bne l0
+        rts
+.endproc
+
+
 fade_in_colors_d022_idx: .byte 0
 fade_in_colors_d023_idx: .byte 0
 fade_in_colors_d022:
@@ -351,5 +382,9 @@ logo_label:
         .incbin "octavo-arlequin-pvmlogoc64_1m_remix-charset.bin"
 
 .segment "EASTEREGG1"
-        .incbin "sol_screen.exo"
-        .incbin "sol_color.exo"
+
+easter_egg_bundle_begin:
+        .incbin "easteregg-exo.prg"
+
+.export EASTEREGG_SIZE
+EASTEREGG_SIZE = * - easter_egg_bundle_begin
