@@ -28,7 +28,7 @@
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; Constants
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-DEBUG = 0                               ; rasterlines:1, music:2, all:3
+DEBUG = 3                               ; rasterlines:1, music:2, all:3
 SPRITE0_POINTER = <((__SPRITES_LOAD__ .MOD $4000) / 64)
 
 BORDER_LEFT = 32
@@ -1852,16 +1852,16 @@ song_end_addrs:
 
 
 
-;Amor clasificado 5:11
 ;Hacelo por mi 3:25
+;Amor clasificado 5:11
 ;Juana Azurduy reggae mix 2:28
 ;Loco un poco 3:13
 ;Mujer amante 5:28
 ;Prófugos 5:19
 ;Seguir viviendo sin tu amor 2:45
 song_durations:                                 ; measured in "cycles ticks"
-        .word (5*60+11+2) * 50                ; #1 5:11
         .word (3*60+25+1) * 50                ; #2 3:25
+        .word (5*60+11+2) * 50                ; #1 5:11
         .word (2*60+28+2) * 50                ; #3 2:28
         .word (3*60+13+6) * 50                ; #4 3:13
         .word (5*60+28+3) * 50                ; #5 5:28
@@ -1886,13 +1886,13 @@ song_author_empty:
                 ; Names must be as long as the longest name
                 ; must be $ff terminated
 song_1_name:
-        scrcode "      Am&or Clasificado"
+        scrcode "       Hacelo por m&i  "
         .byte $ff
 song_2_name:
-        scrcode "       Hacelo por m&i "
+        scrcode "      Am&or Clasificado"
         .byte $ff
 song_3_name:
-        scrcode "       Juana Azurduy  "
+        scrcode "       Juana Azurduy   "
         .byte $ff
 song_4_name:
         scrcode "       Loco un Poco "
@@ -1963,10 +1963,10 @@ bitmap:
 
 
 .segment "MUSIC"
-.incbin "uc-amor.exo"
+.incbin "uc-hacelo.exo"
 song_1_end_of_data:
 
-.incbin "uc-hacelo.exo"
+.incbin "uc-amor.exo"
 song_2_end_of_data:
 
 .incbin "uc-juana.exo"
