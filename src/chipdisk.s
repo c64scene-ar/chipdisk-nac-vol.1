@@ -1829,6 +1829,8 @@ song_names:
         .addr song_5_name
         .addr song_6_name
         .addr song_7_name
+        .addr song_8_name
+        .addr song_9_name
 TOTAL_SONGS = (* - song_names) / 2
 
 
@@ -1840,6 +1842,8 @@ song_authors:
         .addr song_5_author
         .addr song_6_author
         .addr song_7_author
+        .addr song_8_author
+        .addr song_9_author
 
 song_end_addrs:
         .addr song_1_end_of_data
@@ -1849,31 +1853,36 @@ song_end_addrs:
         .addr song_5_end_of_data
         .addr song_6_end_of_data
         .addr song_7_end_of_data
+        .addr song_8_end_of_data
+        .addr song_9_end_of_data
 
 
 
-;Hacelo por mi 3:25
-;Amor clasificado 5:11
-;Juana Azurduy reggae mix 2:28
-;Loco un poco 3:13
-;Mujer amante 5:28
-;Prófugos 5:19
 ;Seguir viviendo sin tu amor 2:45
+;Amor clasificado 5:11
+;Hacelo por mi 3:25
+;Juana Azurduy reggae mix 2:28
+;Mujer amante 5:28
+;Loco un poco 3:13
+;Prófugos 5:19
 song_durations:                                 ; measured in "cycles ticks"
-        .word (3*60+25+1) * 50                ; #2 3:25
-        .word (5*60+11+2) * 50                ; #1 5:11
-        .word (2*60+28+2) * 50                ; #3 2:28
-        .word (3*60+13+6) * 50                ; #4 3:13
+        .word (2*60+45+3) * 50                ; #1 2:45
+        .word (5*60+11+2) * 50                ; #2 5:11
+        .word (3*60+25+1) * 50                ; #3 3:25
+        .word (2*60+28+2) * 50                ; #4 2:28
         .word (5*60+28+3) * 50                ; #5 5:28
-        .word (5*60+19+3) * 50                ; #6 5:19
-        .word (2*60+45+3) * 50                ; #7 2:45
+        .word (3*60+13+6) * 50                ; #6 3:13
+        .word (5*60+19+3) * 50                ; #7 5:19
+
+        .word (2*60+45+3) * 50                ; #8 ???
+        .word (2*60+45+3) * 50                ; #9 ???
 
 
 song_name_empty:
         scrcode "                            "
         .byte $ff
 song_author_empty:
-        scrcode "                  "
+        scrcode "                "
         .byte $ff
 
 ; M, m, w and W uses two chars to render
@@ -1886,25 +1895,31 @@ song_author_empty:
                 ; Names must be as long as the longest name
                 ; must be $ff terminated
 song_1_name:
-        scrcode "       Hacelo por m&i  "
+        scrcode "Seguir viviendo sin tu am&or"
         .byte $ff
 song_2_name:
-        scrcode "      Am&or Clasificado"
+        scrcode "      Am&or Clasificado     "
         .byte $ff
 song_3_name:
-        scrcode "       Juana Azurduy   "
+        scrcode "       Hacelo por m&i  "
         .byte $ff
 song_4_name:
-        scrcode "       Loco un Poco "
+        scrcode "       Juana Azurduy "
         .byte $ff
 song_5_name:
         scrcode "      M'ujer Am&ante"
         .byte $ff
 song_6_name:
-        scrcode "         Profugos           "
+        scrcode "       Loco un Poco "
         .byte $ff
 song_7_name:
-        scrcode "Seguir viviendo sin tu am&or"
+        scrcode "         Profugos   "
+        .byte $ff
+song_8_name:
+        scrcode "        Last Tango  "
+        .byte $ff
+song_9_name:
+        scrcode "       Chew(ing Gum&"
         .byte $ff
 
 
@@ -1928,6 +1943,12 @@ song_6_author:
         .byte $ff
 song_7_author:
         scrcode "       Uctum&i"
+        .byte $ff
+song_8_author:
+        scrcode "        CoM'u "
+        .byte $ff
+song_9_author:
+        scrcode "        CoM'u"
         .byte $ff
 
 
@@ -1963,29 +1984,35 @@ bitmap:
 
 
 .segment "MUSIC"
-.incbin "uc-hacelo.exo"
+.incbin "uc-seguir.exo"
 song_1_end_of_data:
 
 .incbin "uc-amor.exo"
 song_2_end_of_data:
 
-.incbin "uc-juana.exo"
+.incbin "uc-hacelo.exo"
 song_3_end_of_data:
 
-.incbin "uc-loco.exo"
+.incbin "uc-juana.exo"
 song_4_end_of_data:
 
 .incbin "uc-mujer.exo"
 song_5_end_of_data:
 
-.incbin "uc-profugos.exo"
+.incbin "uc-loco.exo"
 song_6_end_of_data:
 
-.incbin "uc-seguir.exo"
+.incbin "uc-profugos.exo"
 song_7_end_of_data:
 
+.incbin "lastango22.exo"
+song_8_end_of_data:
 
-.incbin "uc-himn.exo"
+.incbin "chewing21.exo"
+song_9_end_of_data:
+
+
+;.incbin "uc-himn.exo"
 song_easter_egg_end_of_data:
 
 .byte 0                 ; ignore
