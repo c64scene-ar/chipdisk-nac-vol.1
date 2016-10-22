@@ -749,7 +749,7 @@ sprites_y_pos:
         .byte 150, 150, 218,    32+50, 48+50, 141+50,     120, 92
 
 sprites_color:
-        .byte 0, 1, 2,   12, 12,   6,   12, 12
+        .byte 0, 1, 2,   12, 12,   12,   12, 12
 
 sprites_pointer:
         .byte SPRITE0_POINTER + 17      ; cursor
