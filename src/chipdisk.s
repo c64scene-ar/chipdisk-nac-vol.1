@@ -1358,9 +1358,6 @@ loop:
         inc tmp_counter
         ldy tmp_counter
         jmp loop
-tmp_counter: .byte 0
-tmp_mul8_hi: .byte 0
-tmp_mul8_lo: .byte 0
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -1797,7 +1794,7 @@ tmp_mul8_lo: .byte 0
 
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; global variables
+; global variables ZP
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 sync_raster_irq:        .byte 0                 ; boolean
 sync_timer_irq:         .byte 0                 ; boolean
@@ -1808,15 +1805,19 @@ current_song:           .byte 0                 ; selected song
 joy_button_already_pressed: .byte 0             ; boolean. don't trigger the button again if it is already pressed
 mouse_button_already_pressed: .byte 0           ; boolean. don't trigger the button again if it is already pressed
 song_tick:              .word 0                 ; word. incremented on each frame, when playing
-current_button:         .byte $ff               ; byte. current button when using keyboard (default: -1)
-wheel_delay_counter:    .byte WHEEL_FF_DELAY    ; delay counter for wheel animation
 button_delay_counter:   .byte 0                 ; delay counter for button animation
 white_noise_counter:    .byte 0                 ; who many ticks white noise will be played
+tmp_counter:            .byte 0
+tmp_mul8_hi:            .byte 0
+tmp_mul8_lo:            .byte 0
+
 enable_easter_egg:      .byte 1                 ; boolean. enabled by default. if key is pressed, disable
+current_button:         .byte $ff               ; byte. current button when using keyboard (default: -1)
+wheel_delay_counter:    .byte WHEEL_FF_DELAY    ; delay counter for wheel animation
 
 buttons_pos:
         .repeat 4, II
-        .byte BORDER_LEFT + 18 + 28*II, BORDER_TOP + 145 + 14*II
+                .byte BORDER_LEFT + 18 + 28*II, BORDER_TOP + 145 + 14*II
         .endrepeat
 
 ; song order
@@ -1859,30 +1860,31 @@ song_end_addrs:
 
 
 ;Seguir viviendo sin tu amor 2:45
+;Ultimo Tango en Paris ???
 ;Amor clasificado 5:11
 ;Hacelo por mi 3:25
-;Juana Azurduy reggae mix 2:28
 ;Mujer amante 5:28
+;Juana Azurduy reggae mix 2:28
 ;Loco un poco 3:13
+;Masticar ???
 ;Prófugos 5:19
 song_durations:                                 ; measured in "cycles ticks"
         .word (2*60+45+3) * 50                ; #1 2:45
-        .word (5*60+11+2) * 50                ; #2 5:11
-        .word (3*60+25+1) * 50                ; #3 3:25
-        .word (2*60+28+2) * 50                ; #4 2:28
+        .word (2*60+45+3) * 50                ; #2 ???
+        .word (5*60+11+2) * 50                ; #3 5:11
+        .word (3*60+25+1) * 50                ; #4 3:25
         .word (5*60+28+3) * 50                ; #5 5:28
-        .word (3*60+13+6) * 50                ; #6 3:13
-        .word (5*60+19+3) * 50                ; #7 5:19
-
+        .word (2*60+28+2) * 50                ; #6 2:28
+        .word (3*60+13+6) * 50                ; #7 3:13
         .word (2*60+45+3) * 50                ; #8 ???
-        .word (2*60+45+3) * 50                ; #9 ???
+        .word (5*60+19+3) * 50                ; #9 5:19
 
 
 song_name_empty:
-        scrcode "                            "
+        scrcode "                           "
         .byte $ff
 song_author_empty:
-        scrcode "                "
+        scrcode "              "
         .byte $ff
 
 ; M, m, w and W uses two chars to render
@@ -1898,28 +1900,28 @@ song_1_name:
         scrcode "Seguir viviendo sin tu am&or"
         .byte $ff
 song_2_name:
-        scrcode "      Am&or Clasificado     "
+        scrcode "   Ultim&o Tango en Paris   "
         .byte $ff
 song_3_name:
-        scrcode "       Hacelo por m&i  "
+        scrcode "     Am&or Clasificado   "
         .byte $ff
 song_4_name:
-        scrcode "       Juana Azurduy "
+        scrcode "       Hacelo por m&i "
         .byte $ff
 song_5_name:
-        scrcode "      M'ujer Am&ante"
+        scrcode "       M'ujer Am&ante"
         .byte $ff
 song_6_name:
-        scrcode "       Loco un Poco "
+        scrcode "       Juana Azurduy "
         .byte $ff
 song_7_name:
-        scrcode "         Profugos   "
+        scrcode "       Loco un Poco "
         .byte $ff
 song_8_name:
-        scrcode "        Last Tango  "
+        scrcode "         M'asticar "
         .byte $ff
 song_9_name:
-        scrcode "       Chew(ing Gum&"
+        scrcode "         Profugos "
         .byte $ff
 
 
@@ -1927,7 +1929,7 @@ song_1_author:
         scrcode "       Uctum&i"
         .byte $ff
 song_2_author:
-        scrcode "       Uctum&i"
+        scrcode "        CoM'u "
         .byte $ff
 song_3_author:
         scrcode "       Uctum&i"
@@ -1948,7 +1950,7 @@ song_8_author:
         scrcode "        CoM'u "
         .byte $ff
 song_9_author:
-        scrcode "        CoM'u"
+        scrcode "       Uctum&i"
         .byte $ff
 
 
@@ -1987,29 +1989,30 @@ bitmap:
 .incbin "uc-seguir.exo"
 song_1_end_of_data:
 
-.incbin "uc-amor.exo"
+.incbin "lastango22.exo"
 song_2_end_of_data:
 
-.incbin "uc-hacelo.exo"
+.incbin "uc-amor.exo"
 song_3_end_of_data:
 
-.incbin "uc-juana.exo"
+.incbin "uc-hacelo.exo"
 song_4_end_of_data:
 
 .incbin "uc-mujer.exo"
 song_5_end_of_data:
 
-.incbin "uc-loco.exo"
+.incbin "uc-juana.exo"
 song_6_end_of_data:
 
-.incbin "uc-profugos.exo"
+.incbin "uc-loco.exo"
 song_7_end_of_data:
 
-.incbin "lastango22.exo"
+.incbin "chewing21.exo"
 song_8_end_of_data:
 
-.incbin "chewing21.exo"
+.incbin "uc-profugos.exo"
 song_9_end_of_data:
+
 
 
 ;.incbin "uc-himn.exo"
