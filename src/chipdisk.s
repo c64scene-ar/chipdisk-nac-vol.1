@@ -707,7 +707,7 @@ delay:
 ; init_sprites
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_sprites
-        lda #%11111111                  ; enable sprites
+        lda #%11100111                  ; enable sprites
         sta VIC_SPR_ENA
 
         lda #%00100000
