@@ -6,7 +6,7 @@
 
 .segment "CODE"
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; init_easteregg
+; start
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .export start
 .proc start
@@ -60,7 +60,10 @@
         stx $dc04                       ; it plays at 50.125hz
         sty $dc05
 
-;        jsr $1000
+        lda #0
+        tax
+        tay
+        jsr $1000
 
         cli
 
@@ -99,7 +102,7 @@ self:
         pha
 
         lda $dc0d                       ; clears CIA interrupts, in particular timer A
-;        jsr $1003
+        jsr $1003
 
         pla                             ; restores A, X, Y
         tay

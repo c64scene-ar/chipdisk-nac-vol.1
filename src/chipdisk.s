@@ -754,12 +754,12 @@ sprites_color:
 sprites_pointer:
         .byte SPRITE0_POINTER + 17      ; cursor
         .byte SPRITE0_POINTER + 16      ; cursor
-        .byte SPRITE0_POINTER + 7       ; LED
-        .byte SPRITE0_POINTER + 8       ; artifact fix #1
-        .byte SPRITE0_POINTER + 9       ; artifact fix #2
+        .byte SPRITE0_POINTER + 18      ; LED
+        .byte SPRITE0_POINTER + 19      ; artifact fix #1 (unused)
+        .byte SPRITE0_POINTER + 19      ; artifact fix #2 (unused)
         .byte SPRITE0_POINTER + 5       ; counter
-        .byte SPRITE0_POINTER + 4       ; casette wheel
-        .byte SPRITE0_POINTER + 4       ; casette wheel
+        .byte SPRITE0_POINTER + 0       ; casette wheel
+        .byte SPRITE0_POINTER + 0       ; casette wheel
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -1136,7 +1136,7 @@ OFFSET_X_BOTTOM = 13
         ldx current_song                ; update sprite counter
         txa
         clc
-        adc #SPRITE0_POINTER + 18
+        adc #SPRITE0_POINTER + 6        ; counter
         sta $63f8 + 5                   ; sprite 5
         rts
 .endproc
@@ -1280,7 +1280,7 @@ f1_pressed:
 
         cli
 
-        jmp $7800                               ; easter egg start address
+        jmp $9000                               ; easter egg start address
 
 .endproc
 
@@ -2014,8 +2014,7 @@ song_8_end_of_data:
 song_9_end_of_data:
 
 
-
-;.incbin "uc-himn.exo"
+.incbin "uc-himn.exo"
 song_easter_egg_end_of_data:
 
 .byte 0                 ; ignore
@@ -2025,5 +2024,4 @@ charset:
 .incbin "names-charset.bin"
 
 .segment "EASTEREGG2"
-init_easteregg:
-        nop
+        .byte 0
