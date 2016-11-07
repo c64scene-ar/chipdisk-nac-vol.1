@@ -42,8 +42,8 @@ WHEEL_PLAY_DELAY = 150
 LED_ON_COLOR  = 2
 LED_OFF_COLOR = 12
 
-WHITE_NOISE_INIT = $7400
-WHITE_NOISE_PLAY = $7403
+WHITE_NOISE_INIT = $7100
+WHITE_NOISE_PLAY = $7103
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; Macros
@@ -1860,23 +1860,23 @@ song_end_addrs:
 
 
 ;Seguir viviendo sin tu amor 2:45
-;Ultimo Tango en Paris ???
+;Ultimo Tango en Paris 1:46
 ;Amor clasificado 5:11
 ;Hacelo por mi 3:25
 ;Mujer amante 5:28
 ;Juana Azurduy reggae mix 2:28
 ;Loco un poco 3:13
-;Masticar ???
+;Masticar 1:47
 ;Prófugos 5:19
 song_durations:                                 ; measured in "cycles ticks"
         .word (2*60+45+3) * 50                ; #1 2:45
-        .word (2*60+45+3) * 50                ; #2 ???
+        .word (1*60+46+1) * 50                ; #2 1:46
         .word (5*60+11+2) * 50                ; #3 5:11
         .word (3*60+25+1) * 50                ; #4 3:25
         .word (5*60+28+3) * 50                ; #5 5:28
         .word (2*60+28+2) * 50                ; #6 2:28
         .word (3*60+13+6) * 50                ; #7 3:13
-        .word (2*60+45+3) * 50                ; #8 ???
+        .word (1*60+47+1) * 50                ; #8 1:47
         .word (5*60+19+3) * 50                ; #9 5:19
 
 
