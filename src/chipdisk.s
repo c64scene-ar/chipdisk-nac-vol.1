@@ -42,8 +42,8 @@ WHEEL_PLAY_DELAY = 150
 LED_ON_COLOR  = 2
 LED_OFF_COLOR = 12
 
-WHITE_NOISE_INIT = $7100
-WHITE_NOISE_PLAY = $7103
+WHITE_NOISE_INIT = $6d00
+WHITE_NOISE_PLAY = $6d03
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; Macros
@@ -2021,7 +2021,7 @@ song_easter_egg_end_of_data:
 
 .segment "CHARSET"
 charset:
-.incbin "names-charset.bin"
+.incbin "names-charset1024.bin"
 
-.segment "EASTEREGG2"
+.segment "MORECODE2"
         .byte 0
