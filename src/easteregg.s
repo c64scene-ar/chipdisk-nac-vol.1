@@ -116,10 +116,10 @@ handle_raster:
 ; void init_sprites()
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_sprites
-        lda #255; enable all sprites
+        lda #%01111111
         sta VIC_SPR_ENA
 
-        lda #%11000000
+        lda #%01000000
         sta $d010                       ; 8-bit on for sprites x
 
         lda #0
@@ -135,7 +135,7 @@ handle_raster:
 l1:
         lda sprite_x_pos,x
         sta VIC_SPR0_X,y
-        lda #250
+        lda sprite_y_pos,x
         sta VIC_SPR0_Y,y
         lda #1                          ; white color
         sta VIC_SPR0_COLOR,x            ; all sprites are white
@@ -157,7 +157,12 @@ l2:     sta SPRITE_ADDR,x               ; 8 sprites = 512 bytes = 64 * 8
 
 sprite_x_pos:
         .byte 48*0, 48*1, 48*2, 48*3
-        .byte 48*4, 48*5, (48*6) .MOD 256, (48*7) .MOD 256
+        .byte 48*4, 48*5, (48*6) .MOD 256
+        .byte 160
+sprite_y_pos:
+        .byte 252,252,252,252,252,252,252
+        .byte 32
+
 sprite_pointers:
         .byte SPRITE_PTR0+0
         .byte SPRITE_PTR0+1
