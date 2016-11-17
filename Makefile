@@ -17,7 +17,7 @@ easteregg: src/easteregg.s
 	cl65 -d -g -Ln bin/$@.sym -o bin/$@.prg -t c64 -C easteregg.cfg $^
 	exomizer mem -o bin/$@-exo.prg bin/$@.prg
 	cp bin/$@-exo.prg src/
-	#$(X64) -moncommands bin/$@.sym bin/$@.prg
+#	$(X64) -moncommands bin/$@.sym bin/$@.prg
 
 buttons:
 	src/extract_image.py 7 7 <res/buttons/play.prg >src/button_play.raw

@@ -5,6 +5,17 @@
 .include "c64.inc"                      ; c64 constants
 
 .segment "CODE"
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; ZP and other variables
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+SYNC_RASTER     = $40                   ; byte
+
+SPRITE_ADDR     = $a000
+SPRITE_PTR0     = <((SPRITE_ADDR .MOD $4000) / 64)     ; Sprite 0 at 128
+
+CHARSET_ADDR    = $b000
+
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; start
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -12,21 +23,25 @@
 .proc start
         sei
 
-        lda #$35
-        sta $01                         ; no basic, no kernal
+        lda #0
+        sta SYNC_RASTER
 
-                                        ; turn VIC on 
+                                        ; turn VIC on
         lda #%00011011                  ; charset mode, default scroll-Y position, 25-rows
         sta $d011                       ; extended color mode: off
 
         lda #%00001000                  ; no scroll, hires (mono color), 40-cols
         sta $d016                       ; turn off multicolor
 
-        lda #0
-        sta VIC_SPR_ENA
+        jsr init_sprites
+        jsr init_charset
 
-        lda #$00
-        sta $d01a                       ; no raster IRQ
+        lda #$35                        ; call it after init_charset, since it modifies $01
+        sta $01                         ; no basic, no kernal
+
+        lda #$01
+        sta $d01a                       ; enable raster IRQ
+
         lda #$7f
         sta $dc0d                       ; no timer A and B IRQ
         sta $dd0d
@@ -47,25 +62,14 @@
         lda #%00010100                  ; screen point to $0800
         sta $d018                       ; charset at $1800 (VIC)
 
-        lda #$81                        ; turn on cia interrups
-        sta $dc0d                       ; reuses the IRQ from chipdisk
+        lda #$50
+        sta $d012
 
-        ldx #<irq_vector
-        ldy #>irq_vector
+        ldx #<irq_top
+        ldy #>irq_top
         stx $fffe
         sty $ffff
 
-        ldx #<$4cc7                     ; init timer
-        ldy #>$4cc7                     ; sync with PAL
-        stx $dc04                       ; it plays at 50.125hz
-        sty $dc05
-
-        lda #0
-        tax
-        tay
-        jsr $1000
-
-        cli
 
         ldx #0
 l0:
@@ -90,20 +94,168 @@ l0:
         inx
         bne l0
 
-self:
-        jmp self
+        lda #0
+        tax
+        tay
+        jsr $1000                       ; init sid
+
+        cli
+
+main_loop:
+        lda SYNC_RASTER
+        beq main_loop
+
+handle_raster:
+        dec SYNC_RASTER
+        jsr $1003
+        jsr animate_scroll
+        jmp main_loop
 .endproc
 
-.proc irq_vector
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; void init_sprites()
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc init_sprites
+        lda #255; enable all sprites
+        sta VIC_SPR_ENA
+
+        lda #%11000000
+        sta $d010                       ; 8-bit on for sprites x
+
+        lda #0
+        sta $d01c                       ; no sprite multi-color. hi-res only
+
+        lda #%11111111
+        sta $d017                       ; no y double resolution
+        sta $d01d                       ; no x double resolution
+
+
+        ldx #7
+        ldy #14
+l1:
+        lda sprite_x_pos,x
+        sta VIC_SPR0_X,y
+        lda #250
+        sta VIC_SPR0_Y,y
+        lda #1                          ; white color
+        sta VIC_SPR0_COLOR,x            ; all sprites are white
+        lda sprite_pointers,x
+        sta $87f8,x                     ; sprite pointers
+        dey
+        dey
+        dex
+        bpl l1
+
+        lda #0                          ; all sprites are clean
+        tax
+l2:     sta SPRITE_ADDR,x               ; 8 sprites = 512 bytes = 64 * 8
+        sta SPRITE_ADDR+$100,x
+        dex
+        bne l2
+
+        rts
+
+sprite_x_pos:
+        .byte 48*0, 48*1, 48*2, 48*3
+        .byte 48*4, 48*5, (48*6) .MOD 256, (48*7) .MOD 256
+sprite_pointers:
+        .byte SPRITE_PTR0+0
+        .byte SPRITE_PTR0+1
+        .byte SPRITE_PTR0+2
+        .byte SPRITE_PTR0+3
+        .byte SPRITE_PTR0+4
+        .byte SPRITE_PTR0+5
+        .byte SPRITE_PTR0+6
+        .byte SPRITE_PTR0+7
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; void init_charset()
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc init_charset
+        lda #%00110001          ; make the CPU see the Character Generator ROM...
+        sta $01                 ; ...at $D000 by storing %00110001 into location $01
+
+        lda #$d8                ; load high byte of $D000
+        sta $fc                 ; store it in a free location we use as vector
+        lda #$b0
+        sta $fe                 ; $FD/$FE = $b000
+
+        ldy #$00                ; init counter with 0
+        sty $fb                 ; store it as low byte in the $FB/$FC vector
+        sty $fd                 ; $FD/$FE vector
+
+        ldx #8
+
+l0:     lda ($fb),y             ; read byte from vector stored in $fb/$fc
+        sta ($fd),y             ; store it in $fd/$fe
+        iny                     ; do this 255 times...
+        bne l0                  ; ..for low byte $00 to $FF
+        inc $fc                 ; when we passed $FF increase high byte...
+        inc $fe
+        dex                     ; ... and decrease X by one before restart
+        bne l0                  ; We repeat this until X becomes Zero
+
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; IRQ: irq_top()
+;------------------------------------------------------------------------------;
+; used to open the top/bottom borders
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc irq_top
         pha                             ; saves A, X, Y
         txa
         pha
         tya
         pha
 
-        lda $dc0d                       ; clears CIA interrupts, in particular timer A
-        jsr $1003
+        asl $d019                       ; clears raster interrupt
 
+        lda #$f8
+        sta $d012
+
+        ldx #<irq_bottom
+        ldy #>irq_bottom
+        stx $fffe
+        sty $ffff
+
+        inc SYNC_RASTER
+
+        jmp exit_irq
+
+
+irq_bottom:
+        pha                             ; saves A, X, Y
+        txa
+        pha
+        tya
+        pha
+
+        asl $d019                       ; clears raster interrupt
+
+        lda $d011                       ; open vertical borders trick
+        and #%11110111                  ; first switch to 24 cols-mode...
+        sta $d011
+
+:       lda $d012
+        cmp #$ff
+        bne :-
+
+        lda $d011                       ; ...a few raster lines switch to 25 cols-mode again
+        ora #%00001000
+        sta $d011
+
+
+        lda #50
+        sta $d012
+        ldx #<irq_top
+        ldy #>irq_top
+        stx $fffe
+        sty $ffff
+
+exit_irq:
         pla                             ; restores A, X, Y
         tay
         pla
@@ -111,6 +263,105 @@ self:
         pla
         rti                             ; restores previous PC, status
 .endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; animate_scroll
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc animate_scroll
+
+        ; zero page variables f0-f9 are being used by the sid player (I guess)
+        ; use fa-ff then
+        lda #0
+        sta $fa                         ; tmp variable
+
+        ldx #<CHARSET_ADDR
+        ldy #>CHARSET_ADDR
+        stx $fc
+        sty $fd                         ; pointer to charset
+
+load_scroll_addr = * + 1
+        lda scroll_text                 ; self-modifying
+        cmp #$ff
+        bne next
+        ldx #0
+        stx bit_idx
+        ldx #<scroll_text
+        ldy #>scroll_text
+        stx load_scroll_addr
+        sty load_scroll_addr+1
+        lda scroll_text
+
+next:
+        clc                             ; char_idx * 8
+        asl
+        rol $fa
+        asl
+        rol $fa
+        asl
+        rol $fa
+
+        tay                             ; char_def = ($fc),y
+        sty $fb                         ; to be used in the bottom part of the char
+
+        clc
+        lda $fd
+        adc $fa                         ; A = charset[char_idx * 8]
+        sta $fd
+
+
+        ; scroll top 8 bytes
+        ; YY = sprite rows
+        ; SS = sprite number
+        .repeat 8, YY
+                lda ($fc),y
+                ldx bit_idx             ; set C according to the current bit index
+:               asl
+                dex
+                bpl :-
+
+        .repeat 8, SS
+                rol SPRITE_ADDR + (7 - SS) * 64 + YY * 3 + 2
+                rol SPRITE_ADDR + (7 - SS) * 64 + YY * 3 + 1
+                rol SPRITE_ADDR + (7 - SS) * 64 + YY * 3 + 0
+        .endrepeat
+                iny                     ; byte of the char
+        .endrepeat
+
+
+        ldx bit_idx
+        inx
+        cpx #8
+        bne l1
+
+        ldx #0
+        clc
+        lda load_scroll_addr
+        adc #1
+        sta load_scroll_addr
+        bcc l1
+        inc load_scroll_addr+1
+l1:
+        stx bit_idx
+
+        rts
+
+bit_idx:
+        .byte 0                         ; points to the bit displayed
+.endproc
+
+scroll_text:
+        scrcode "...Oid mortales el grito sagrado, LIBERTAD, LIBERTAD, LIBERTAD. Bueno, aca va lo que tenga que ir."
+        scrcode "Le quiero enviar un saludo a mi mama que me esta viendo, y a nadie mas. No hay espacio para usar caracteres custom"
+        scrcode " asi que vamos a tener que usar los del sistema. Algo mas? Bueno, chau. Probando probando probando"
+        scrcode " chau!....."
+        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
+        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
+        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
+        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
+        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
+        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
+        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
+        .byte $ff
 
 easteregg_screen:
 ;screen char data
