@@ -156,8 +156,8 @@ l2:     sta SPRITE_ADDR,x               ; 8 sprites = 512 bytes = 64 * 8
         rts
 
 sprite_x_pos:
-        .byte 48*0, 48*1, 48*2, 48*3
-        .byte 48*4, 48*5, (48*6) .MOD 256
+        .byte 48*0+10, 48*1+10, 48*2+10, 48*3+10
+        .byte 48*4+10, 48*5+10, (48*6+10) .MOD 256
         .byte 160
 sprite_y_pos:
         .byte 252,252,252,252,252,252,252
