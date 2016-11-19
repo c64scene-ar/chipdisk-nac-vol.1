@@ -1089,8 +1089,8 @@ OFFSET_X_UPPER = 14
         lda #>song_author_empty
         sta $fd
 
-OFFSET_Y_BOTTOM = 7
-OFFSET_X_BOTTOM = 13
+OFFSET_Y_BOTTOM = 9
+OFFSET_X_BOTTOM = 16
         ldx #<(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
         ldy #>(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
         jsr plot_name
@@ -1126,8 +1126,8 @@ OFFSET_X_UPPER = 14
         lda song_authors+1,x
         sta $fd
 
-OFFSET_Y_BOTTOM = 7
-OFFSET_X_BOTTOM = 13
+OFFSET_Y_BOTTOM = 9
+OFFSET_X_BOTTOM = 16
         ldx #<(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
         ldy #>(bitmap + OFFSET_Y_BOTTOM * 8 * 40 + OFFSET_X_BOTTOM * 8)
         jsr plot_name
@@ -1881,10 +1881,10 @@ song_durations:                                 ; measured in "cycles ticks"
 
 
 song_name_empty:
-        scrcode "                           "
+        scrcode "                            "
         .byte $ff
 song_author_empty:
-        scrcode "              "
+        scrcode "       "
         .byte $ff
 
 ; M, m, w and W uses two chars to render
@@ -1926,31 +1926,31 @@ song_9_name:
 
 
 song_1_author:
-        scrcode "       Uctum&i"
+        scrcode "Uctum&i"
         .byte $ff
 song_2_author:
-        scrcode "        CoM'u "
+        scrcode " CoM'u "
         .byte $ff
 song_3_author:
-        scrcode "       Uctum&i"
+        scrcode "Uctum&i"
         .byte $ff
 song_4_author:
-        scrcode "       Uctum&i"
+        scrcode "Uctum&i"
         .byte $ff
 song_5_author:
-        scrcode "       Uctum&i"
+        scrcode "Uctum&i"
         .byte $ff
 song_6_author:
-        scrcode "       Uctum&i"
+        scrcode "Uctum&i"
         .byte $ff
 song_7_author:
-        scrcode "       Uctum&i"
+        scrcode "Uctum&i"
         .byte $ff
 song_8_author:
-        scrcode "        CoM'u "
+        scrcode " CoM'u "
         .byte $ff
 song_9_author:
-        scrcode "       Uctum&i"
+        scrcode "Uctum&i"
         .byte $ff
 
 
