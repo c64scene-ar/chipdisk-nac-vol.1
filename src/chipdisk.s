@@ -707,7 +707,7 @@ delay:
 ; init_sprites
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc init_sprites
-        lda #%11100111                  ; enable sprites
+        lda #%11111111                  ; enable sprites
         sta VIC_SPR_ENA
 
         lda #%00100000
@@ -715,7 +715,6 @@ delay:
         lda #0
         sta $d01c                       ; sprite multi-color. hi-res only
         sta $d017                       ; y double resolution
-        lda #%00011000
         sta $d01d                       ; x double resolution
 
 
@@ -743,20 +742,20 @@ l1:
         ; sprite 5: counter
         ; sprite 6, 7: spinning casette wheels
 sprites_x_pos:
-        .byte 150, 150, 240,    142+24, 184+24, <(232+24 .MOD 255),     202, 146
+        .byte 150, 150, 240,    128+24, 144+24, <(232+24 .MOD 255),     202, 146
 
 sprites_y_pos:
-        .byte 150, 150, 218,    32+50, 48+50, 141+50,     120, 92
+        .byte 150, 150, 218,    67+50, 75+50, 141+50,     120, 92
 
 sprites_color:
-        .byte 0, 1, 2,   12, 12,   12,   12, 12
+        .byte 0, 1, 2,   4, 6,   12,   12, 12
 
 sprites_pointer:
         .byte SPRITE0_POINTER + 17      ; cursor
         .byte SPRITE0_POINTER + 16      ; cursor
         .byte SPRITE0_POINTER + 18      ; LED
-        .byte SPRITE0_POINTER + 19      ; artifact fix #1 (unused)
-        .byte SPRITE0_POINTER + 19      ; artifact fix #2 (unused)
+        .byte SPRITE0_POINTER + 19      ; artifact fix #1
+        .byte SPRITE0_POINTER + 19      ; artifact fix #2
         .byte SPRITE0_POINTER + 5       ; counter
         .byte SPRITE0_POINTER + 0       ; casette wheel
         .byte SPRITE0_POINTER + 0       ; casette wheel

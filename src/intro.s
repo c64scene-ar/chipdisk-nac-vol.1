@@ -51,7 +51,7 @@
         lda #%00011000                  ; no scroll, multi-color,40-cols
         sta $d016
 
-        lda #%00011000                  ; screen addr 0x1c00, charset at $2000
+        lda #%00011000                  ; screen addr 0x0400, charset at $2000
         sta $d018
 
         lda #0                          ; no sprites
