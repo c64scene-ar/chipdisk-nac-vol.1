@@ -40,8 +40,8 @@ WHEEL_BASE_FRAME = SPRITE0_POINTER
 WHEEL_FF_DELAY   = 90
 WHEEL_PLAY_DELAY = 150
 
-LED_ON_COLOR  = 2
-LED_OFF_COLOR = 12
+LED_ON_COLOR  = 5
+LED_OFF_COLOR = 13
 
 WHITE_NOISE_INIT = $6d00
 WHITE_NOISE_PLAY = $6d03
@@ -747,13 +747,13 @@ l1:
         ; sprite 5: counter
         ; sprite 6, 7: spinning casette wheels
 sprites_x_pos:
-        .byte 150, 150, 240,    128+24, 144+24, <(232+24 .MOD 255),     202, 146
+        .byte 150, 150, 240,    128+24, 144+24, <(232+25 .MOD 255),     202, 146
 
 sprites_y_pos:
-        .byte 150, 150, 218,    67+50, 75+50, 141+50,     120, 92
+        .byte 150, 150, 218,    67+50, 75+50, 141+51,     120, 92
 
 sprites_color:
-        .byte 0, 1, 2,   4, 6,   12,   12, 12
+        .byte 0, 1, 5,   4, 6,   14,   12, 12
 
 sprites_pointer:
         .byte SPRITE0_POINTER + 17      ; cursor
