@@ -6,7 +6,7 @@ X64 = x64
 
 all: easteregg chipdisk
 
-SRC = src/chipdisk.s src/exodecrunch.s src/intro.s
+SRC = src/main.s src/chipdisk.s src/exodecrunch.s src/intro.s src/utils.s
 
 chipdisk: ${SRC}
 	cl65 -d -g -Ln bin/$@.sym -o bin/$@.prg -u __EXEHDR__ -t c64 -C chipdisk.cfg $^

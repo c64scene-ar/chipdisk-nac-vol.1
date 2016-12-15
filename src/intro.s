@@ -104,6 +104,7 @@ l:      lda logo_label + $0000,x        ; paint logo
 
         cli
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 
         lda #5
         sta delay
@@ -127,6 +128,8 @@ l2:
         dec delay
         bne l0
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+
 end:
         jsr fade_out_logo
 
@@ -140,6 +143,7 @@ end:
         jsr save_easteregg
 
         jmp player_main
+
 
 delay:
         .byte 0

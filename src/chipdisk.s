@@ -23,6 +23,7 @@
 .import decrunch                        ; exomizer decrunch
 .import intro_main
 .import EASTEREGG_SIZE
+.import ut_vic_video_type
 .export get_crunched_byte               ; needed for exomizer decruncher
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -119,9 +120,7 @@ ora_addr = *+1
 .endscope
 .endmacro
 
-
 .segment "CODE"
-        jmp intro_main
 
 .export player_main
 .proc player_main
@@ -163,15 +162,21 @@ ora_addr = *+1
         stx $fffe
         sty $ffff
 
-        lda #<$4cc7                     ; init timer
-        sta $dc04                       ; it plays at 50.125hz
-        lda #>$4cc7                     ; sync with PAL
-        sta $dc05
+        jsr setup_timer_speed
+
+        ldx timer_speed
+        ldy timer_speed+1
+        stx $dc04                       ; it plays at 50.125hz
+        sty $dc05
 
         lda $dc0d                       ; ack possible interrupts
         lda $dd0d
         asl $d019
 
+        lda #$11
+        sta $dc0e                       ; start timer interrupt A
+
+        lda #0
         jsr WHITE_NOISE_INIT            ; init white noise sid
 
         jsr do_play_song                ; start song 0 at the beginning
@@ -994,6 +999,8 @@ next_song:
 
         inc $01                         ; $35: RAM + IO ($D000-$DF00)
 
+        jsr update_freq_table             ; update freq table
+                                        ; do it after decruch
 
 ;        lda #0
 ;        jsr WHITE_NOISE_INIT            ; init white noise sid
@@ -1001,10 +1008,10 @@ next_song:
         lda #75
         sta white_noise_counter         ; play it for one second (50 frames)
 
-        ldx #<$4cc7                     ; init timer
-        ldy #>$4cc7                     ; sync with PAL
-        stx $dc04                       ; it plays at 50.125hz
-        sty $dc05                       ; we have to call this everytime
+;        ldx #<$4cc7                     ; init timer
+;        ldy #>$4cc7                     ; sync with PAL
+;        stx $dc04                       ; it plays at 50.125hz
+;        sty $dc05                       ; we have to call this everytime
 
         lda #$81                        ; turn on cia interrups
         sta $dc0d
@@ -1238,7 +1245,7 @@ f1_pressed:
 .endproc
 
 .export setup_easteregg
-.proc setup_easteregg 
+.proc setup_easteregg
         sei
 
         lda #0
@@ -1820,7 +1827,7 @@ buttons_pos:
         .endrepeat
 
 ; song order
-; 1, 2, 3, 4, 5, 6, 7
+; 1, 2, 3, 4, 5, 6, 7, 8, 9
 song_names:
         .addr song_1_name
         .addr song_2_name
@@ -1856,6 +1863,30 @@ song_end_addrs:
         .addr song_8_end_of_data
         .addr song_9_end_of_data
 
+song_table_freq_addrs_lo:
+        .addr $1700
+        .addr $17eb
+        .addr $164c
+        .addr $151b
+        .addr $151b
+        .addr $151b
+        .addr $16ea
+        .addr $17eb
+        .addr $1779
+
+song_table_freq_addrs_hi:
+        .addr $1760
+        .addr $1783
+        .addr $15e4
+        .addr $14bb
+        .addr $14bb
+        .addr $14bb
+        .addr $1682
+        .addr $1785
+        .addr $1711
+
+timer_speed:
+        .addr $4cc7                             ; default: PAL 50.128hz
 
 
 ;Seguir viviendo sin tu amor 2:45
@@ -2023,4 +2054,136 @@ charset:
 .incbin "names-charset1024.bin"
 
 .segment "MORECODE2"
-        .byte 0
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; void setup_timer_speed()
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc setup_timer_speed
+        ;   $01 --> PAL
+        ;   $2F --> PAL-N
+        ;   $28 --> NTSC
+        ;   $2e --> NTSC-OLD
+        lda ut_vic_video_type
+        cmp #$01
+        beq exit
+        cmp #$2f
+        beq do_paln
+
+do_ntsc:                                                ; fall through: ntsc
+        ldx #<$4fb2
+        ldy #>$4fb2
+        bne store
+
+do_paln:
+        ldx #<$4fc1
+        ldy #>$4fc1
+
+store:
+        stx timer_speed
+        sty timer_speed+1
+exit:
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; void update_freq_table()
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc update_freq_table
+        ;   $01 --> PAL
+        ;   $2F --> PAL-N
+        ;   $28 --> NTSC
+        ;   $2e --> NTSC-OLD
+        lda ut_vic_video_type
+        cmp #$01                                        ; PAL? don't update it then
+        bne l0
+        rts
+
+l0:
+        cmp #$2f                                        ; PAL-N ?
+        bne l2                                          ; if so, use PAL-N tables
+
+        ldx #<ntsc_freq_table_lo
+        ldy #>ntsc_freq_table_lo
+        stx src_lo
+        sty src_lo+1
+        ldx #<ntsc_freq_table_hi
+        ldy #>ntsc_freq_table_hi
+        stx src_hi
+        sty src_hi+1
+
+
+l2:
+        lda current_song
+        asl
+        tax
+
+        lda song_table_freq_addrs_lo,x
+        sta dst_lo
+        lda song_table_freq_addrs_lo+1,x
+        sta dst_lo+1
+
+        lda song_table_freq_addrs_hi,x
+        sta dst_hi
+        lda song_table_freq_addrs_hi+1,x
+        sta dst_hi+1
+
+
+        ldx #94                                         ; copy one less
+                                                        ; since sidwizard table
+src_lo = *+1                                            ; seems to be moved
+l1:     lda ntsc_freq_table_lo,x
+dst_lo = *+1
+        sta $1000,x                                     ; self modifying
+
+src_hi = *+1
+        lda ntsc_freq_table_hi,x
+dst_hi = *+1
+        sta $1000,x                                     ; self modifying
+
+        dex
+        bpl l1
+
+        rts
+.endproc
+
+; autogenerated table: freq_table_generator.py -b440 -o8 -s12 1022727
+ntsc_freq_table_lo:
+.byte $0c,$1c,$2d,$3f,$52,$66,$7b,$92,$aa,$c3,$de,$fa  ; 0
+.byte $18,$38,$5a,$7e,$a4,$cc,$f7,$24,$54,$86,$bc,$f5  ; 1
+.byte $31,$71,$b4,$fc,$48,$98,$ed,$48,$a7,$0c,$78,$e9  ; 2
+.byte $62,$e2,$69,$f8,$90,$30,$db,$8f,$4e,$19,$f0,$d3  ; 3
+.byte $c4,$c3,$d1,$f0,$1f,$61,$b6,$1e,$9d,$32,$df,$a6  ; 4
+.byte $88,$86,$a3,$e0,$3f,$c2,$6b,$3d,$3a,$64,$be,$4c  ; 5
+.byte $0f,$0c,$46,$bf,$7d,$84,$d6,$7a,$73,$c8,$7d,$97  ; 6
+.byte $1e,$18,$8b,$7f,$fb,$07,$ac,$f4,$e7,$8f,$f9,$2f  ; 7
+ntsc_freq_table_hi:
+.byte $01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01  ; 0
+.byte $02,$02,$02,$02,$02,$02,$02,$03,$03,$03,$03,$03  ; 1
+.byte $04,$04,$04,$04,$05,$05,$05,$06,$06,$07,$07,$07  ; 2
+.byte $08,$08,$09,$09,$0a,$0b,$0b,$0c,$0d,$0e,$0e,$0f  ; 3
+.byte $10,$11,$12,$13,$15,$16,$17,$19,$1a,$1c,$1d,$1f  ; 4
+.byte $21,$23,$25,$27,$2a,$2c,$2f,$32,$35,$38,$3b,$3f  ; 5
+.byte $43,$47,$4b,$4f,$54,$59,$5e,$64,$6a,$70,$77,$7e  ; 6
+.byte $86,$8e,$96,$9f,$a8,$b3,$bd,$c8,$d4,$e1,$ee,$fd  ; 7
+
+
+; autogenerated table: freq_table_generator.py -b440 -o8 -s12 1023440
+paln_freq_table_lo:
+.byte $0c,$1c,$2d,$3f,$52,$66,$7b,$92,$aa,$c3,$de,$fa  ; 0
+.byte $18,$38,$5a,$7e,$a3,$cc,$f6,$23,$53,$86,$bb,$f4  ; 1
+.byte $30,$70,$b4,$fb,$47,$97,$ec,$46,$a6,$0b,$76,$e8  ; 2
+.byte $60,$e0,$67,$f6,$8e,$2e,$d9,$8d,$4c,$16,$ed,$d0  ; 3
+.byte $c1,$c0,$ce,$ec,$1c,$5d,$b1,$1a,$98,$2d,$da,$a0  ; 4
+.byte $82,$80,$9c,$d9,$37,$ba,$63,$34,$30,$5a,$b4,$40  ; 5
+.byte $03,$ff,$38,$b1,$6e,$74,$c5,$68,$60,$b4,$67,$81  ; 6
+.byte $07,$ff,$70,$62,$dd,$e7,$8a,$d0,$c1,$67,$ce,$02  ; 7
+paln_freq_table_hi:
+.byte $01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01  ; 0
+.byte $02,$02,$02,$02,$02,$02,$02,$03,$03,$03,$03,$03  ; 1
+.byte $04,$04,$04,$04,$05,$05,$05,$06,$06,$07,$07,$07  ; 2
+.byte $08,$08,$09,$09,$0a,$0b,$0b,$0c,$0d,$0e,$0e,$0f  ; 3
+.byte $10,$11,$12,$13,$15,$16,$17,$19,$1a,$1c,$1d,$1f  ; 4
+.byte $21,$23,$25,$27,$2a,$2c,$2f,$32,$35,$38,$3b,$3f  ; 5
+.byte $43,$46,$4b,$4f,$54,$59,$5e,$64,$6a,$70,$77,$7e  ; 6
+.byte $86,$8d,$96,$9f,$a8,$b2,$bd,$c8,$d4,$e1,$ee,$fd  ; 7
+
