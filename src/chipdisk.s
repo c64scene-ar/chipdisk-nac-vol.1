@@ -1882,7 +1882,7 @@ song_table_freq_addrs_hi:
         .addr $14bb
         .addr $14bb
         .addr $1682
-        .addr $1785
+        .addr $1783
         .addr $1711
 
 timer_speed:
