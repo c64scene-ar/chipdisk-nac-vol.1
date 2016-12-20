@@ -41,8 +41,8 @@ chipdisk_end:
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc hicode_main
         sei                             ; disable interrupts
-        lda #$00
-        sta $d01a                       ; no raster IRQ
+        lda #$01
+        sta $d01a                       ; raster IRQ
         lda #$7f
         sta $dc0d                       ; no timer A and B IRQ
         sta $dd0d
@@ -76,34 +76,155 @@ chipdisk_end:
 
         ldx #0
 
-@l0:    lda bitmap_color + $000,x       ; copy color ram
+@l0:    lda bitmap_color + $000,x       ; copy color ram, first 14 rows
         sta $d800,x
         lda bitmap_color + $100,x
         sta $d900,x
-        lda bitmap_color + $200,x
-        sta $da00,x
-        lda bitmap_color + $300,x
-        sta $db00,x
+        lda bitmap_color + $130,x
+        sta $d900 + $130,x
         inx
         bne @l0
+
+        lda #1                          ; rest should be 1 (white)
+@l00:   sta $da30,x                     ; for the labels
+        sta $db00,x
+        inx
+        bne @l00
+
+        ldx #<irq_bitmap                ; setup irq
+        ldy #>irq_bitmap
+        stx $fffe
+        sty $ffff
+
         cli
 
 
-@l1:
+@main:
+                                        ; wait for space bar
+                                        ; or wait for delay to end
+        lda delay_space_bar
+        cmp #150                        ; ~3 seconds
+        beq @end_delay
+
         lda #%01111111                  ; space ?
         sta CIA1_PRA                    ; row 7
         lda CIA1_PRB
         and #%00010000                  ; col 4
-        bne @l1
+        bne @main
 
+@end_delay:
+
+        sei
+        lda $dd00                       ; Vic bank 0: $0000-$3FFF
+        and #%11111100
+        ora #3
+        sta $dd00
+
+        lda #%00001000                  ; no scroll, multi-color off, 40-cols
+        sta $d016
+
+        lda #%00010100                  ; screen addr 0x0400, charset at $1000
+        sta $d018
+
+        lda #%00011011                  ; bitmap mode disabled
+        sta $d011
+
+        asl $d019                       ; ack raster irq
+        lda #0
+        sta $d01a                       ; disable irq
+
+        ldx #0
+        lda #$20
+:       sta $0400,x                     ; clears the screen memory
+        sta $0500,x
+        sta $0600,x
+        sta $06e8,x
+        inx                             ; 1000 bytes = 40*25
+        bne :-
 
         ldx #0                          ; decrunch table. clean it
 @l2:    sta $0200,x
         inx
         bne @l2
+        cli
 
         jmp do_decrunch
+
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+irq_bitmap:
+        pha                             ; saves A, X, Y
+        txa
+        pha
+        tya
+        pha
+
+        asl $d019                       ; clears raster interrupt
+
+        lda #%00011000                  ; no scroll, multi-color,40-cols
+        sta $d016
+
+        lda #%10000000                  ; screen addr 0x2000, bitmap at $0000
+        sta $d018
+
+        lda #%00111011                  ; bitmap mode enabled
+        sta $d011
+
+        ldx #<irq_text
+        ldy #>irq_text
+        stx $fffe
+        sty $ffff
+
+        lda #50 + (15*8)
+        sta $d012
+
+        pla                             ; restores A, X, Y
+        tay
+        pla
+        tax
+        pla
+        rti                             ; restores previous PC, status
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+irq_text:
+        pha                             ; saves A, X, Y
+        txa
+        pha
+        tya
+        pha
+
+        asl $d019                       ; clears raster interrupt
+
+        lda #%00001000                  ; no scroll, multi-color off, 40-cols
+        sta $d016
+
+        lda #%11101100                  ; screen addr 0x3800, charset at $3000
+        sta $d018
+
+        lda #%00011011                  ; bitmap mode disabled
+        sta $d011
+
+        ldx #<irq_bitmap
+        ldy #>irq_bitmap
+        stx $fffe
+        sty $ffff
+
+        lda #0
+        sta $d012
+
+        inc delay_space_bar
+
+        pla                             ; restores A, X, Y
+        tay
+        pla
+        tax
+        pla
+        rti                             ; restores previous PC, status
+
 .endproc
+
+delay_space_bar:
+        .byte 0
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ;segment "BITMAP" $C000
@@ -124,6 +245,17 @@ chipdisk_end:
 bitmap_color:
         .incbin "intro_half.attrib"
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "CHARSET" $F000
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.segment "CHARSET"
+        .incbin "octavo-arlequin-pvmlogoc64_1m_remix-charset.bin"
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "TEXT" $F800
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.segment "TEXT"
+        .incbin "octavo-arlequin-pvmlogoc64_1m_remix-map.bin"
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ;segment "DECRUNCH"
@@ -153,11 +285,8 @@ get_crunched_byte:
         bne _byte_skip_hi
         dec _byte_hi
 _byte_skip_hi:
-        inc $01
-        sta $d020
-        stx $d020
-        sty $d020
-        dec $01
+        inc $07e7
+        dec $07e6
 
         dec _byte_lo
 _byte_lo = * + 1

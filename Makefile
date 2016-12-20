@@ -22,6 +22,8 @@ easteregg: src/easteregg.s
 	cp bin/$@-exo.prg src/
 
 intro: src/intro.s
+	-cp res/octavo-arlequin-pvmlogoc64_1m_remix-map.bin src/
+	-cp res/octavo-arlequin-pvmlogoc64_1m_remix-charset.bin src/
 	cl65 -d -g -Ln bin/$@.sym -o bin/$@.prg -u __EXEHDR__ -t c64 -C intro.cfg $^
 	exomizer sfx sys -x1 -Di_line_number=1996 -o bin/$@-exo.prg bin/$@.prg
 	$(X64) -moncommands bin/$@.sym bin/$@-exo.prg
