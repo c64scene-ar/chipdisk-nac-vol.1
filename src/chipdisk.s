@@ -22,7 +22,6 @@
 .import __SPRITES_LOAD__
 .import decrunch                        ; exomizer decrunch
 .import intro_main
-.import EASTEREGG_SIZE
 .import ut_vic_video_type
 .export get_crunched_byte               ; needed for exomizer decruncher
 
@@ -120,11 +119,17 @@ ora_addr = *+1
 .endscope
 .endmacro
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "CODE"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .segment "CODE"
-
 .export player_main
 .proc player_main
         sei
+
+        ldx #$3f                        ; only use 64 bytes of stack
+        txs
+        jsr save_easteregg
 
         lda #$35                        ; no basic, no kernal
         sta $01
@@ -1997,24 +2002,40 @@ tmp_img_button:
 .res 441, 0       ; reserved for temporary storing
                   ; button bitmap before being pressed
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "BITMAP"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .segment "BITMAP"
 bitmap:
 .incbin "datasette.bitmap"
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "COLORMAP"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .segment "COLORMAP"
 .incbin "datasette.colormap"
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "SPRITES"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .segment "SPRITES"
 .incbin "sprites.bin"
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "SIDMUSIC"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .segment "SIDMUSIC"
 ; $1000 - $3400 free are to copy the songs
 
-
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "WHITENOISE"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .segment "WHITENOISE"
 .incbin "ruido_blanco.sid",$7e
 
-
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "MUSIC"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .segment "MUSIC"
 .incbin "uc-seguir.exo"
 song_1_end_of_data:
@@ -2049,10 +2070,51 @@ song_easter_egg_end_of_data:
 
 .byte 0                 ; ignore
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "CHARSET"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .segment "CHARSET"
 charset:
 .incbin "names-charset1024.bin"
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "INTROCODE"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.segment "INTROCODE"
+.proc save_easteregg
+        ldx #0
+
+l0:
+        lda easter_egg_bundle_begin,x
+        sta $140,x
+        lda easter_egg_bundle_begin + $0100,x
+        sta $240,x
+        lda easter_egg_bundle_begin + $0200,x
+        sta $340,x
+        lda easter_egg_bundle_begin + $0300,x
+        sta $440,x
+        lda easter_egg_bundle_begin + $0400,x
+        sta $540,x
+        lda easter_egg_bundle_begin + $0500,x
+        sta $640,x
+        lda easter_egg_bundle_begin + $05c0,x
+        sta $700,x
+        inx
+        bne l0
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "EASTEREGG1"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.segment "EASTEREGG1"
+easter_egg_bundle_begin:
+        .incbin "easteregg-exo.prg"
+EASTEREGG_SIZE = * - easter_egg_bundle_begin
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "MORECODE2"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .segment "MORECODE2"
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;

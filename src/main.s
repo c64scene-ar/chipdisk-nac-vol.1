@@ -1,6 +1,7 @@
 
 .import ut_detect_pal_paln_ntsc
 .import intro_main
+.import player_main
 
 .segment "CODE"
 
@@ -9,6 +10,4 @@ main:
         sta $01
 
         jsr ut_detect_pal_paln_ntsc
-        jsr intro_main                                  ; stack will be broken.
-                                                        ; calls player_main directly
-        jmp main
+        jmp player_main

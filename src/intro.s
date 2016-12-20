@@ -16,23 +16,31 @@
 .macpack cbm                            ; adds support for scrcode
 .include "c64.inc"                      ; c64 constants
 
-.import player_main
-
-.segment "INTROCODE"
-
-; INTRO SCREEN  $1c00
-; INTRO CHARSET $2000
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; void intro_main()
+;segment "CODE"
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.export intro_main
-.proc intro_main
-        sei                             ; disable interrupts
+.segment "CODE"
 
-        lda #$35                        ; no basic, no kernal
+        lda #$35                        ; no basic, no kernal, vic
         sta $01
+        jmp hicode_main
 
+chipdisk_begin:
+.incbin "chipdisk-exo.prg"
+chipdisk_end:
+        .byte 0
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "HICODE"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.segment "HICODE"
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; void hicode()
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc hicode_main
+        sei                             ; disable interrupts
         lda #$00
         sta $d01a                       ; no raster IRQ
         lda #$7f
@@ -43,16 +51,19 @@
         lda $dc0d                       ; ACK timer A interrupt
         lda $dd0d                       ; ACK timer B interrupt
 
-        lda $dd00                       ; Vic bank 0: $0000-$3FFF (default)
-        and #$fc
-        ora #3
+        lda $dd00                       ; Vic bank 3: $C000-$FFFF
+        and #%11111100
+        ora #0
         sta $dd00
 
         lda #%00011000                  ; no scroll, multi-color,40-cols
         sta $d016
 
-        lda #%00011000                  ; screen addr 0x0400, charset at $2000
+        lda #%10000000                  ; screen addr 0x2000, charset at $0000, bitmap at $0000
         sta $d018
+
+        lda #%00111011                  ; bitmap mode enabled
+        sta $d011
 
         lda #0                          ; no sprites
         sta VIC_SPR_ENA
@@ -63,332 +74,362 @@
         sta $d022
         sta $d023
 
+        ldx #0
 
-        ldx #$00
-l:      lda logo_label + $0000,x        ; paint logo
-        sta $0400 + $0000,x
-        tay
-        lda logo_attrib_data,y
-        and #%00001000                  ; only 0 or 8. both are black in MC mode
+@l0:    lda bitmap_color + $000,x       ; copy color ram
         sta $d800,x
-
-        lda logo_label + $0100,x
-        sta $0400 + $0100,x
-        tay
-        lda logo_attrib_data,y
-        and #%00001000                  ; only 0 or 8. both are black in MC mode
+        lda bitmap_color + $100,x
         sta $d900,x
-
-        lda logo_label + $0200,x
-        sta $0400 + $0200,x
-        tay
-        lda logo_attrib_data,y
-        and #%00001000                  ; only 0 or 8. both are black in MC mode
+        lda bitmap_color + $200,x
         sta $da00,x
-
-        lda logo_label + $02e8,x
-        sta $0400 + $02e8,x
-        tay
-        lda logo_attrib_data,y
-        and #%00001000                  ; only 0 or 8. both are black in MC mode
-        sta $dae8,x
-
+        lda bitmap_color + $300,x
+        sta $db00,x
         inx
-        bne l
-
-:       jsr fade_delay_2                ; delay
-        dec delay_in_idx
-        bne :-
-
-        jsr fade_in
-
+        bne @l0
         cli
 
-;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 
-        lda #5
-        sta delay
-
-l0:     ldx #0
-l1:     ldy #0
-
-l2:
+@l1:
         lda #%01111111                  ; space ?
         sta CIA1_PRA                    ; row 7
         lda CIA1_PRB
         and #%00010000                  ; col 4
-        beq end
+        bne @l1
 
-        dey
-        bne l2
 
-        dex
-        bne l1
+        ldx #0                          ; decrunch table. clean it
+@l2:    sta $0200,x
+        inx
+        bne @l2
 
-        dec delay
-        bne l0
+        jmp do_decrunch
+.endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "BITMAP" $C000
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.segment "BITMAP"
+        .incbin "intro_half.bitmap"
 
-end:
-        jsr fade_out_logo
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "SCREENRAM" $E000
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.segment "SCREENRAM"
+        .incbin "intro_half.colormap"
 
-:       jsr fade_delay_2                ; delay
-        dec delay_out_idx
-        bne :-
-
-        ldx #$3f                        ; only use 64 bytes of stack
-        txs
-
-        jsr save_easteregg
-
-        jmp player_main
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "COLORRAM" $E200
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.segment "COLORRAM"
+bitmap_color:
+        .incbin "intro_half.attrib"
 
 
-delay:
-        .byte 0
-delay_in_idx:
-        .byte 20
-delay_out_idx:
-        .byte 20
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;segment "DECRUNCH"
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.segment "DECRUNCH"
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; void do_decrunch()
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc do_decrunch
+        dec $01                         ; everything is RAM
+        jsr decrunch
+        inc $01                         ; using $d000 for VIC again
+        jmp $0820                       ; jump to chipdisk
 .endproc
 
-.proc fade_in
-        jsr fade_in_logo
-        jmp fade_in_chars
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; void get_crunched_byte()
+;
+; The decruncher jsr:s to the get_crunched_byte address when it wants to
+; read a crunched byte. This subroutine has to preserve x and y register
+; and must not modify the state of the carry flag.
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc get_crunched_byte
+get_crunched_byte:
+        lda _byte_lo
+        bne _byte_skip_hi
+        dec _byte_hi
+_byte_skip_hi:
+        inc $01
+        sta $d020
+        stx $d020
+        sty $d020
+        dec $01
+
+        dec _byte_lo
+_byte_lo = * + 1
+_byte_hi = * + 2
+        lda chipdisk_end                        ; needs to be set correctly before
+        rts			                            ; decrunch_file is called.
 .endproc
 
-.proc fade_in_logo
-        ldx fade_in_colors_d022_idx
-        lda fade_in_colors_d022,x
-        sta $d022
-        inc fade_in_colors_d022_idx
+; end_of_data needs to point to the address just after the address
+; of the last byte of crunched data.
+; -------------------------------------------------------------------
+; if literal sequences is not used (the data was crunched with the -c
+; flag) then the following line can be uncommented for shorter code.
+;LITERAL_SEQUENCES_NOT_USED = 1
+; -------------------------------------------------------------------
+; zero page addresses used
+; -------------------------------------------------------------------
+zp_len_lo = $a7
 
-        ldx fade_in_colors_d023_idx
-        lda fade_in_colors_d023,x
-        sta $d023
-        inc fade_in_colors_d023_idx
+zp_src_lo  = $ae
+zp_src_hi  = zp_src_lo + 1
 
-        ldy #0
-l0:     lda $d800,y
-        and #$0f
-        pha
-        lda $0400,y
-        tax
-        pla
-        cmp logo_attrib_data,x
-        beq next2
-        tax
-        lda fade_in_colors_mc,x
-        sta $d800,y
+zp_bits_hi = $fc
 
-next2:
-        lda $d900,y
-        and #$0f
-        pha
-        lda $0500,y
-        tax
-        pla
-        cmp logo_attrib_data,x
-        beq next3
-        tax
-        lda fade_in_colors_mc,x
-        sta $d900,y
+zp_bitbuf  = $fd
+zp_dest_lo = zp_bitbuf + 1	; dest addr lo
+zp_dest_hi = zp_bitbuf + 2	; dest addr hi
 
-next3:
-        dey
-        bne l0
+decrunch_table = $0200
+tabl_bi = decrunch_table
+tabl_lo = decrunch_table + 52
+tabl_hi = decrunch_table + 104
 
-        jsr fade_delay_2
+; -------------------------------------------------------------------
+; no code below this comment has to be modified in order to generate
+; a working decruncher of this source file.
+; However, you may want to relocate the tables last in the file to a
+; more suitable address.
+; -------------------------------------------------------------------
 
-        dec iters
-        beq end
-        jmp fade_in_logo
-end:
-        rts
-iters:
-        .byte 8
-.endproc
+; -------------------------------------------------------------------
+; jsr this label to decrunch, it will in turn init the tables and
+; call the decruncher
+; no constraints on register content, however the
+; decimal flag has to be #0 (it almost always is, otherwise do a cld)
+decrunch:
+; -------------------------------------------------------------------
+; init zeropage, x and y regs. (12 bytes)
+;
+	ldy #0
+	ldx #3
+init_zp:
+	jsr get_crunched_byte
+	sta zp_bitbuf - 1,x
+	dex
+	bne init_zp
+; -------------------------------------------------------------------
+; calculate tables (50 bytes)
+; x and y must be #0 when entering
+;
+nextone:
+	inx
+	tya
+	and #$0f
+	beq shortcut		; starta på ny sekvens
 
-.proc fade_in_chars
-        ldy #0
-l0:
-        lda $da00,y
-        and #$0f
-        pha
-        lda $0600,y
-        tax
-        pla
-        cmp logo_attrib_data,x
-        beq next0
-        tax
-        lda fade_in_colors_mc,x
-        sta $da00,y
-next0:
-        iny
-        bne l0
+	txa			; this clears reg a
+	lsr a			; and sets the carry flag
+	ldx tabl_bi-1,y
+rolle:
+	rol a
+	rol zp_bits_hi
+	dex
+	bpl rolle		; c = 0 after this (rol zp_bits_hi)
 
-l1:     lda $db00,y
-        and #$0f
-        pha
-        lda $0700,y
-        tax
-        pla
-        cmp logo_attrib_data,x
-        beq next1
-        tax
-        lda fade_in_colors_mc,x
-        sta $db00,y
-next1:
+	adc tabl_lo-1,y
+	tax
 
-        iny
-        cpy #$e8
-        bne l1
+	lda zp_bits_hi
+	adc tabl_hi-1,y
+shortcut:
+	sta tabl_hi,y
+	txa
+	sta tabl_lo,y
 
-        jsr fade_delay_2
-
-        dec iters
-        bne fade_in_chars
-        rts
-iters:
-        .byte 16
-.endproc
-
-.proc fade_out_logo
-
-        dec fade_in_colors_d022_idx
-        ldx fade_in_colors_d022_idx             ; reuse fade_in palette
-        lda fade_in_colors_d022,x               ; from back to front
-        sta $d022
-
-        dec fade_in_colors_d023_idx
-        ldx fade_in_colors_d023_idx             ; reuse fade_in palette
-        lda fade_in_colors_d023,x               ; from back to front
-        sta $d023
-
-
-        ldy #0
-l0:     lda $d800,y
-        and #$0f
-        tax
-        lda fade_out_colors_mc,x
-        sta $d800,y
-
-        lda $d900,y
-        and #$0f
-        tax
-        lda fade_out_colors_mc,x
-        sta $d900,y
-
-        lda $da00,y
-        and #$0f
-        tax
-        lda fade_out_colors_mc,x
-        sta $da00,y
-
-        dey
-        bne l0
-
-l1:     lda $db00,y
-        and #$0f
-        tax
-        lda fade_out_colors_mc,x
-        sta $db00,y
-        iny
-        cpy #$e8
-        bne l1
-
-        jsr fade_delay
-
-        dec iters
-        bne fade_out_logo
-        rts
-iters:
-        .byte 8
-.endproc
-
-.proc fade_delay
-        ldy #4
-l1:     ldx #0
-l0:     dex
-        bne l0
-        dey
-        bne l1
-        rts
-.endproc
-
-.proc fade_delay_2
-        ldy #20
-l1:     ldx #0
-l0:     dex
-        bne l0
-        dey
-        bne l1
-        rts
-.endproc
-
-.proc save_easteregg
-        ldx #0
-
-l0:
-        lda easter_egg_bundle_begin,x
-        sta $140,x
-        lda easter_egg_bundle_begin + $0100,x
-        sta $240,x
-        lda easter_egg_bundle_begin + $0200,x
-        sta $340,x
-        lda easter_egg_bundle_begin + $0300,x
-        sta $440,x
-        lda easter_egg_bundle_begin + $0400,x
-        sta $540,x
-        lda easter_egg_bundle_begin + $0500,x
-        sta $640,x
-        lda easter_egg_bundle_begin + $05c0,x
-        sta $700,x
-        inx
-        bne l0
-        rts
-.endproc
-
-
-fade_in_colors_d022_idx: .byte 0
-fade_in_colors_d023_idx: .byte 0
-fade_in_colors_d022:
-        .byte $00,$09,$0b,$02,$04,$08,$0c,$0e
-fade_in_colors_d023:
-        .byte $00,$00,$00,$06,$06,$09,$09,$0b
-
-fade_in_colors_mc:
-        ;       0   1   2   3   4   5   6   7
-        ;       8   9   a   b   c   d   e   f
-        .byte $06,$01,$04,$07,$05,$03,$02,$01
-        .byte $0e,$09,$0c,$0f,$0d,$0b,$0a,$09
-
-        ;     $00,$06,$02,$04,$05,$03,$07,$01
-
-fade_out_colors_mc:
-        ;       0   1   2   3   4   5   6   7
-        ;       8   9   a   b   c   d   e   f
-        .byte $00,$07,$06,$05,$02,$04,$00,$03
-        .byte $08,$0f,$0e,$0d,$0a,$0c,$08,$0b
-
-;       .byte $0d,$0f,$0a,$0e,$0c,$08,$0b,$09,$00
-;       .byte $01,$07,$03,$05,$04,$02,$06,$00,$00
-
-logo_attrib_data:
-        .incbin "octavo-arlequin-pvmlogoc64_1m_remix-colors.bin"
-
-.segment "INTROSCREEN"
-logo_label:
-        .incbin "octavo-arlequin-pvmlogoc64_1m_remix-map.bin"
-
-.segment "INTROCHARSET"
-        .incbin "octavo-arlequin-pvmlogoc64_1m_remix-charset.bin"
-
-.segment "EASTEREGG1"
-
-easter_egg_bundle_begin:
-        .incbin "easteregg-exo.prg"
-
-.export EASTEREGG_SIZE
-EASTEREGG_SIZE = * - easter_egg_bundle_begin
+	ldx #4
+	jsr get_bits		; clears x-reg.
+	sta tabl_bi,y
+	iny
+	cpy #52
+	bne nextone
+	ldy #0
+	beq begin
+; -------------------------------------------------------------------
+; get bits (29 bytes)
+;
+; args:
+;   x = number of bits to get
+; returns:
+;   a = #bits_lo
+;   x = #0
+;   c = 0
+;   z = 1
+;   zp_bits_hi = #bits_hi
+; notes:
+;   y is untouched
+; -------------------------------------------------------------------
+get_bits:
+	lda #$00
+	sta zp_bits_hi
+	cpx #$01
+	bcc bits_done
+bits_next:
+	lsr zp_bitbuf
+	bne ok
+	pha
+literal_get_byte:
+	jsr get_crunched_byte
+	bcc literal_byte_gotten
+	ror a
+	sta zp_bitbuf
+	pla
+ok:
+	rol a
+	rol zp_bits_hi
+	dex
+	bne bits_next
+bits_done:
+	rts
+; -------------------------------------------------------------------
+; main copy loop (18(16) bytes)
+;
+copy_next_hi:
+	dex
+	dec zp_dest_hi
+	dec zp_src_hi
+copy_next:
+	dey
+.IFNDEF LITERAL_SEQUENCES_NOT_USED
+	bcc literal_get_byte
+.ENDIF
+	lda (zp_src_lo),y
+literal_byte_gotten:
+	sta (zp_dest_lo),y
+copy_start:
+	tya
+	bne copy_next
+begin:
+	txa
+	bne copy_next_hi
+; -------------------------------------------------------------------
+; decruncher entry point, needs calculated tables (21(13) bytes)
+; x and y must be #0 when entering
+;
+.IFNDEF LITERAL_SEQUENCES_NOT_USED
+	inx
+	jsr get_bits
+	tay
+	bne literal_start1
+.ELSE
+	dey
+.ENDIF
+begin2:
+	inx
+	jsr bits_next
+	lsr a
+	iny
+	bcc begin2
+.IFDEF LITERAL_SEQUENCES_NOT_USED
+	beq literal_start
+.ENDIF
+	cpy #$11
+.IFNDEF LITERAL_SEQUENCES_NOT_USED
+	bcc sequence_start
+	beq bits_done
+; -------------------------------------------------------------------
+; literal sequence handling (13(2) bytes)
+;
+	ldx #$10
+	jsr get_bits
+literal_start1:
+	sta <zp_len_lo
+	ldx <zp_bits_hi
+	ldy #0
+	bcc literal_start
+sequence_start:
+.ELSE
+	bcs bits_done
+.ENDIF
+; -------------------------------------------------------------------
+; calulate length of sequence (zp_len) (11 bytes)
+;
+	ldx tabl_bi - 1,y
+	jsr get_bits
+	adc tabl_lo - 1,y	; we have now calculated zp_len_lo
+	sta zp_len_lo
+; -------------------------------------------------------------------
+; now do the hibyte of the sequence length calculation (6 bytes)
+	lda zp_bits_hi
+	adc tabl_hi - 1,y	; c = 0 after this.
+	pha
+; -------------------------------------------------------------------
+; here we decide what offset table to use (20 bytes)
+; x is 0 here
+;
+	bne nots123
+	ldy zp_len_lo
+	cpy #$04
+	bcc size123
+nots123:
+	ldy #$03
+size123:
+	ldx tabl_bit - 1,y
+	jsr get_bits
+	adc tabl_off - 1,y	; c = 0 after this.
+	tay			; 1 <= y <= 52 here
+; -------------------------------------------------------------------
+; Here we do the dest_lo -= len_lo subtraction to prepare zp_dest
+; but we do it backwards:	a - b == (b - a - 1) ^ ~0 (C-syntax)
+; (16(16) bytes)
+	lda zp_len_lo
+literal_start:			; literal enters here with y = 0, c = 1
+	sbc zp_dest_lo
+	bcc noborrow
+	dec zp_dest_hi
+noborrow:
+	eor #$ff
+	sta zp_dest_lo
+	cpy #$01		; y < 1 then literal
+.IFNDEF LITERAL_SEQUENCES_NOT_USED
+	bcc pre_copy
+.ELSE
+	bcc literal_get_byte
+.ENDIF
+; -------------------------------------------------------------------
+; calulate absolute offset (zp_src) (27 bytes)
+;
+	ldx tabl_bi,y
+	jsr get_bits;
+	adc tabl_lo,y
+	bcc skipcarry
+	inc zp_bits_hi
+	clc
+skipcarry:
+	adc zp_dest_lo
+	sta zp_src_lo
+	lda zp_bits_hi
+	adc tabl_hi,y
+	adc zp_dest_hi
+	sta zp_src_hi
+; -------------------------------------------------------------------
+; prepare for copy loop (8(6) bytes)
+;
+	pla
+	tax
+.IFNDEF LITERAL_SEQUENCES_NOT_USED
+	sec
+pre_copy:
+	ldy <zp_len_lo
+	jmp copy_start
+.ELSE
+	ldy <zp_len_lo
+	bcc copy_start
+.ENDIF
+; -------------------------------------------------------------------
+; two small static tables (6(6) bytes)
+;
+tabl_bit:
+	.byte 2,4,4
+tabl_off:
+	.byte 48,32,16
+; -------------------------------------------------------------------
+; end of decruncher
+; -------------------------------------------------------------------
+;
