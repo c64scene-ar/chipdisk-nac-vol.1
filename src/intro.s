@@ -81,7 +81,7 @@ chipdisk_end:
         lda bitmap_color + $100,x
         sta $d900,x
         lda bitmap_color + $130,x
-        sta $d900 + $130,x
+        sta $d900 + $030,x
         inx
         bne @l0
 
@@ -103,7 +103,7 @@ chipdisk_end:
                                         ; wait for space bar
                                         ; or wait for delay to end
         lda delay_space_bar
-        cmp #150                        ; ~3 seconds
+        cmp #250                        ; ~5 seconds
         beq @end_delay
 
         lda #%01111111                  ; space ?
