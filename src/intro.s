@@ -142,6 +142,13 @@ chipdisk_end:
         inx                             ; 1000 bytes = 40*25
         bne :-
 
+        lda #16                         ; P
+        sta $7e4
+        lda #22                         ; V
+        sta $7e5
+        lda #13                         ; M
+        sta $7e6
+
         ldx #0                          ; decrunch table. clean it
 @l2:    sta $0200,x
         inx
@@ -286,7 +293,7 @@ get_crunched_byte:
         dec _byte_hi
 _byte_skip_hi:
         inc $07e7
-        dec $07e6
+        dec $07e7
 
         dec _byte_lo
 _byte_lo = * + 1
