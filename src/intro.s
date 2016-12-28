@@ -243,9 +243,6 @@ irq_rasterbar:
         sta $d021                       ; 4
         inx                             ; 2
         cpx #8 * 7                      ; 2
-        nop
-        nop
-        nop
         bne @l0                         ; 2/3
 
         lda #0
