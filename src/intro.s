@@ -85,7 +85,7 @@ chipdisk_end:
         inx
         bne @l0
 
-        lda #1                          ; rest should be 1 (white)
+        lda #0                          ; rest should be 1 (white)
 @l00:   sta $da30,x                     ; for the labels
         sta $db00,x
         inx
@@ -211,6 +211,55 @@ irq_text:
         lda #%00011011                  ; bitmap mode disabled
         sta $d011
 
+        ldx #<irq_rasterbar
+        ldy #>irq_rasterbar
+        stx $fffe
+        sty $ffff
+
+        lda #50 + (8 * 15) + 5
+        sta $d012
+
+        pla                             ; restores A, X, Y
+        tay
+        pla
+        tax
+        pla
+        rti                             ; restores previous PC, status
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+irq_rasterbar:
+        pha                             ; saves A, X, Y
+        txa
+        pha
+        tya
+        pha
+
+        ldx #0
+@l0:
+        lda $d012                       ; 4
+@l1:    cmp $d012                       ; 4
+        beq @l1                         ; 2/3
+        lda palette,x                   ; 6
+        sta $d021                       ; 4
+        inx                             ; 2
+        cpx #8 * 7                      ; 2
+        bne @l0                         ; 2/3
+
+        lda #0
+        sta $d020
+        sta $d021
+
+        asl $d019                       ; clears raster interrupt
+
+        lda #%00001000                  ; no scroll, multi-color off, 40-cols
+        sta $d016
+
+        lda #%11101100                  ; screen addr 0x3800, charset at $3000
+        sta $d018
+
+        lda #%00011011                  ; bitmap mode disabled
+        sta $d011
+
         ldx #<irq_bitmap
         ldy #>irq_bitmap
         stx $fffe
@@ -218,6 +267,7 @@ irq_text:
 
         lda #0
         sta $d012
+
 
         inc delay_space_bar
 
@@ -232,6 +282,22 @@ irq_text:
 
 delay_space_bar:
         .byte 0
+
+palette:
+        .byte 0, 0
+        .byte 6, 4, 14, 14,  3, 13, 1, 1
+
+        .byte 0, 0, 0, 0,    0, 0, 0
+        .byte 0, 0, 0, 0,    0, 0, 0
+
+        .byte 1, 13, 3, 14, 14, 4, 6, 6
+
+        .byte 0, 0, 0, 0,   0, 0, 0
+        .byte 0, 0, 0, 0,   0, 0
+
+        .byte 1, 7, 15, 10, 10, 8, 2, 2
+
+        .byte 0, 0, 0, 0, 0, 0, 0
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ;segment "BITMAP" $C000
