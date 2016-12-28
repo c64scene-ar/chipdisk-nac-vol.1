@@ -243,6 +243,9 @@ irq_rasterbar:
         sta $d021                       ; 4
         inx                             ; 2
         cpx #8 * 7                      ; 2
+        nop
+        nop
+        nop
         bne @l0                         ; 2/3
 
         lda #0
@@ -284,17 +287,20 @@ delay_space_bar:
         .byte 0
 
 palette:
-        .byte 0, 0
+        .byte 6, 6
         .byte 6, 4, 14, 14,  3, 13, 1, 1
 
         .byte 0, 0, 0, 0,    0, 0, 0
-        .byte 0, 0, 0, 0,    0, 0, 0
+        .byte 0, 0, 0, 0,    0
 
+        .byte 1, 1
         .byte 1, 13, 3, 14, 14, 4, 6, 6
 
         .byte 0, 0, 0, 0,   0, 0, 0
-        .byte 0, 0, 0, 0,   0, 0
+        .byte 0, 0, 0, 0
 
+
+        .byte 1, 1
         .byte 1, 7, 15, 10, 10, 8, 2, 2
 
         .byte 0, 0, 0, 0, 0, 0, 0
