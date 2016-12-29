@@ -98,21 +98,60 @@ chipdisk_end:
 
         cli
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+main_loop:
+        lda sync_raster_irq
+        bne do_effects
 
-@main:
+post_sync_raster:
+
+        lda effect_wip
+        bne @l0                         ; skip delay if effect is still in progress
+
                                         ; wait for space bar
                                         ; or wait for delay to end
         lda delay_space_bar
-        cmp #250                        ; ~5 seconds
-        beq @end_delay
+        cmp #120                        ; ~2 seconds
+        beq end_intro
 
+@l0:
         lda #%01111111                  ; space ?
         sta CIA1_PRA                    ; row 7
         lda CIA1_PRB
         and #%00010000                  ; col 4
-        bne @main
+        bne main_loop
+        jmp end_intro
 
-@end_delay:
+do_effects:
+        dec sync_raster_irq
+
+        lda effect_wip
+        bne @l1
+        jmp post_sync_raster            ; effect finished, don't do it again
+@l1:
+
+        ldx #0                          ; do "change letter" effect
+        stx effect_wip                  ; reset "effect_wip" if not done
+
+@l0:
+        lda $f800 + 22 * 40,x
+        cmp label_linyera_ok,x          ; if letter already in place, skip
+
+        beq @skip                       ; skip, if no needed
+
+        inc $f800 + 22 * 40,x           ; inc letter
+        inc effect_wip                  ; and set effect as not done. Work in Progress
+@skip:
+        inx
+        cpx #40
+        bne @l0
+
+        jmp post_sync_raster
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; void end_intro()
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc end_intro
 
         sei
         lda $dd00                       ; Vic bank 0: $0000-$3FFF
@@ -135,12 +174,21 @@ chipdisk_end:
 
         ldx #0
         lda #$20
-:       sta $0400,x                     ; clears the screen memory
+@l0:    sta $0400,x                     ; clears the screen memory
         sta $0500,x
         sta $0600,x
         sta $06e8,x
         inx                             ; 1000 bytes = 40*25
-        bne :-
+        bne @l0
+
+        lda #15                         ; ram color. white. for PVM logo
+@l1:
+        sta $d800,x
+        sta $d900,x
+        sta $da00,x
+        sta $dae8,x
+        inx
+        bne @l1
 
         lda #16                         ; P
         sta $7e4
@@ -154,8 +202,8 @@ chipdisk_end:
         inx
         bne @l2
         cli
-
         jmp do_decrunch
+.endproc
 
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -184,6 +232,8 @@ irq_bitmap:
 
         lda #50 + (15*8)
         sta $d012
+
+        inc sync_raster_irq
 
         pla                             ; restores A, X, Y
         tay
@@ -280,9 +330,9 @@ irq_rasterbar:
 
 .endproc
 
-delay_space_bar:
-        .byte 0
-
+effect_wip:             .byte 1         ; boolean. effect Work In Progress
+sync_raster_irq:        .byte 0
+delay_space_bar:        .byte 0
 palette:
         .byte 6, 6
         .byte 6, 4, 14, 14,  3, 13, 1, 1
@@ -301,6 +351,9 @@ palette:
         .byte 1, 7, 15, 10, 10, 8, 2, 2
 
         .byte 0, 0, 0, 0, 0, 0, 0
+
+label_linyera_ok:
+        .incbin "linyera-map.bin"
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ;segment "BITMAP" $C000
