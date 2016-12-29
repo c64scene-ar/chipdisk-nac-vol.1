@@ -9,6 +9,10 @@ all: easteregg chipdisk intro
 SRC = src/main.s src/chipdisk.s src/exodecrunch.s src/utils.s
 
 chipdisk: ${SRC}
+	echo
+	echo =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	echo Building Player
+	echo =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	cl65 -d -g -Ln bin/$@.sym -o bin/$@.prg -t c64 -C chipdisk.cfg $^
 	exomizer mem -o bin/$@-exo.prg bin/$@.prg
 	cp bin/$@-exo.prg src/
@@ -17,11 +21,19 @@ chipdisk: ${SRC}
 	#$(X64) -moncommands bin/$@.sym bin/$@-exo.prg
 
 easteregg: src/easteregg.s
+	echo
+	echo =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	echo Building EasterEgg
+	echo =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	cl65 -d -g -Ln bin/$@.sym -o bin/$@.prg -t c64 -C easteregg.cfg $^
 	exomizer mem -o bin/$@-exo.prg bin/$@.prg
 	cp bin/$@-exo.prg src/
 
 intro: src/intro.s
+	echo
+	echo =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	echo Building Intro
+	echo =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	-cp res/octavo-arlequin-pvmlogoc64_1m_remix-map.bin src/
 	-cp res/octavo-arlequin-pvmlogoc64_1m_remix-charset.bin src/
 	-cp res/linyera-map.bin src/

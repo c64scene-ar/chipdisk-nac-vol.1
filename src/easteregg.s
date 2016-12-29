@@ -9,7 +9,9 @@
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; ZP and other variables
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-SYNC_RASTER     = $40                   ; byte
+ZP_SYNC_RASTER          = $40           ; byte
+ZP_EYE_OPEN_COUNTER     = $41           ; byte
+ZP_EYE_CLOSED_COUNTER   = $42           ; byte
 
 SPRITE_ADDR     = $a000
 SPRITE_PTR0     = <((SPRITE_ADDR .MOD $4000) / 64)     ; Sprite 0 at 128
@@ -24,7 +26,9 @@ CHARSET_ADDR    = $b000
         sei
 
         lda #0
-        sta SYNC_RASTER
+        sta ZP_SYNC_RASTER
+        sta ZP_EYE_OPEN_COUNTER
+        sta ZP_EYE_CLOSED_COUNTER
 
                                         ; turn VIC on
         lda #%00011011                  ; charset mode, default scroll-Y position, 25-rows
@@ -102,13 +106,14 @@ l0:
         cli
 
 main_loop:
-        lda SYNC_RASTER
+        lda ZP_SYNC_RASTER
         beq main_loop
 
 handle_raster:
-        dec SYNC_RASTER
+        dec ZP_SYNC_RASTER
         jsr $1003
         jsr animate_scroll
+        jsr animate_eye
         jmp main_loop
 .endproc
 
@@ -226,7 +231,7 @@ l0:     lda ($fb),y             ; read byte from vector stored in $fb/$fc
         stx $fffe
         sty $ffff
 
-        inc SYNC_RASTER
+        inc ZP_SYNC_RASTER
 
         jmp exit_irq
 
@@ -267,6 +272,41 @@ exit_irq:
         tax
         pla
         rti                             ; restores previous PC, status
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; animate_eye
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc animate_eye
+        dec ZP_EYE_OPEN_COUNTER
+        beq @do
+        rts
+@do:
+;screen char data
+; origin: (18, 6) = $0400 + 40 * 6 + 18
+; size: (19, 3)
+        ldx #18
+
+@l0:
+        lda eyes_closed_screen + 19 * 0,x
+        sta $8400 + 40 * 6 + 18,x
+        lda eyes_closed_screen + 19 * 1,x
+        sta $8400 + 40 * 7 + 18,x
+        lda eyes_closed_screen + 19 * 2,x
+        sta $8400 + 40 * 8 + 18,x
+
+        lda eyes_closed_color + 19 * 0,x
+        sta $d800 + 40 * 6 + 18,x
+        lda eyes_closed_color + 19 * 1,x
+        sta $d800 + 40 * 7 + 18,x
+        lda eyes_closed_color + 19 * 2,x
+        sta $d800 + 40 * 8 + 18,x
+
+        dex
+        bpl @l0
+
+        rts
+
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -423,3 +463,17 @@ easteregg_color:
 .byte  $01,$01,$01,$01,$01,$01,$07,$07,$07,$07,$07,$01,$07,$07,$01,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07
 .byte  $01,$01,$01,$01,$01,$07,$07,$07,$07,$07,$01,$07,$07,$01,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07
 .byte  $01,$01,$01,$07,$07,$07,$07,$07,$01,$01,$07,$07,$07,$07,$07,$01,$01,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$01
+
+eyes_closed_screen:
+;screen char data
+; origin: (18, 6) = $0400 + 40 * 6 + 18
+; size: (19, 3)
+.byte  $fb,$a0,$a0,$a0,$fc,$ff,$a0,$a0,$e1,$e0,$61,$a0,$a0,$7f,$fe,$a0,$a0,$a0,$ec
+.byte  $a0,$a0,$a0,$a0,$a0,$ec,$62,$a0,$dd,$e0,$dd,$a0,$62,$fb,$a0,$a0,$a0,$a0,$a0
+.byte  $f8,$c3,$c6,$c6,$c3,$fe,$cb,$a0,$dd,$e0,$dd,$a0,$ca,$fc,$c3,$c6,$c6,$c3,$f8
+
+eyes_closed_color:
+;screen color data
+.byte  $07,$07,$01,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$01,$07,$07
+.byte  $07,$07,$01,$01,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$01,$01,$01,$07
+.byte  $07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$01,$07,$07

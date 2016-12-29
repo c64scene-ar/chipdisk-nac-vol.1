@@ -2111,6 +2111,7 @@ l0:
 easter_egg_bundle_begin:
         .incbin "easteregg-exo.prg"
 EASTEREGG_SIZE = * - easter_egg_bundle_begin
+.assert EASTEREGG_SIZE < $6c0, error, "Easteregg too big to fit"
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ;segment "MORECODE2"
