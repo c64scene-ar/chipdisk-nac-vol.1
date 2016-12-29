@@ -14,6 +14,7 @@
 ; c64 helpers
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .macpack cbm                            ; adds support for scrcode
+.macpack macros                         ; our macros
 .include "c64.inc"                      ; c64 constants
 
 
@@ -126,21 +127,36 @@ do_effects:
         dec sync_raster_irq
 
         lda effect_wip
-        bne @l1
+        bne @start_effect
         jmp post_sync_raster            ; effect finished, don't do it again
-@l1:
+
+
+@start_effect:
 
         ldx #0                          ; do "change letter" effect
         stx effect_wip                  ; reset "effect_wip" if not done
 
 @l0:
-        lda $f800 + 22 * 40,x
-        cmp label_linyera_ok,x          ; if letter already in place, skip
+        lda $f800 + 40 * 16,x           ; modify: "pungas de villa..."
+        cmp label_linyera_ok + 40 * 0,x
+        beq @next0
+        inc $f800 + 40 * 16,x
+        inc effect_wip
 
-        beq @skip                       ; skip, if no needed
+@next0:
+        lda $f800 + 40 * 19,x           ; modify "presents..."
+        cmp label_linyera_ok + 40 * 1,x
+        beq @next1
+        inc $f800 + 40 * 19,x
+        inc effect_wip
 
-        inc $f800 + 22 * 40,x           ; inc letter
-        inc effect_wip                  ; and set effect as not done. Work in Progress
+@next1:
+        lda $f800 + 40 * 22,x           ; modify "de musica linyera..."
+        cmp label_linyera_ok + 40 * 2,x
+        beq @skip
+        inc $f800 + 40 * 22,x
+        inc effect_wip
+
 @skip:
         inx
         cpx #40
@@ -284,6 +300,10 @@ irq_rasterbar:
         tya
         pha
 
+        STABILIZE_RASTER
+
+        sei
+
         ldx #0
 @l0:
         lda $d012                       ; 4
@@ -334,7 +354,6 @@ effect_wip:             .byte 1         ; boolean. effect Work In Progress
 sync_raster_irq:        .byte 0
 delay_space_bar:        .byte 0
 palette:
-        .byte 6, 6
         .byte 6, 4, 14, 14,  3, 13, 1, 1
 
         .byte 0, 0, 0, 0,    0, 0, 0
