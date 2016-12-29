@@ -10,13 +10,20 @@
 ; ZP and other variables
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ZP_SYNC_RASTER          = $40           ; byte
-ZP_EYE_OPEN_COUNTER     = $41           ; byte
-ZP_EYE_CLOSED_COUNTER   = $42           ; byte
+ZP_EYE_DELAY_LO         = $41           ; byte
+ZP_EYE_DELAY_HI         = $42           ; byte
+ZP_EYE_MODE             = $43           ; byte
 
-SPRITE_ADDR     = $a000
+SPRITE_ADDR     = $b000
 SPRITE_PTR0     = <((SPRITE_ADDR .MOD $4000) / 64)     ; Sprite 0 at 128
+CHARSET_ADDR    = $c000
 
-CHARSET_ADDR    = $b000
+;DEBUG = 1
+
+.enum EYE_MODE
+        EYE_SHOULD_BE_CLOSED
+        EYE_SHOULD_BE_OPEN
+.endenum
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; start
@@ -25,10 +32,15 @@ CHARSET_ADDR    = $b000
 .proc start
         sei
 
-        lda #0
+        lda #$35
+        sta $01
+
+        lda #1
         sta ZP_SYNC_RASTER
-        sta ZP_EYE_OPEN_COUNTER
-        sta ZP_EYE_CLOSED_COUNTER
+        sta ZP_EYE_DELAY_LO
+        sta ZP_EYE_MODE
+        lda #2
+        sta ZP_EYE_DELAY_HI
 
                                         ; turn VIC on
         lda #%00011011                  ; charset mode, default scroll-Y position, 25-rows
@@ -37,11 +49,9 @@ CHARSET_ADDR    = $b000
         lda #%00001000                  ; no scroll, hires (mono color), 40-cols
         sta $d016                       ; turn off multicolor
 
+        jsr init_screen
         jsr init_sprites
         jsr init_charset
-
-        lda #$35                        ; call it after init_charset, since it modifies $01
-        sta $01                         ; no basic, no kernal
 
         lda #$01
         sta $d01a                       ; enable raster IRQ
@@ -75,8 +85,36 @@ CHARSET_ADDR    = $b000
         sty $ffff
 
 
+.ifndef DEBUG
+        lda #0
+        tax
+        tay
+        jsr $1000                       ; init sid
+.endif
+
+        cli
+
+main_loop:
+        lda ZP_SYNC_RASTER
+        beq main_loop
+
+handle_raster:
+        dec ZP_SYNC_RASTER
+
+.ifndef DEBUG
+        jsr $1003
+.endif
+        jsr animate_scroll
+        jsr animate_eye
+        jmp main_loop
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+;void init_screen()
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc init_screen
         ldx #0
-l0:
+@l0:
         lda easteregg_color + $0000,x
         sta $d800 + $0000,x
         lda easteregg_color + $0100,x
@@ -96,25 +134,8 @@ l0:
         sta $8400 + $02e8,x
 
         inx
-        bne l0
-
-        lda #0
-        tax
-        tay
-        jsr $1000                       ; init sid
-
-        cli
-
-main_loop:
-        lda ZP_SYNC_RASTER
-        beq main_loop
-
-handle_raster:
-        dec ZP_SYNC_RASTER
-        jsr $1003
-        jsr animate_scroll
-        jsr animate_eye
-        jmp main_loop
+        bne @l0
+        rts
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -188,8 +209,8 @@ sprite_pointers:
 
         lda #$d8                ; load high byte of $D000
         sta $fc                 ; store it in a free location we use as vector
-        lda #$b0
-        sta $fe                 ; $FD/$FE = $b000
+        lda #>CHARSET_ADDR
+        sta $fe                 ; $FD/$FE = $7000
 
         ldy #$00                ; init counter with 0
         sty $fb                 ; store it as low byte in the $FB/$FC vector
@@ -205,6 +226,9 @@ l0:     lda ($fb),y             ; read byte from vector stored in $fb/$fc
         inc $fe
         dex                     ; ... and decrease X by one before restart
         bne l0                  ; We repeat this until X becomes Zero
+
+        lda #%00110101          ; restore: RAM + IO
+        sta $01
 
         rts
 .endproc
@@ -278,16 +302,46 @@ exit_irq:
 ; animate_eye
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .proc animate_eye
-        dec ZP_EYE_OPEN_COUNTER
-        beq @do
+        dec ZP_EYE_DELAY_LO
+        beq @hi
         rts
+
+@hi:
+        dec ZP_EYE_DELAY_HI
+        bmi @do
+        rts
+
 @do:
+
+        lda ZP_EYE_MODE
+        cmp #EYE_MODE::EYE_SHOULD_BE_CLOSED
+        beq @close_eyes
+
+        ldx #40*3
+
+@l0:
+        lda easteregg_screen + 40 * 6,x
+        sta $8400 + 40 * 6,x
+        lda easteregg_color + 40 * 6,x
+        sta $d800 + 40 * 6,x
+        dex
+        bpl @l0
+
+        lda #1                                        ; keep them open for 10 seconds
+        sta ZP_EYE_DELAY_LO
+        lda #2
+        sta ZP_EYE_DELAY_HI
+        lda #EYE_MODE::EYE_SHOULD_BE_CLOSED
+        sta ZP_EYE_MODE
+        rts
+
+@close_eyes:
 ;screen char data
 ; origin: (18, 6) = $0400 + 40 * 6 + 18
 ; size: (19, 3)
         ldx #18
 
-@l0:
+@l1:
         lda eyes_closed_screen + 19 * 0,x
         sta $8400 + 40 * 6 + 18,x
         lda eyes_closed_screen + 19 * 1,x
@@ -303,8 +357,14 @@ exit_irq:
         sta $d800 + 40 * 8 + 18,x
 
         dex
-        bpl @l0
+        bpl @l1
 
+        lda #10                                         ; keep them closed for 0.20s
+        sta ZP_EYE_DELAY_LO
+        lda #0
+        sta ZP_EYE_DELAY_HI
+        lda #EYE_MODE::EYE_SHOULD_BE_OPEN
+        sta ZP_EYE_MODE
         rts
 
 .endproc

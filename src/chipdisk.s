@@ -127,8 +127,8 @@ ora_addr = *+1
 .proc player_main
         sei
 
-        ldx #$3f                        ; only use 64 bytes of stack
-        txs
+        ldx #$1f                        ; only use 32 bytes of stack
+        txs                             ; rest is reserved for easteregg code
         jsr save_easteregg
 
         lda #$35                        ; no basic, no kernal
@@ -1269,8 +1269,8 @@ f1_pressed:
 
         dec $01
         ; easter egg code
-        ldx #<($140 + EASTEREGG_SIZE)
-        ldy #>($140 + EASTEREGG_SIZE)
+        ldx #<($120 + EASTEREGG_SIZE)
+        ldy #>($120 + EASTEREGG_SIZE)
         stx _crunched_byte_lo
         sty _crunched_byte_hi
 
@@ -2086,18 +2086,18 @@ charset:
 
 l0:
         lda easter_egg_bundle_begin,x
-        sta $140,x
+        sta $120,x
         lda easter_egg_bundle_begin + $0100,x
-        sta $240,x
+        sta $220,x
         lda easter_egg_bundle_begin + $0200,x
-        sta $340,x
+        sta $320,x
         lda easter_egg_bundle_begin + $0300,x
-        sta $440,x
+        sta $420,x
         lda easter_egg_bundle_begin + $0400,x
-        sta $540,x
+        sta $520,x
         lda easter_egg_bundle_begin + $0500,x
-        sta $640,x
-        lda easter_egg_bundle_begin + $05c0,x
+        sta $620,x
+        lda easter_egg_bundle_begin + $05e0,x
         sta $700,x
         inx
         bne l0
@@ -2111,7 +2111,7 @@ l0:
 easter_egg_bundle_begin:
         .incbin "easteregg-exo.prg"
 EASTEREGG_SIZE = * - easter_egg_bundle_begin
-.assert EASTEREGG_SIZE < $6c0, error, "Easteregg too big to fit"
+.assert EASTEREGG_SIZE < $6e0, error, "Easteregg too big to fit"
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ;segment "MORECODE2"

@@ -18,7 +18,9 @@ chipdisk: ${SRC}
 	cp bin/$@-exo.prg src/
 	#cl65 -d -g -Ln bin/$@.sym -o bin/$@.prg -u __EXEHDR__ -t c64 -C chipdisk.cfg $^
 	#exomizer sfx sys -x1 -Di_line_number=1996 -o bin/$@-exo.prg bin/$@.prg
-	#$(X64) -moncommands bin/$@.sym bin/$@-exo.prg
+
+testchipdisk:
+	$(X64) -moncommands bin/chipdisk.sym bin/chipdisk.prg
 
 easteregg: src/easteregg.s
 	echo
@@ -28,6 +30,9 @@ easteregg: src/easteregg.s
 	cl65 -d -g -Ln bin/$@.sym -o bin/$@.prg -t c64 -C easteregg.cfg $^
 	exomizer mem -o bin/$@-exo.prg bin/$@.prg
 	cp bin/$@-exo.prg src/
+
+testeaster: easteregg
+	$(X64) -moncommands bin/easteregg.sym bin/easteregg.prg
 
 intro: src/intro.s
 	echo
