@@ -35,11 +35,11 @@ CHARSET_ADDR    = $c000
         lda #$35
         sta $01
 
-        lda #1
+        lda #0
         sta ZP_SYNC_RASTER
-        sta ZP_EYE_DELAY_LO
         sta ZP_EYE_MODE
-        lda #2
+        sta ZP_EYE_DELAY_LO
+        lda #1
         sta ZP_EYE_DELAY_HI
 
                                         ; turn VIC on
@@ -317,8 +317,7 @@ exit_irq:
         cmp #EYE_MODE::EYE_SHOULD_BE_CLOSED
         beq @close_eyes
 
-        ldx #40*3
-
+        ldx #40*3                                       ; animation to open eye
 @l0:
         lda easteregg_screen + 40 * 6,x
         sta $8400 + 40 * 6,x
@@ -327,15 +326,11 @@ exit_irq:
         dex
         bpl @l0
 
-        lda #1                                        ; keep them open for 10 seconds
-        sta ZP_EYE_DELAY_LO
-        lda #2
-        sta ZP_EYE_DELAY_HI
         lda #EYE_MODE::EYE_SHOULD_BE_CLOSED
         sta ZP_EYE_MODE
-        rts
+        jmp @set_delays
 
-@close_eyes:
+@close_eyes:                                            ; aninamtion to close eye
 ;screen char data
 ; origin: (18, 6) = $0400 + 40 * 6 + 18
 ; size: (19, 3)
@@ -349,22 +344,33 @@ exit_irq:
         lda eyes_closed_screen + 19 * 2,x
         sta $8400 + 40 * 8 + 18,x
 
-        lda eyes_closed_color + 19 * 0,x
+        lda #7
         sta $d800 + 40 * 6 + 18,x
-        lda eyes_closed_color + 19 * 1,x
         sta $d800 + 40 * 7 + 18,x
-        lda eyes_closed_color + 19 * 2,x
         sta $d800 + 40 * 8 + 18,x
 
         dex
         bpl @l1
 
-        lda #10                                         ; keep them closed for 0.20s
-        sta ZP_EYE_DELAY_LO
-        lda #0
-        sta ZP_EYE_DELAY_HI
         lda #EYE_MODE::EYE_SHOULD_BE_OPEN
         sta ZP_EYE_MODE
+
+@set_delays:
+        ldx eyes_delays_idx
+        inx
+        cpx #EYES_DELAYS_TOTAL
+        bne @l2
+        ldx #0
+@l2:
+        stx eyes_delays_idx
+
+        txa                                             ; multiply by 2
+        asl
+        tax
+        lda eyes_delays_tbl,x
+        sta ZP_EYE_DELAY_LO
+        lda eyes_delays_tbl+1,x
+        sta ZP_EYE_DELAY_HI
         rts
 
 .endproc
@@ -528,12 +534,23 @@ eyes_closed_screen:
 ;screen char data
 ; origin: (18, 6) = $0400 + 40 * 6 + 18
 ; size: (19, 3)
-.byte  $fb,$a0,$a0,$a0,$fc,$ff,$a0,$a0,$e1,$e0,$61,$a0,$a0,$7f,$fe,$a0,$a0,$a0,$ec
+.byte  $a0,$a0,$a0,$a0,$fc,$ff,$a0,$a0,$e1,$e0,$61,$a0,$a0,$7f,$fe,$a0,$a0,$a0,$a0
 .byte  $a0,$a0,$a0,$a0,$a0,$ec,$62,$a0,$dd,$e0,$dd,$a0,$62,$fb,$a0,$a0,$a0,$a0,$a0
-.byte  $f8,$c3,$c6,$c6,$c3,$fe,$cb,$a0,$dd,$e0,$dd,$a0,$ca,$fc,$c3,$c6,$c6,$c3,$f8
+.byte  $f8,$c3,$c6,$c6,$c3,$4e,$cb,$a0,$dd,$e0,$dd,$a0,$ca,$4d,$c3,$c6,$c6,$c3,$f8
 
-eyes_closed_color:
-;screen color data
-.byte  $07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07
-.byte  $07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07
-.byte  $07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07
+eyes_delays_tbl:
+        .addr $0201                     ; open:   10.0s
+        .addr $0010                     ; closed:  0.2s
+        .addr $0201                     ; open:   10.0s
+        .addr $0010                     ; closed:  0.2s
+        .addr $0201                     ; open:   10.0s
+        .addr $0005                     ; closed:  0.2s
+        .addr $0005                     ; open:    0.2s
+        .addr $0005                     ; closed:  0.2s
+        .addr $0101                     ; open:    5.0s
+        .addr $0181                     ; closed:  5.0s
+        .addr $0010                     ; open:    0.2s
+        .addr $0101                     ; closed:  5.0s
+EYES_DELAYS_TOTAL = (* - eyes_delays_tbl) / 2
+eyes_delays_idx: .byte 0
+
