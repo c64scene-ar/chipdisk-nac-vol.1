@@ -2040,7 +2040,7 @@ bitmap:
 .incbin "uc-seguir.exo"
 song_1_end_of_data:
 
-.incbin "lastango22.exo"
+.incbin "lastango24.exo"
 song_2_end_of_data:
 
 .incbin "uc-amor.exo"
@@ -2058,7 +2058,7 @@ song_6_end_of_data:
 .incbin "uc-loco.exo"
 song_7_end_of_data:
 
-.incbin "chewing21.exo"
+.incbin "chewing22.exo"
 song_8_end_of_data:
 
 .incbin "uc-profugos.exo"
