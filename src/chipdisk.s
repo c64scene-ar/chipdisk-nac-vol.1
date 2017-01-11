@@ -1294,9 +1294,9 @@ f1_pressed:
 
         inc $01
 
-;        lda #9                                  ; current song: 9
-;        sta current_song                        ; needed to update the freq table
-;        jsr update_freq_table                   ; correctly
+        lda #9                                  ; current song: 9
+        sta current_song                        ; needed to update the freq table
+        jsr update_freq_table                   ; correctly
 
         ldx #$ff
         tsx
@@ -1899,7 +1899,7 @@ song_table_freq_addrs_lo:
         .addr $16ea
         .addr $17eb
         .addr $1779
-        .addr $1779                             ; easteregg song
+        .addr $1404                             ; easteregg song
 
 song_table_freq_addrs_hi:
         .addr $1760
@@ -1911,7 +1911,7 @@ song_table_freq_addrs_hi:
         .addr $1682
         .addr $1783
         .addr $1711
-        .addr $1779                             ; easteregg song
+        .addr $1464                             ; easteregg song
 
 timer_speed:
         .addr $4cc7                             ; default: PAL 50.125hz
