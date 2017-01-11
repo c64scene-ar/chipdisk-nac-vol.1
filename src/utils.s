@@ -6,6 +6,15 @@
 ;
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; ZP and other variables
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+ZP_VIC_VIDEO_TYPE       = $60           ; byte. values:
+                                        ;   $01 --> PAL
+                                        ;   $2F --> PAL-N
+                                        ;   $28 --> NTSC
+                                        ;   $2e --> NTSC-OLD
+
 .segment "MORECODE2"
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -26,8 +35,6 @@
 ;   $2e --> NTSC-OLD
 ;
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.export ut_vic_video_type
-ut_vic_video_type: .byte $01
 
 .export ut_detect_pal_paln_ntsc
 .proc ut_detect_pal_paln_ntsc
@@ -80,7 +87,7 @@ ut_vic_video_type: .byte $01
 
         lda #$1b                        ; enable the display again
         sta $d011
-        lda ut_vic_video_type           ; load ret value
+        lda ZP_VIC_VIDEO_TYPE           ; load ret value
         rts
 
 timer_irq:
@@ -89,7 +96,7 @@ timer_irq:
         lda $dc0d                       ; clear timer A interrupt
 
         lda $d012
-        sta ut_vic_video_type
+        sta ZP_VIC_VIDEO_TYPE
 
         inc sync
         cli

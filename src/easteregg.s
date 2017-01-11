@@ -13,6 +13,12 @@ ZP_SYNC_RASTER          = $40           ; byte
 ZP_EYE_DELAY_LO         = $41           ; byte
 ZP_EYE_DELAY_HI         = $42           ; byte
 ZP_EYE_MODE             = $43           ; byte
+ZP_VIC_VIDEO_TYPE       = $60           ; byte. values:
+                                        ;   $01 --> PAL
+                                        ;   $2F --> PAL-N
+                                        ;   $28 --> NTSC
+                                        ;   $2e --> NTSC-OLD
+ZP_BIT_INDEX            = $61           ; byte  points to the bit displayed
 
 SPRITE_ADDR     = $b000
 SPRITE_PTR0     = <((SPRITE_ADDR .MOD $4000) / 64)     ; Sprite 0 at 128
@@ -30,65 +36,50 @@ CHARSET_ADDR    = $c000
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .export start
 .proc start
-        sei
 
+.ifdef DEBUG
+        sei
         lda #$35
         sta $01
-
-        lda #0
-        sta ZP_SYNC_RASTER
-        sta ZP_EYE_MODE
-        sta ZP_EYE_DELAY_LO
-        lda #1
-        sta ZP_EYE_DELAY_HI
-
-                                        ; turn VIC on
-        lda #%00011011                  ; charset mode, default scroll-Y position, 25-rows
-        sta $d011                       ; extended color mode: off
-
-        lda #%00001000                  ; no scroll, hires (mono color), 40-cols
-        sta $d016                       ; turn off multicolor
-
-        jsr init_screen
-        jsr init_sprites
-        jsr init_charset
-
-        lda #$01
-        sta $d01a                       ; enable raster IRQ
-
-        lda #$7f
-        sta $dc0d                       ; no timer A and B IRQ
-        sta $dd0d
-
-        asl $d019                       ; ACK raster interrupt
-        lda $dc0d                       ; ACK timer A interrupt
-        lda $dd0d                       ; ACK timer B interrupt
-
-        lda $dd00                       ; Vic bank 2: $8000-$bFFF
-        and #$fc
-        ora #1
-        sta $dd00
 
         lda #0
         sta $d020
         sta $d021
 
+        lda #$01
+        sta ZP_VIC_VIDEO_TYPE           ; set it to PAL in DEBUG mode
+.endif
+
+        lda #0
+        sta ZP_SYNC_RASTER
+        sta ZP_EYE_MODE
+        sta ZP_EYE_DELAY_LO
+        STA ZP_BIT_INDEX
+        lda #1
+        sta ZP_EYE_DELAY_HI
+
+        lda #$00
+        sta $d01a                       ; disable raster IRQ
+
+        asl $d019                       ; ACK raster interrupt
+        lda $dc0d                       ; ACK timer A interrupt
+        lda $dd0d                       ; ACK timer B interrupt
+
+        lda #%00010101
+        sta $dd00                       ; Vic bank 2: $8000-$bFFF
+
         lda #%00010100                  ; screen point to $0800
         sta $d018                       ; charset at $1800 (VIC)
 
-        lda #$50
-        sta $d012
-
-        ldx #<irq_top
-        ldy #>irq_top
-        stx $fffe
-        sty $ffff
+        jsr init_screen
+        jsr init_sprites
+        jsr init_charset
+        jsr init_irq
+        jsr init_nmi
 
 
 .ifndef DEBUG
         lda #0
-        tax
-        tay
         jsr $1000                       ; init sid
 .endif
 
@@ -151,13 +142,13 @@ handle_raster:
         lda #0
         sta $d01c                       ; no sprite multi-color. hi-res only
 
-        lda #%11111111
-        sta $d017                       ; no y double resolution
-        sta $d01d                       ; no x double resolution
+        lda #%01111111
+        sta $d017                       ; y double resolution
+        sta $d01d                       ; x double resolution
 
 
-        ldx #7
-        ldy #14
+        ldx #6
+        ldy #12
 l1:
         lda sprite_x_pos,x
         sta VIC_SPR0_X,y
@@ -184,10 +175,8 @@ l2:     sta SPRITE_ADDR,x               ; 8 sprites = 512 bytes = 64 * 8
 sprite_x_pos:
         .byte 48*0+10, 48*1+10, 48*2+10, 48*3+10
         .byte 48*4+10, 48*5+10, (48*6+10) .MOD 256
-        .byte 160
 sprite_y_pos:
         .byte 252,252,252,252,252,252,252
-        .byte 32
 
 sprite_pointers:
         .byte SPRITE_PTR0+0
@@ -197,7 +186,6 @@ sprite_pointers:
         .byte SPRITE_PTR0+4
         .byte SPRITE_PTR0+5
         .byte SPRITE_PTR0+6
-        .byte SPRITE_PTR0+7
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -234,67 +222,147 @@ l0:     lda ($fb),y             ; read byte from vector stored in $fb/$fc
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-; IRQ: irq_top()
-;------------------------------------------------------------------------------;
-; used to open the top/bottom borders
+; init_irq
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-.proc irq_top
-        pha                             ; saves A, X, Y
-        txa
-        pha
-        tya
-        pha
+.proc init_irq
+                                        ; setup IRQ (play music)
 
-        asl $d019                       ; clears raster interrupt
+        lda #$0                         ; stop timer A
+        sta $dc0e
 
-        lda #$f8
-        sta $d012
-
-        ldx #<irq_bottom
-        ldy #>irq_bottom
+        ldx #<irq_playmusic
+        ldy #>irq_playmusic
         stx $fffe
         sty $ffff
 
+.ifdef DEBUG
+                                        ; will be set at the correct speed from chipdisk
+        ldx #<$4cc7                     ; music speed
+        ldy #>$4cc7
+        stx $dc04                       ; low-cycle-count
+        sty $dc05                       ; high-cycle-count
+.endif
+
+:       lda $d012                       ; wait for raster at $0
+:       cmp $d012
+        beq :-
+        bmi :--
+
+        lda #%10010001                  ; and enable it
+        sta $dc0e
+
+        rts
+.endproc
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; init_nmi
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc init_nmi
+                                        ; setup NMI (open borders)
+        ldx #<nmi_openborder
+        ldy #>nmi_openborder
+        stx $fffa
+        sty $fffb
+
+        lda #$0                         ; stop timer A
+        sta $dd0e
+
+
+                                        ; PAL,      (312 by 63) $4cc8 - 1
+                                        ; PAL-N,    (312 by 65) $4f38 - 1
+                                        ; NTSC,     (263 by 65) $42c7 - 1
+                                        ; NTSC Old, (262 by 64) $4180 - 1
+
+        ldx #<$4cc7                     ; default: PAL
+        ldy #>$4cc7
+
+        lda ZP_VIC_VIDEO_TYPE           ; $01 --> PAL
+                                        ; $2F --> PAL-N
+                                        ; $28 --> NTSC
+                                        ; $2e --> NTSC-OLD
+        cmp #$01
+        beq @done
+
+        cmp #$2f
+        beq @paln
+
+        cmp #$28
+        beq @ntsc
+        bne @ntsc_old
+
+@paln:
+        ldx #<$4f37
+        ldy #>$4f37
+        bne @done
+
+@ntsc:
+        ldx #<$42c6
+        ldy #>$42c6
+        bne @done
+
+@ntsc_old:
+        ldx #<$417f
+        ldy #>$417f                     ; fall-through
+
+@done:
+        stx $dd04                       ; low-cycle-count
+        sty $dd05                       ; high-cycle-count
+
+        lda #%10000001                  ; enable timer A interrupt
+        sta $dd0d
+
+:       lda $d012                       ; wait for raster at #f9
+:       cmp $d012
+        beq :-
+        cmp #$f9
+        bne :--
+
+        lda #%10010001                  ; and enable it
+        sta $dd0e
+
+        rts
+.endproc
+
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; IRQ: irq_playmusic
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc irq_playmusic
+        pha                             ; saves A
+
+        lda $dc0d                       ; clears CIA1 timer A interrupt
+
         inc ZP_SYNC_RASTER
 
-        jmp exit_irq
+        pla                             ; restores A
+        rti                             ; restores previous PC, status
+.endproc
 
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; nmi_openborder
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+.proc nmi_openborder
+        pha                             ; saves A
 
-irq_bottom:
-        pha                             ; saves A, X, Y
-        txa
-        pha
-        tya
-        pha
+        lda $dd0d                       ; clears CIA1 timer A interrupt
 
-        asl $d019                       ; clears raster interrupt
+        inc $d020
 
         lda $d011                       ; open vertical borders trick
         and #%11110111                  ; first switch to 24 cols-mode...
         sta $d011
 
-:       lda $d012
-        cmp #$ff
+        lda #$fc
+:       cmp $d012
         bne :-
 
         lda $d011                       ; ...a few raster lines switch to 25 cols-mode again
         ora #%00001000
         sta $d011
 
+        dec $d020
 
-        lda #50
-        sta $d012
-        ldx #<irq_top
-        ldy #>irq_top
-        stx $fffe
-        sty $ffff
-
-exit_irq:
-        pla                             ; restores A, X, Y
-        tay
-        pla
-        tax
-        pla
+        pla                             ; restores A
         rti                             ; restores previous PC, status
 .endproc
 
@@ -395,7 +463,7 @@ load_scroll_addr = * + 1
         cmp #$ff
         bne next
         ldx #0
-        stx bit_idx
+        stx ZP_BIT_INDEX
         ldx #<scroll_text
         ldy #>scroll_text
         stx load_scroll_addr
@@ -425,39 +493,35 @@ next:
         ; SS = sprite number
         .repeat 8, YY
                 lda ($fc),y
-                ldx bit_idx             ; set C according to the current bit index
+                ldx ZP_BIT_INDEX             ; set C according to the current bit index
 :               asl
                 dex
                 bpl :-
 
-        .repeat 8, SS
-                rol SPRITE_ADDR + (7 - SS) * 64 + YY * 3 + 2
-                rol SPRITE_ADDR + (7 - SS) * 64 + YY * 3 + 1
-                rol SPRITE_ADDR + (7 - SS) * 64 + YY * 3 + 0
-        .endrepeat
+                .repeat 7, SS
+                        rol SPRITE_ADDR + (6 - SS) * 64 + YY * 3 + 2
+                        rol SPRITE_ADDR + (6 - SS) * 64 + YY * 3 + 1
+                        rol SPRITE_ADDR + (6 - SS) * 64 + YY * 3 + 0
+                .endrepeat
                 iny                     ; byte of the char
         .endrepeat
 
 
-        ldx bit_idx
+        ldx ZP_BIT_INDEX
         inx
         cpx #8
         bne l1
 
         ldx #0
         clc
-        lda load_scroll_addr
-        adc #1
-        sta load_scroll_addr
-        bcc l1
+        inc load_scroll_addr
+        bne l1
         inc load_scroll_addr+1
 l1:
-        stx bit_idx
+        stx ZP_BIT_INDEX
 
         rts
 
-bit_idx:
-        .byte 0                         ; points to the bit displayed
 .endproc
 
 scroll_text:
@@ -465,8 +529,6 @@ scroll_text:
         scrcode "Le quiero enviar un saludo a mi mama que me esta viendo, y a nadie mas. No hay espacio para usar caracteres custom"
         scrcode " asi que vamos a tener que usar los del sistema. Algo mas? Bueno, chau. Probando probando probando"
         scrcode " chau!....."
-        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
-        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
         scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
         scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
         scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"

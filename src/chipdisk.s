@@ -22,8 +22,16 @@
 .import __SPRITES_LOAD__
 .import decrunch                        ; exomizer decrunch
 .import intro_main
-.import ut_vic_video_type
 .export get_crunched_byte               ; needed for exomizer decruncher
+
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+; ZP and other variables
+;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+ZP_VIC_VIDEO_TYPE       = $60           ; byte. values:
+                                        ;   $01 --> PAL
+                                        ;   $2F --> PAL-N
+                                        ;   $28 --> NTSC
+                                        ;   $2e --> NTSC-OLD
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; Constants
@@ -127,7 +135,7 @@ ora_addr = *+1
 .proc player_main
         sei
 
-        ldx #$1f                        ; only use 32 bytes of stack
+        ldx #$17                        ; only use 24 bytes of stack
         txs                             ; rest is reserved for easteregg code
         jsr save_easteregg
 
@@ -1255,22 +1263,22 @@ f1_pressed:
 
         lda #0
         sta VIC_SPR_ENA
-                                        ; multicolor mode + extended color causes
-        lda #%01011011                  ; the bug that blanks the screen
-        sta $d011                       ; extended color mode: on
+                                                ; multicolor mode + extended color causes
+        lda #%01011011                          ; the bug that blanks the screen
+        sta $d011                               ; extended color mode: on
         lda #%00011000
-        sta $d016                       ; turn on multicolor
+        sta $d016                               ; turn on multicolor
 
-        lda #$7f                        ; turn off cia interrups
+        lda #$7f                                ; turn off cia interrups
         sta $dc0d
 
         lda #$00
-        sta $d418                       ; no volume
+        sta $d418                               ; no volume
 
         dec $01
         ; easter egg code
-        ldx #<($120 + EASTEREGG_SIZE)
-        ldy #>($120 + EASTEREGG_SIZE)
+        ldx #<($118 + EASTEREGG_SIZE)
+        ldy #>($118 + EASTEREGG_SIZE)
         stx _crunched_byte_lo
         sty _crunched_byte_hi
 
@@ -1286,12 +1294,25 @@ f1_pressed:
 
         inc $01
 
+;        lda #9                                  ; current song: 9
+;        sta current_song                        ; needed to update the freq table
+;        jsr update_freq_table                   ; correctly
+
         ldx #$ff
         tsx
 
-        cli
+                                                ; turn VIC on
+        lda #%00011011                          ; charset mode, default scroll-Y position, 25-rows
+        sta $d011                               ; extended color mode: off
 
-        jmp $9000                               ; easter egg start address
+        lda #%00001000                          ; no scroll, hires (mono color), 40-cols
+        sta $d016                               ; turn off multicolor
+
+        lda #$81                                ; turn on cia1 interrups again
+        sta $dc0d
+
+        jmp $9000                               ; easter egg start address with
+                                                ; interrupts disabled
 
 .endproc
 
@@ -1878,6 +1899,7 @@ song_table_freq_addrs_lo:
         .addr $16ea
         .addr $17eb
         .addr $1779
+        .addr $1779                             ; easteregg song
 
 song_table_freq_addrs_hi:
         .addr $1760
@@ -1889,9 +1911,10 @@ song_table_freq_addrs_hi:
         .addr $1682
         .addr $1783
         .addr $1711
+        .addr $1779                             ; easteregg song
 
 timer_speed:
-        .addr $4cc7                             ; default: PAL 50.128hz
+        .addr $4cc7                             ; default: PAL 50.125hz
 
 
 ;Seguir viviendo sin tu amor 2:45
@@ -2086,18 +2109,18 @@ charset:
 
 l0:
         lda easter_egg_bundle_begin,x
-        sta $120,x
+        sta $118,x
         lda easter_egg_bundle_begin + $0100,x
-        sta $220,x
+        sta $218,x
         lda easter_egg_bundle_begin + $0200,x
-        sta $320,x
+        sta $318,x
         lda easter_egg_bundle_begin + $0300,x
-        sta $420,x
+        sta $418,x
         lda easter_egg_bundle_begin + $0400,x
-        sta $520,x
+        sta $518,x
         lda easter_egg_bundle_begin + $0500,x
-        sta $620,x
-        lda easter_egg_bundle_begin + $05e0,x
+        sta $618,x
+        lda easter_egg_bundle_begin + $05e8,x
         sta $700,x
         inx
         bne l0
@@ -2111,7 +2134,7 @@ l0:
 easter_egg_bundle_begin:
         .incbin "easteregg-exo.prg"
 EASTEREGG_SIZE = * - easter_egg_bundle_begin
-.assert EASTEREGG_SIZE < $6e0, error, "Easteregg too big to fit"
+.assert EASTEREGG_SIZE < $6e7, error, "Easteregg too big to fit"
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ;segment "MORECODE2"
@@ -2126,7 +2149,7 @@ EASTEREGG_SIZE = * - easter_egg_bundle_begin
         ;   $2F --> PAL-N
         ;   $28 --> NTSC
         ;   $2e --> NTSC-OLD
-        lda ut_vic_video_type
+        lda ZP_VIC_VIDEO_TYPE
         cmp #$01
         beq exit
         cmp #$2f
@@ -2156,7 +2179,7 @@ exit:
         ;   $2F --> PAL-N
         ;   $28 --> NTSC
         ;   $2e --> NTSC-OLD
-        lda ut_vic_video_type
+        lda ZP_VIC_VIDEO_TYPE
         cmp #$01                                        ; PAL? don't update it then
         bne l0
         rts
