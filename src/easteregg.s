@@ -346,7 +346,7 @@ l0:     lda ($fb),y             ; read byte from vector stored in $fb/$fc
 
         lda $dd0d                       ; clears CIA1 timer A interrupt
 
-        inc $d020
+;        inc $d020
 
         lda $d011                       ; open vertical borders trick
         and #%11110111                  ; first switch to 24 cols-mode...
@@ -360,7 +360,7 @@ l0:     lda ($fb),y             ; read byte from vector stored in $fb/$fc
         ora #%00001000
         sta $d011
 
-        dec $d020
+;        dec $d020
 
         pla                             ; restores A
         rti                             ; restores previous PC, status
