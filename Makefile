@@ -4,7 +4,7 @@
 
 X64 = x64
 
-all: easteregg chipdisk intro
+all: easteregg_txt easteregg chipdisk decrunch_chipdisk intro
 
 SRC = src/main.s src/chipdisk.s src/exodecrunch.s src/utils.s
 
@@ -19,7 +19,7 @@ chipdisk: ${SRC}
 	#cl65 -d -g -Ln bin/$@.sym -o bin/$@.prg -u __EXEHDR__ -t c64 -C chipdisk.cfg $^
 	#exomizer sfx sys -x1 -Di_line_number=1996 -o bin/$@-exo.prg bin/$@.prg
 
-testchipdisk:
+testchipdisk: chipdisk
 	$(X64) -moncommands bin/chipdisk.sym bin/chipdisk.prg
 
 easteregg: src/easteregg.s
@@ -31,8 +31,25 @@ easteregg: src/easteregg.s
 	exomizer mem -o bin/$@-exo.prg bin/$@.prg
 	cp bin/$@-exo.prg src/
 
+easteregg_txt: src/easteregg_txt.s
+	echo
+	echo =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	echo Building EasterEgg Scroll Text
+	echo =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	cl65 -d -g -Ln bin/$@.sym -o bin/$@.prg -t c64 -C easteregg_txt.cfg $^
+	exomizer mem -o bin/$@-exo.prg bin/$@.prg
+	cp bin/$@-exo.prg src/
+
 testeaster: easteregg
 	$(X64) -moncommands bin/easteregg.sym bin/easteregg.prg
+
+decrunch_chipdisk: src/decrunch_chipdisk.s
+	echo
+	echo =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	echo Building Decruncher for chipdisk
+	echo =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+	cl65 -d -g -Ln bin/$@.sym -o bin/$@.prg -t c64 -C decrunch_chipdisk.cfg $^
+	cp bin/$@.prg src/
 
 intro: src/intro.s
 	echo

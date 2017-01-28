@@ -24,6 +24,8 @@ SPRITE_ADDR     = $b000
 SPRITE_PTR0     = <((SPRITE_ADDR .MOD $4000) / 64)     ; Sprite 0 at 128
 CHARSET_ADDR    = $c000
 
+SCROLL_TEXT     = $c800                 ; where the scroll is
+
 ;DEBUG = 1
 
 .enum EYE_MODE
@@ -459,16 +461,16 @@ l0:     lda ($fb),y             ; read byte from vector stored in $fb/$fc
         sty $fd                         ; pointer to charset
 
 load_scroll_addr = * + 1
-        lda scroll_text                 ; self-modifying
+        lda SCROLL_TEXT                 ; self-modifying
         cmp #$ff
         bne next
         ldx #0
         stx ZP_BIT_INDEX
-        ldx #<scroll_text
-        ldy #>scroll_text
+        ldx #<SCROLL_TEXT
+        ldy #>SCROLL_TEXT
         stx load_scroll_addr
         sty load_scroll_addr+1
-        lda scroll_text
+        lda SCROLL_TEXT
 
 next:
         clc                             ; char_idx * 8
@@ -523,18 +525,6 @@ l1:
         rts
 
 .endproc
-
-scroll_text:
-        scrcode "...Oid mortales el grito sagrado, LIBERTAD, LIBERTAD, LIBERTAD. Bueno, aca va lo que tenga que ir."
-        scrcode "Le quiero enviar un saludo a mi mama que me esta viendo, y a nadie mas. No hay espacio para usar caracteres custom"
-        scrcode " asi que vamos a tener que usar los del sistema. Algo mas? Bueno, chau. Probando probando probando"
-        scrcode " chau!....."
-        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
-        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
-        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
-        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
-        scrcode "aaaaaabbbbbcccccdddddeeeeefffffgggggghhhhiiiiijjjjjkkkkkllllllmmmmmmnnnnnopqrstuvwxz0123456789"
-        .byte $ff
 
 easteregg_screen:
 ;screen char data
