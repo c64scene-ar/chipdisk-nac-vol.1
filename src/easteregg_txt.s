@@ -18,13 +18,39 @@ scroll_text:
 
         scrcode "                                      "
 
-        scrcode "Pungas de Villa Martelli quiso revisitar la música que te acompañó "
-        scrcode "durante toda tu vida para que puedas escucharla en la que probablemente "
-        scrcode "fue tu primera computadora. CoMu y Uctumi nos ofrecen su re-interpretación de los "
-        scrcode "temas orginales para esta producción que gracias al mágico código de Riq ocupa un "
+        ; á: $80
+        ; é: $81
+        ; í: $82
+        ; ó: $83
+        ; ú: $84
+        ; ñ: $85
+        scrcode "Pungas de Villa Martelli quiso revisitar la m"
+        .byte $84       ; ú
+        scrcode "sica que te acompa"
+        .byte $85       ; ñ
+        .byte $83       ; ó
+        scrcode " durante toda tu vida para que puedas escucharla en la que probablemente "
+        scrcode "fue tu primera computadora. CoMu y Uctumi nos ofrecen su re-interpretaci"
+        .byte $83       ; ó
+        scrcode "n de los "
+        scrcode "temas orginales para esta producci"
+        .byte $83       ; ó
+        scrcode "n que gracias al m"
+        .byte $80       ; á
+        scrcode "gico c"
+        .byte $83       ;ó
+        scrcode "digo de Riq ocupa un "
         scrcode "solo ejecutable y es compatible con todas las versiones de commodore 64 que existen, "
-        scrcode "incluida la Drean. Finalmente Alakrán nos aporta sus gráficos renovados llenos de detalle, "
-        scrcode "color, lealtad y patriotismo punga. Que lo disfrutes y nos vemos en la próxima producción! "
+        scrcode "incluida la Drean. Finalmente Alakr"
+        .byte $80       ; á
+        scrcode "n nos aporta sus gr"
+        .byte $80       ; á
+        scrcode "ficos renovados llenos de detalle, "
+        scrcode "color, lealtad y patriotismo punga. Que lo disfrutes y nos vemos en la pr"
+        .byte $83       ; ó
+        scrcode "xima producci"
+        .byte $83       ; ó
+        scrcode "n! "
 
         scrcode "                                      "
 

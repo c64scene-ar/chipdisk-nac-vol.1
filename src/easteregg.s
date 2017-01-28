@@ -220,6 +220,13 @@ l0:     lda ($fb),y             ; read byte from vector stored in $fb/$fc
         lda #%00110101          ; restore: RAM + IO
         sta $01
 
+        ldx #0
+l1:     lda aeiou,x
+        sta CHARSET_ADDR + $80 * 8,x
+        inx
+        cpx #(8*6)
+        bne l1
+
         rts
 .endproc
 
@@ -605,4 +612,8 @@ eyes_delays_tbl:
         .addr $0101                     ; closed:  5.0s
 EYES_DELAYS_TOTAL = (* - eyes_delays_tbl) / 2
 eyes_delays_idx: .byte 0
+
+aeiou:
+        ; only read first 6 chars: aeiou6
+        .incbin "aeiou_acentos-charset.bin", 0, 8 * 6
 
