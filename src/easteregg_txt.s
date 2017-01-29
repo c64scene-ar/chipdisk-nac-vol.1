@@ -33,7 +33,7 @@ scroll_text:
         scrcode "fue tu primera computadora. CoMu y Uctumi nos ofrecen su re-interpretaci"
         .byte $83       ; ó
         scrcode "n de los "
-        scrcode "temas orginales para esta producci"
+        scrcode "temas originales para esta producci"
         .byte $83       ; ó
         scrcode "n que gracias al m"
         .byte $80       ; á
