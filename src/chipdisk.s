@@ -2156,6 +2156,7 @@ l0:
         sta $700,x
         inx
         bne l0
+
         rts
 .endproc
 

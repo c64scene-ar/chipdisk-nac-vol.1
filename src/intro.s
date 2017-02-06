@@ -17,6 +17,8 @@
 .macpack macros                         ; our macros
 .include "c64.inc"                      ; c64 constants
 
+ZP_NMI_HANDLER  = $70                   ; here will be an `rti`
+
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ;segment "CODE"
@@ -96,6 +98,14 @@ chipdisk_end:
         ldy #>irq_bitmap
         stx $fffe
         sty $ffff
+
+        lda #$40                        ; `rti`
+        sta ZP_NMI_HANDLER
+
+        ldx #<ZP_NMI_HANDLER            ; restore key disabled
+        ldy #>ZP_NMI_HANDLER
+        stx $fffa
+        sty $fffb
 
         cli
 
@@ -282,6 +292,8 @@ irq_bitmap:
         pla
         tax
         pla
+
+nmi_irq:
         rti                             ; restores previous PC, status
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -396,10 +408,10 @@ palette:
         .byte 1, 7, 15, 10, 10, 8, 2, 2
 
         .byte 0, 0, 0, 0,   0, 0, 0
-        .byte 0, 0, 0, 0
+        .byte 0, 0, 0, 0, 0
 
         .byte 2, 2, 8, 10, 10, 15, 7, 1
-        .byte 0
+        .byte 1, 1
 
 TOTAL_PALETTE = * - palette
 
