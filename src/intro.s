@@ -137,24 +137,31 @@ do_effects:
         stx effect_wip                  ; reset "effect_wip" if not done
 
 @l0:
-        lda $f800 + 40 * 16,x           ; modify: "pungas de villa..."
+        lda $f800 + 40 * 15,x           ; modify: "pungas de villa..."
         cmp label_linyera_ok + 40 * 0,x
         beq @next0
-        inc $f800 + 40 * 16,x
+        inc $f800 + 40 * 15,x
         inc effect_wip
 
 @next0:
-        lda $f800 + 40 * 19,x           ; modify "presents..."
+        lda $f800 + 40 * 18,x           ; modify "presents..."
         cmp label_linyera_ok + 40 * 1,x
         beq @next1
-        inc $f800 + 40 * 19,x
+        inc $f800 + 40 * 18,x
         inc effect_wip
 
 @next1:
-        lda $f800 + 40 * 22,x           ; modify "de musica linyera..."
+        lda $f800 + 40 * 21,x           ; modify "de musica linyera..."
         cmp label_linyera_ok + 40 * 2,x
+        beq @next2
+        inc $f800 + 40 * 21,x
+        inc effect_wip
+
+@next2:
+        lda $f800 + 40 * 24,x           ; modify "de musica linyera..."
+        cmp label_linyera_ok + 40 * 3,x
         beq @skip
-        inc $f800 + 40 * 22,x
+        inc $f800 + 40 * 24,x
         inc effect_wip
 
 @skip:
@@ -265,7 +272,7 @@ irq_bitmap:
         stx $fffe
         sty $ffff
 
-        lda #50 + (15*8)
+        lda #50 + (8 * 14) + 2
         sta $d012
 
         inc sync_raster_irq
@@ -301,7 +308,7 @@ irq_text:
         stx $fffe
         sty $ffff
 
-        lda #50 + (8 * 15) + 5
+        lda #50 + (8 * 14) + 5
         sta $d012
 
         pla                             ; restores A, X, Y
@@ -331,7 +338,7 @@ irq_rasterbar:
         lda palette,x                   ; 6
         sta $d021                       ; 4
         inx                             ; 2
-        cpx #8 * 7                      ; 2
+        cpx #TOTAL_PALETTE              ; 2
         bne @l0                         ; 2/3
 
         lda #0
@@ -354,7 +361,7 @@ irq_rasterbar:
         stx $fffe
         sty $ffff
 
-        lda #0
+        lda #20
         sta $d012
 
 
@@ -388,7 +395,13 @@ palette:
         .byte 1, 1
         .byte 1, 7, 15, 10, 10, 8, 2, 2
 
-        .byte 0, 0, 0, 0, 0, 0, 0
+        .byte 0, 0, 0, 0,   0, 0, 0
+        .byte 0, 0, 0, 0
+
+        .byte 1, 7, 15, 10, 10, 8, 2, 2
+        .byte 0
+
+TOTAL_PALETTE = * - palette
 
 label_linyera_ok:
         .incbin "linyera-map.bin"
