@@ -2095,7 +2095,7 @@ bitmap:
 .incbin "uc-seguir.exo"
 song_1_end_of_data:
 
-.incbin "lastango24.exo"
+.incbin "lastango25.exo"
 song_2_end_of_data:
 
 .incbin "uc-amor.exo"

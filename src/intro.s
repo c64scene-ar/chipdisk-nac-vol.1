@@ -398,7 +398,7 @@ palette:
         .byte 0, 0, 0, 0,   0, 0, 0
         .byte 0, 0, 0, 0
 
-        .byte 1, 7, 15, 10, 10, 8, 2, 2
+        .byte 2, 2, 8, 10, 10, 15, 7, 1
         .byte 0
 
 TOTAL_PALETTE = * - palette

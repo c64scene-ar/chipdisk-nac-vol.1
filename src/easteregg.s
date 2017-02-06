@@ -9,10 +9,11 @@
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; ZP and other variables
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-ZP_SYNC_RASTER          = $40           ; byte
-ZP_EYE_DELAY_LO         = $41           ; byte
-ZP_EYE_DELAY_HI         = $42           ; byte
-ZP_EYE_MODE             = $43           ; byte
+ZP_SYNC_MUSIC          = $40           ; byte
+ZP_SYNC_ANIM            = $41           ; byte
+ZP_EYE_DELAY_LO         = $42           ; byte
+ZP_EYE_DELAY_HI         = $43           ; byte
+ZP_EYE_MODE             = $44           ; byte
 ZP_VIC_VIDEO_TYPE       = $60           ; byte. values:
                                         ;   $01 --> PAL
                                         ;   $2F --> PAL-N
@@ -53,7 +54,8 @@ SCROLL_TEXT     = $c800                 ; where the scroll is
 .endif
 
         lda #0
-        sta ZP_SYNC_RASTER
+        sta ZP_SYNC_MUSIC
+        sta ZP_SYNC_ANIM
         sta ZP_EYE_MODE
         sta ZP_EYE_DELAY_LO
         STA ZP_BIT_INDEX
@@ -88,18 +90,26 @@ SCROLL_TEXT     = $c800                 ; where the scroll is
         cli
 
 main_loop:
-        lda ZP_SYNC_RASTER
+        lda ZP_SYNC_MUSIC
+        bne play_music
+
+test_anim:
+        lda ZP_SYNC_ANIM
         beq main_loop
 
-handle_raster:
-        dec ZP_SYNC_RASTER
+        dec ZP_SYNC_ANIM
+        jsr animate_scroll              ; animation
+        jsr animate_eye
+        jmp main_loop
+
+play_music:
+        dec ZP_SYNC_MUSIC               ; music
 
 .ifndef DEBUG
         jsr $1003
 .endif
-        jsr animate_scroll
-        jsr animate_eye
-        jmp main_loop
+        jmp test_anim
+
 .endproc
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -341,7 +351,7 @@ l1:     lda aeiou,x
 
         lda $dc0d                       ; clears CIA1 timer A interrupt
 
-        inc ZP_SYNC_RASTER
+        inc ZP_SYNC_MUSIC
 
         pla                             ; restores A
         rti                             ; restores previous PC, status
@@ -370,6 +380,8 @@ l1:     lda aeiou,x
         sta $d011
 
 ;        dec $d020
+
+        inc ZP_SYNC_ANIM
 
         pla                             ; restores A
         rti                             ; restores previous PC, status
