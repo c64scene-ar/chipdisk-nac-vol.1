@@ -62,8 +62,11 @@ SCROLL_TEXT     = $c800                 ; where the scroll is
         lda #1
         sta ZP_EYE_DELAY_HI
 
-        lda #$00
-        sta $d01a                       ; disable raster IRQ
+        lda #$01
+        sta $d01a                       ; raster IRQ
+
+        lda #50
+        sta $d012
 
         asl $d019                       ; ACK raster interrupt
         lda $dc0d                       ; ACK timer A interrupt
@@ -349,10 +352,17 @@ l1:     lda aeiou,x
 .proc irq_playmusic
         pha                             ; saves A
 
+        asl $d019                       ; clears raster interrupt
+        bcs @raster
+
         lda $dc0d                       ; clears CIA1 timer A interrupt
-
         inc ZP_SYNC_MUSIC
+        bne @end
 
+@raster:
+        inc ZP_SYNC_ANIM
+
+@end:
         pla                             ; restores A
         rti                             ; restores previous PC, status
 .endproc
@@ -381,7 +391,6 @@ l1:     lda aeiou,x
 
 ;        dec $d020
 
-        inc ZP_SYNC_ANIM
 
         pla                             ; restores A
         rti                             ; restores previous PC, status
