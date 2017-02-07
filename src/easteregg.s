@@ -101,15 +101,20 @@ test_anim:
         beq main_loop
 
         dec ZP_SYNC_ANIM
+
+;        dec $d020
         jsr animate_scroll              ; animation
         jsr animate_eye
+;        inc $d020
         jmp main_loop
 
 play_music:
         dec ZP_SYNC_MUSIC               ; music
 
 .ifndef DEBUG
+;        inc $d020
         jsr $1003
+;        dec $d020
 .endif
         jmp test_anim
 
