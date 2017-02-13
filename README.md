@@ -1,6 +1,6 @@
-# Chipdisk
+# Chipdisk Nacional Volumen 1
 
-Se recomienda correrlo en una Commodore 64 de norma PAL-B y SID 8580.
+Se recomienda correrlo en una Commodore 64 con SID 8580. Funciona en PAL-B, NTSC y PAL-N (Drean).
 
 ## Cómo compilarlo
 
@@ -12,13 +12,7 @@ Y luego darle `make`
 
 ## Tracks originales
 
-En el directorio [res/orig](res/orig) se encuentran los archivos originales de
-algunos de los .SIDs presentes en este chipdisk.  Las extensiones corresponden
-a los siguientes trackers:
-
-- `.ct`: CheeseCutter
-- `.sng`: GoatTracker
-- `.swm`: SID-Wizard
+En el directorio [res/sids](res/sids) se encuentran los archivos los SIDs.
 
 ## Internals
 
@@ -31,24 +25,8 @@ a los siguientes trackers:
 
 ### Memoria
 
-Ver el archivo [chipdisk.cfg](chipdisk.cfg) que muestra cómo se usa la memoria.
-Hay 2 lugares para agregar código. "CODE", y "MORECODE". Tratar de que todo
-entre ahí para evitar sacarle espacio a posibles nuevos SIDs, y además vamos a
-necesitar memoria para los botones.
-
-De dónde sacar memoria en caso que se necesite más:
-
-- Fonts: Estan reservados 2k para los fonts, pero probablemente no se necesite
-  tanto.
-- Comprimir los botones apretaods.
-- Usar la memoria de $0400 a $0800 (1k) para poner código. La idea seria que
-  ese código este temporalmente en $1000 y luego se copia a $0400
-- El espacio de $1000 a $2800 esta reservado para tocar los sids. pero se puede
-  usar cosas temporales (y luego moverlas a otro lado) antes de tocar el primer
-  sid.
-- El buffer de $1000 a $2800 tiene que ser tan grande como el tamaño del sid
-  más grande a tocar. Ejemplo: Si el .sid más grande ocupa 4k, entonces ese
-  tamaño se puede reducir de $1000 a $2000, liberando memoria (2k)
+Más info sobre esto próximamente. Mientrastanto ver los archivos `.cfg` para darse
+una idea de como esta organizada la memoria.
 
 ### SIDs comprimidos
 
