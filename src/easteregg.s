@@ -9,7 +9,7 @@
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 ; ZP and other variables
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-ZP_SYNC_MUSIC          = $40           ; byte
+ZP_SYNC_MUSIC           = $40           ; byte
 ZP_SYNC_ANIM            = $41           ; byte
 ZP_EYE_DELAY_LO         = $42           ; byte
 ZP_EYE_DELAY_HI         = $43           ; byte
@@ -112,9 +112,9 @@ play_music:
         dec ZP_SYNC_MUSIC               ; music
 
 .ifndef DEBUG
-;        inc $d020
+        inc $d020
         jsr $1003
-;        dec $d020
+        dec $d020
 .endif
         jmp test_anim
 
@@ -380,7 +380,7 @@ l1:     lda aeiou,x
 
         lda $dd0d                       ; clears CIA1 timer A interrupt
 
-;        inc $d020
+        dec $d020
 
         lda $d011                       ; open vertical borders trick
         and #%11110111                  ; first switch to 24 cols-mode...
@@ -394,7 +394,7 @@ l1:     lda aeiou,x
         ora #%00001000
         sta $d011
 
-;        dec $d020
+        inc $d020
 
 
         pla                             ; restores A
@@ -515,7 +515,6 @@ next:
         rol $fa
 
         tay                             ; char_def = ($fc),y
-        sty $fb                         ; to be used in the bottom part of the char
 
         clc
         lda $fd

@@ -435,7 +435,7 @@ TOTAL_DECRUNCH_SIZE = * - decruncher
         .incbin "intro_half.colormap"
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-;segment "COLORRAM" $E200
+;segment "COLORRAM" $E400
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
 .segment "COLORRAM"
 bitmap_color:
