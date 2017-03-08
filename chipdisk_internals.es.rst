@@ -2689,6 +2689,16 @@ Eso significa que tiene todos los problemas de "código real".
 -  El Easter Egg tiene algunos bugs en el scroll. Con tiempo los arreglaremos
 -  Y puede que haya otros bugs también.
 
+Preguntas y demás
+=================
+
+¿Tenés preguntas? ¿Querés colaborar con PVM? Estamos acá:
+
+-  http://pungas.space
+-  En IRC. `EFnet <http://www.efnet.org/>`__ . Canal #pvm
+-  `Twitter <https://twitter.com/pungas64>`__
+-  `Facebook <https://www.facebook.com/PVM1996/>`__
+
 Referencias
 ===========
 
@@ -2698,15 +2708,6 @@ Referencias
 .. [#] O como bien recomienda Acid, se podría optimizar solamente ``set_pixel()`` con tablas para evitar la multiplicación.
 .. [#] Más truquitos de como optimizar el 6502 están acá: `6502 assembly optimisations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ y acá `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. Y también acá: `CodeBase64 <http://codebase64.org/>`__
 .. [#] Para más información sobre Bad Lines ir a `Beyond the Screen: Rasters and Cycles <http://dustlayer.com/vic-ii/2013/4/25/vic-ii-for-beginners-beyond-the-screen-rasters-cycle>`__
-
-
-Preguntas y demás
-=================
-
-¿Tenés preguntas? ¿Querés colaborar con PVM? Estamos acá:
-
--  http://pungas.space
--  En IRC. `EFnet <http://www.efnet.org/>`__ . Canal #pvm
 
 
 .. |intro| image:: https://lh3.googleusercontent.com/8428M9tm2gsXy5q5725Y_ddPiO6XLxNfV3E2jt5q8hp_-G65M-klPna7nJjk82BdEBR9_o72mYsDN3gf9o_OgABJ6cuH_D1nl-VJnfRtxrtabcdKGNIpkLQZDWX2Wx9qhprp8XU
