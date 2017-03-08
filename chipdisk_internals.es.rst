@@ -66,6 +66,8 @@ solo hay 38k RAM libres.
 .. figure:: https://lh3.googleusercontent.com/q9Fndsw89AVrXaPtPwr9FUPH42cbtExt4vuyi_VpAFCXG_W_7nMhPqZ2-CAfSbFaERt0IK-9eqAlY2nJrM4FKwZ--hEpjcbTzlCrcIKTXJ5ESBGulrjjiN3KsF-1bcztXnww_a0
    :alt: memory\_free
 
+   *Hay 38k RAM libres para usar desde BASIC, pero 64k RAM desde asm*
+
 Pero como no vamos a usar BASIC, lo *apagamos* y nos libera 8k RAM.
 Y si seguimos apagando todo, como el KERNAL y demás, entonces ahí vamos a tener
 los 64k RAM libres.
@@ -185,7 +187,7 @@ El Chipdisk esta compuesto por 3 módulos:
    código
 -  Player: 9 canciones (sids) + sonido para ruido blanco + gráfico
    bitmap + charset + código
--  Easter egg: 1 canción (sid) + gráfico PETSCII + texto scroll + código
+-  Easter Egg: 1 canción (sid) + gráfico PETSCII + texto scroll + código
 
 |intro|\ |player|\ |easteregg|
 
@@ -198,7 +200,7 @@ Y solo el módulo del Player ocupa:
 -  Charset (usado en letras oblicuas): 1k
 -  Sprites (cursores, rueditas, contador): ~1k
 
-Y nos da un total de: ~65k, sin contar código, ni intro, ni easter egg.
+Y nos da un total de: ~65k, sin contar código, ni Intro, ni Easter Egg.
 ¿Cómo hacemos para meter todo en 64k de memoria y sin acceder al disco?
 
 La respuesta es: Se comprime todo lo que se pueda comprimir, y se descomprime
@@ -262,11 +264,11 @@ Y si agregamos los sprites, sid de ruido blanco y demás, queda así:
 
 Sobran 9k para poner el código del Player. Pero recordemos que en esos
 9k también tiene que estar el Easter Egg. Eso complica las cosas
-bastante. Poner la intro no ocupa lugar en los 9k. Luego explicaré
+bastante. Poner la Intro no ocupa lugar en los 9k. Luego explicaré
 porqué.
 
 
-El Player: Código
+Código: El Player
 =================
 
 El código del player se puede dividir en:
@@ -884,6 +886,8 @@ El modo bitmap funciona por celdas. La pantalla esta dividida en:
 .. figure:: https://lh3.googleusercontent.com/W9abCQZfIhLIFlxyodyd5BhMr0JioeCj9SSTgwhjkqfB0KH1J8PEta4SsS_tq7w8GiEXaOY0WFuobe1ngDv3vBwjgLs3MJMa5cpFkBjdFfbnC8AP6umui1-s8R0H8urtX1WG7_c
    :alt: cells
 
+   *En modo Bitmap Standard las celdas no pueden tener más de 2 colores a la vez*
+
 El gráfico en total usa 16 colores. Pero si prestan atención, cada celda
 no tiene más de 2 colores a la vez. Esto modo gráfico existe para
 ahorrar memoria. Por ejemplo, si uno pudiera elegir 16 colores (4 bits)
@@ -948,10 +952,14 @@ nuevamente vemos que tiene una inclinación de:
 .. figure:: https://lh3.googleusercontent.com/TpaSLAM6xyEgB80FWG8R8QsEKmNvBfuTrYpy8bwkECpVF4dtFZs3NqCkKw98dC-PzjtZMu3-ZKEC5Fs3wsyI1aatB9z0r5MyStkOsJOU0gj2SNlNIld4ztQdSXXq6SipWNktL2k
    :alt: inclinación
 
+   *Inclinación que se quiere buscar*
+
 Básicamente, lo que queremos lograr es algo así:
 
 .. figure:: https://lh3.googleusercontent.com/j-TXraycC52OgY3wO-9OTl2wf6X0q1F3jmr5ygvRwJ-NFfd99OicecuzuUa1viUYF3nWsCighJtpFf0QXqXyTpcNY0HWgakFwZ43-jjrcvfx5UYty7IL4T-hMvk6cjprPMxf5LU
    :alt: resultado
+
+   *Ejemplo de como tiene que ser la inclinación de las letras*
 
 El algoritmo a dibujar las letras sería algo así:
 
@@ -1031,6 +1039,8 @@ Con ese algoritmo podemos imprimir cosas de este estilo:
 .. figure:: https://lh3.googleusercontent.com/_egTNJbWjoF0tImd_bbporzfdvE9Vp74q3gIM2ezwOWU4GRYUeLZzWeGJMk6vM4vPHnGC_Tqqtxmiz5HQMHSBRoiAtADyQtZyapK1bQFKFCJA1nl2iIoChVXAujdJ6LSvSq5AHg
    :alt: inclinada\_fat
 
+   *Las letras tienen pixeles vacíos en el medio*
+
 Pero **no** es lo que queremos ya que:
 
 -  Ocupa mucho lugar de pantalla, no van a entrar los nombres de las
@@ -1041,6 +1051,8 @@ Pero **no** es lo que queremos ya que:
 
 .. figure:: https://lh3.googleusercontent.com/K4ylCjj6GgzdI9DEhTjikkcc14C_bnQEHCBk1OvXtOh3ReUK28f0vTnyGnyu6Q1x67mLLNw5qUuec_CtAWUztv-5wFeDvf7LKpq2-KDqtn_qw93OUAQmhNGKJU0pKg8QpQc6N-U
    :alt: rotado
+
+   *El porqué de los pixeles vacíos*
 
 El algoritmo hace lo que le dijimos que haga, pero no es lo que
 queremos. Lo primero a hacer, es usar fonts de 4x8 (y no de 8x8) para
@@ -1054,10 +1066,14 @@ esto:
 .. figure:: https://lh3.googleusercontent.com/gcnEulu7AuMlM2TmwusHLe5-iS3UqUVeTJnHFhKT9d_9JjqdCG7_nFijuyWpQKHzGVeTGfXlbbF-mOi_Y-TRxyuTs1H-xy-BUqfz55rMitmiSJApwRI5M_BTRTzDR47oRk1_iw8
    :alt: rotado2
 
+   *Alternativa para evitar los pixeles vacíos*
+
 Y cuatro letras se verían así:
 
 .. figure:: https://lh3.googleusercontent.com/ViP4RjGdqlvh1B55Q4laIg2S95S6DivApYRuGMOKpK3LnukRebGh410rSkSc5hLb12fu24FMeHuDILaAozN-UK7WX6QgCGqFZZXcKAQ6rC2idlGnCbqJY4Sr9_MPiUCWKScE4Q0
    :alt: rotado3
+
+   *Los pixeles vacíos estan al final de cada letra*
 
 Lo que estamos haciendo, es que los pixeles vacíos estén como
 "separadores" de los caracteres, y no en el medio de cada caracter. Con
@@ -1110,10 +1126,14 @@ este:
 .. figure:: https://lh3.googleusercontent.com/bEDUkJFBU44Uc6vjfmyCPDHVO3jrSTvW0SQzBSoYsQkwuZ7Q1ij8Gl0K6SBfm0LyD8yg6ZaEHsOsJqAgpd2g0CUZUZ1Wvowg72MaX9JjW7GZ058yNLQrtgURQ7NyFOe7RhYbwmI
    :alt: charset
 
+   *Charset completo con letras listas para ser inclinadas*
+
 Y así se ven algunas de las letras inclinadas:
 
 .. figure:: https://lh3.googleusercontent.com/K2eFlXjp7iAn72AjmoREX7GsKBPSxmnSi6s02-fFhtfw0JZhdNG1EnyGPJG_KEYPS6T5pBR3ZhmEaeTsH-7dyogYnlm-J7oFN6gjcYB9k_VeY0UJs8Yy0cES7uGD_NMaLhMFTxk
    :alt: charset\_rotado
+
+   *Ejemplo de como se ven 'a', 'b', 'c' y 'd'*
 
 Pero aún queda por solucionar las letras anchas como ``m``, ``M``, ``W``
 y ``w``. Eso se soluciona usando dos chars para esas letras y haciendo
@@ -1905,6 +1925,9 @@ Acá no estamos haciendo nada raro. Simplemente reemplazamos un pedazo del bitma
 por otro.
 
 .. figure:: https://lh3.googleusercontent.com/gGQcvRrOcIv8tWfcliz_qTAveG2UALJxt9JYd-3JjOKYBzqM9FBiZ0U6nZMknEQt-87LYgH-H_OVP-V_HlMEr4W93M4H1WHOXkL2atCm5TePAqrK2s8CGaXHBg6apUN75M1xnzA
+   :alt: celda de 7x7
+
+   *Se copia un bloque de 7x7 celdas*
 
 El algoritmo es más o menos así:
 
@@ -2009,11 +2032,9 @@ El código en assembler esta hecho con macros:
     button_stop_restore:
             BUTTON_IMAGE_COPY  tmp_img_button,  10, 18
 
-Se podría reemplazar ``BUTTON_IMAGE_COPY`` por una función (y no una
-macro) para que ocupe menos lugar. Aunque sería un poco más lento y más complejo.
 
-Easter Egg: Código
-==================
+Código: El Easter Egg
+=====================
 
 .. figure:: https://lh3.googleusercontent.com/Zp52TSOw_i2SzQ9zJhI0Fl28joPzCKIpYGy4v52h4r2AWZVsnXTGAJAh9dxEPs7vhTIv4x0CdGgt55xQcAhK7HoTrVOjsxdmW_cNiF4Yi9BfiLpB43dJ_Gsuoetg5CH5qNnaex8
    :alt: easter egg
@@ -2146,7 +2167,7 @@ Y en nuestro caso, vamos a usar el Timer A del CIA 2. Es así:
     ; init_nmi
     ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
     init_nmi:
-                                            ; setup NMI (abrir border)
+                                            ; setup NMI (abrir borde)
             ldx #<nmi_openborder
             ldy #>nmi_openborder
             stx $fffa                       ; usa el vector de NMI ($fffa/$fffb)
@@ -2342,6 +2363,16 @@ se scrollean bits de sprites. El código es este:
 
             rts
 
+*Nota*: Ojo que estamos ``rol``eando 163 (7 * 8 * 3) bytes por frame, un total
+de 978 (163 * 6) ciclos de CPU. No es muchísimo, pero es mucho más de lo que se usa en
+un scroll de texto normal. Si usaramos los 24 pixeles del sprite,
+sería el triple de costoso. ¡Ojo!
+
+.. figure:: https://lh3.googleusercontent.com/7j8O3TKZuljEjbSTtlfsd1xLsErRXOsI8W147As4KsvjfNXetZUhP8-BFk3AjiWW1tA7FcGjHrGRQrjOtvjbo38lfcLyaRo1GWP7p_RCFIshxOm3Gb7pOOTug6eVFLZeQ4zcagY
+   :alt: rasterbars
+
+   *Consumo de rasterbars. A:Scroll, B:Música, C:Abrir borde*
+
 Descomprimiendo el Easter Egg
 -----------------------------
 
@@ -2387,8 +2418,8 @@ La memoria del Player con el Easter Egg comprimido queda así:
 Y cuando se dispara el Easter Egg, se descomprimen los tres pedazos del Easter
 Egg en el destino correcto.
 
-Intro: Código
-=============
+Código: La Intro
+================
 
 .. figure:: https://lh3.googleusercontent.com/STIEW1KCcW65Y0U0NMOHebjsrQzkk4IuxsbqR6kVTvzx0O16ZmJYTJ_S0ttv1L5bIv0_Qsg5oGzb3pnVAiJbxBqNMg8HX658PNziScLQB1R3csABQSgB5Pt8nsC-N03Nmv9v_DU
    :alt: intro
@@ -2445,7 +2476,7 @@ Pero si el fondo no fuese negro, se vería lo siguiente:
    *Lo que se vería si la pantalla no tuviese fondo negro*
 
 Para lo segundo, es sencillo también, pero se complicó en el Chipdisk.
-El Player + EasterEgg comprimidos ocupan 40585 bytes, y cuando de descomprimen
+El Player + Easter Egg comprimidos ocupan 40585 bytes, y cuando de descomprimen
 ocupan 63427 bytes. La C64 solo tiene 64k RAM, así que la rutina de descompresión
 va a pisar la data comprimida en algún momento. La idea es que la pise solo una
 vez que haya usado la data comprimida.
@@ -2455,29 +2486,167 @@ para adelante". Es decir, empieza a descomprimir el último byte primero.
 
 ::
 
-        Memoria antes de descomprimir el Player + EasterEgg:
+        Memoria antes de descomprimir el Player + Easter Egg:
         +----+---------------+---------------------------------------------+---------------+
         |    |$0400-$07ff    | $0800 - $afff                               | $b000 - $fff0 |
-        |    |Descompresor   | Código Player+EasterEgg comprimidos         | Intro         |
+        |    |Descompresor   | Código Player+Easter Egg comprimidos        | Intro         |
         +----+---------------+---------------------------------------------+---------------+
 
         Memoria luego de descomprimir:
         +---------------------+------------------------------------------------------------+
         |                     | $0820 - $fff0                                              |
-        |                     | Código Player+EasterEgg                                    |
+        |                     | Código Player+Easter Egg                                   |
         +---------------------+------------------------------------------------------------+
 
 Entonces para evitar que pisa data no usada, se hace algo así:
 
--  El último byte comprimido esta en ``$afff``, y ese byte descomprimido va
-   a parar a ``$fff0``. Así que no "pisa" la data comprimida.
+-  La dirección del último byte comprimido esta en ``$afff``, y ese byte
+   descomprimido va a parar a ``$fff0``. Así que no "pisa" la data comprimida.
 
--  Y el primer byte comprimido esta en ``$0800``, y ese byte descomprimido va
-   a parar a ``$0820``. Pisa la data comprimida, pero una vez que ya fue usada
+-  Y la dirección del primer byte comprimido esta en ``$0800``, y ese byte
+   descomprimido va a parar a ``$0820``. Pisa la data comprimida, pero una vez
+   que ya fue usada.
 
+**Reglita**: Tanto la dirección del primer byte de origen como la del último
+tienen que ser menores que las direcciones del primer y último byte de destino
+respectivamente: ``$0800 < $0820`` y ``$afff < $fff0``.
+
+Raster IRQ estable
+------------------
+
+Cuando uno usa los interrupciones de raster, el callback no siempre es llamado
+donde uno quiere. Si uno hace: ``lda #$80; sta $d012``, el
+raster nos va a llamar cuando el rasterline este en ``$80``, pero ¿en que parte
+de la rasterline ``$80``? A veces nos llama en la mitad de la linea, y otras
+veces más adelante o atrás.
+
+Y eso hace que un simple efecto como el rasterbar se vea "inestable"...
+con una linea de color partida por la mitad, o cosas por el estilo.
+
+Bueno, en la Intro pasa algo similar cuando cambiamos la pantalla de modo
+bitmap a modo texto. A veces aparece/desaparece una linea negra en el rasterline
+que las divide.
+
+.. figure:: https://lh3.googleusercontent.com/kvWKJs7IEaFXfR8dKVI21ans9NSVY9WMXZ_qr9MuM6ugq7TCIiGyzSkDb-YCMWw_15bN_1TJ-J0FerIf2D8K1j_f37xjTixXUFIP6Bl8E-F89jFnaIJj51qrAsTdTUJSmI_VwCk
+   :alt: artifact
+
+   *Arriba de la P y demás letras aparece/desaparece una linea negra. Ese es el "artifact"*
+
+Y eso se soluciona con un "raster IRQ estable". Lo que hace es que el callback
+siempre es llamado en el mismo ciclo del rasterline. Después uno lo puede ajustar
+poniendo unos ``nop``s adicionales. Hay distintas técnicas para lograr el
+raster estable. El Chipdisk usa la técnica llamada "doble IRQ".
+
+El código es así:
+
+.. code:: asm
+
+        ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+        ; STABILIZE_RASTER
+        ; Rutina de raster estable usando Doble-IRQ
+        ; Sacada de from: http://codebase64.org/doku.php?id=base:stable_raster_routine
+        ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+        .macro STABILIZE_RASTER
+                ; El Raster IRQ es disparado en el ciclo 0 del actual rasterline ($d012)
+                ; Pero la CPU tiene que terminar el opcode que se esta ejecutando antes de llamar a la IRQ
+                ; Así que puede haber un retraso de 0 a 7 ciclos, dependiendo del opcode
+                ; Después hay un retraso de unos 7 ciclos llamando a la "Interrupt Handler" (Push SR/PC to stack++)
+                ; Y luego se consumen otros 13 ciclos más para guardar los registros (pha, txa, pha, tya, pha)
+
+                ; ciclos consumidos hasta aca: 20~27
+                lda #<@irq_stable   ; +2, 2
+                ldx #>@irq_stable   ; +2, 4
+                sta $fffe       ; +4, 8
+                stx $ffff       ; +4, 12
+                inc $d012       ; +6, 18
+                asl $d019       ; +6, 24
+                tsx             ; +2, 26
+                cli             ; +2, 28
+
+               .repeat 10
+                        ; La próximo IRQ va a ser llamada mientras se ejecutan estos nops
+                        nop         ; +2 * 10, 48.
+                .endrepeat
+                ; cycle count: 68~75. La nueva raster IRQ ya fue llamado en este punto
+
+        @irq_stable:
+                ; cycle count: 7~8 .7 cycles for the interrupt handler + 0~1 cycle Jitter for the NOP
+                txs         ; +2, 9~10
+
+                ; 42 cycles
+                ldx #$08        ; +2, 11~12
+                dex             ; +2 * 8, 27~28
+                bne *-1         ; +3 * 7, +2, 50~51
+                bit $00         ; +3, 53~54
+
+                lda $d012       ; +4, 57~58
+                cmp $d012       ; +4, 61~62
+                beq *+2         ; +2/+3, 64
+        .endmacro
+
+
+        ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+        ; raster IRQ que divide la pantalla entre modo bitmap y modo texto
+        ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+        irq_rasterbar:
+                pha                             ; guarda A, X, Y
+                txa
+                pha
+                tya
+                pha
+
+                STABILIZE_RASTER                ; llama a la macro "STABILIZE_RASTER"
+                                                ; que es la que hace toda la magia
+
+                sei
+
+                ldx #0                          ; rutina que genera los "raster bars"
+        @l0:
+                lda $d012
+        @l1:    cmp $d012
+                beq @l1                         ; espera a nueva linea de rasterline
+                lda palette,x                   ; y cuando pasa eso cambia el color
+                sta $d021                       ; $d021 para generar una nueva linea
+                inx
+                cpx #TOTAL_PALETTE
+                bne @l0
+
+                asl $d019                       ; ACK la interrupción raster
+
+                lda #%00001000                  ; no scroll, multi-color apagado, 40-cols
+                sta $d016
+
+                lda #%11101100                  ; screen en 0x3800, charset en $3000
+                sta $d018
+
+                lda #%00011011                  ; bitmap mode apagado. modo texto.
+                sta $d011
+
+                ldx #<irq_bitmap                ; apuntar al raster IRQ que prende
+                ldy #>irq_bitmap                ; el modo bitmap
+                stx $fffe
+                sty $ffff
+
+                lda #20
+                sta $d012                       ; próximo raster IRQ en la rasterline $20
+
+                pla                             ; restaura A, X, Y
+                tay
+                pla
+                tax
+                pla
+                rti                             ; restaura previo PC, status
+
+La técnica Doble IRQ funciona bastante bien pero con ciertas limitaciones:
+
+-  Consume ciclos adicionales
+-  No se puede llamar en las *bad lines* [#]_
 
 Fuentes del Chipdisk y demás
 ============================
+
+Cómo compilar el Chipdisk
+-------------------------
 
 El código completo del Chipdisk esta acá:
 
@@ -2498,6 +2667,27 @@ Poner todo es en el path, clonar el repositorio, y hacer:
         $ cd chipdisk-nac-vol.1
         $ make
 
+Licencia
+--------
+
+`Apache v2 <https://www.apache.org/licenses/LICENSE-2.0>`__
+
+
+Comentarios adicionales
+-----------------------
+
+El código **no** fue escrito a modo de ejemplo. Es código real
+escrito para el Chipdisk que presentamos en la Datastorm 2017.
+Eso significa que tiene todos los problemas de "código real".
+
+-  Esta basado en el código del Chipdisk *Arriba Las Manos* que presentamos en DeCrunch 2016
+-  Lo requerimientos fueron cambiando. El código también. Puede que haya
+   código que no se use, o código que ya no tenga más sentido tener.
+-  Se usaron demasiadas macros/unrolled-loops. Quizás hubiera sido mejor usar menos
+   para tener lugar adicional para un posible nuevo tema.
+-  Hay pocos comentarios
+-  El Easter Egg tiene algunos bugs en el scroll. Con tiempo los arreglaremos
+-  Y puede que haya otros bugs también.
 
 Referencias
 ===========
@@ -2506,16 +2696,17 @@ Referencias
 .. [#] La rutina de descompresión esta en el .zip del Exomizer_, pero también la pueden ver acá: `exodecrunch.s <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/exodecrunch.s>`__
 .. [#] La gran idea de hacer un charset especial para simplificar el rendereo es de Alakran
 .. [#] O como bien recomienda Acid, se podría optimizar solamente ``set_pixel()`` con tablas para evitar la multiplicación.
-.. [#] Más truquitos de como optimizar el 6502 están acá: `6502 assembly optimisations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ y acá `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__
+.. [#] Más truquitos de como optimizar el 6502 están acá: `6502 assembly optimisations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ y acá `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. Y también acá: `CodeBase64 <http://codebase64.org/>`__
+.. [#] Para más información sobre Bad Lines ir a `Beyond the Screen: Rasters and Cycles <http://dustlayer.com/vic-ii/2013/4/25/vic-ii-for-beginners-beyond-the-screen-rasters-cycle>`__
 
 
 Preguntas y demás
 =================
 
-¿Tenes preguntas? ¿Queres colaborar con PVM? Estamos acá:
+¿Tenés preguntas? ¿Querés colaborar con PVM? Estamos acá:
 
 -  http://pungas.space
--  En IRC. Efnet. Canal #pvm
+-  En IRC. `EFnet <http://www.efnet.org/>`__ . Canal #pvm
 
 
 .. |intro| image:: https://lh3.googleusercontent.com/8428M9tm2gsXy5q5725Y_ddPiO6XLxNfV3E2jt5q8hp_-G65M-klPna7nJjk82BdEBR9_o72mYsDN3gf9o_OgABJ6cuH_D1nl-VJnfRtxrtabcdKGNIpkLQZDWX2Wx9qhprp8XU

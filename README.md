@@ -39,3 +39,8 @@ archivos .exo, usar este script:
 
 Se distribuye el código fuente bajo la licencia Apache 2.
 Ver [LICENSE](LICENSE) para más información.
+
+
+## Documentación
+
+- [chipdisk_internals.es.rst](chipdisk_internals.es.rst)

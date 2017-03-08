@@ -42,7 +42,8 @@ SCROLL_TEXT     = $c800                 ; where the scroll is
 
 .ifdef DEBUG
         sei
-        lda #$35
+
+        lda #$35                        ; BASIC & KERNAL out
         sta $01
 
         lda #0
@@ -61,16 +62,6 @@ SCROLL_TEXT     = $c800                 ; where the scroll is
         STA ZP_BIT_INDEX
         lda #1
         sta ZP_EYE_DELAY_HI
-
-        lda #$01
-        sta $d01a                       ; raster IRQ
-
-        lda #50
-        sta $d012
-
-        asl $d019                       ; ACK raster interrupt
-        lda $dc0d                       ; ACK timer A interrupt
-        lda $dd0d                       ; ACK timer B interrupt
 
         lda #%00010101
         sta $dd00                       ; Vic bank 2: $8000-$bFFF
@@ -112,9 +103,9 @@ play_music:
         dec ZP_SYNC_MUSIC               ; music
 
 .ifndef DEBUG
-        inc $d020
+;        inc $d020
         jsr $1003
-        dec $d020
+;        dec $d020
 .endif
         jmp test_anim
 
@@ -172,7 +163,7 @@ play_music:
 l1:
         lda sprite_x_pos,x
         sta VIC_SPR0_X,y
-        lda sprite_y_pos,x
+        lda #252                        ; same Y for all sprites
         sta VIC_SPR0_Y,y
         lda #1                          ; white color
         sta VIC_SPR0_COLOR,x            ; all sprites are white
@@ -195,8 +186,6 @@ l2:     sta SPRITE_ADDR,x               ; 8 sprites = 512 bytes = 64 * 8
 sprite_x_pos:
         .byte 48*0+10, 48*1+10, 48*2+10, 48*3+10
         .byte 48*4+10, 48*5+10, (48*6+10) .MOD 256
-sprite_y_pos:
-        .byte 252,252,252,252,252,252,252
 
 sprite_pointers:
         .byte SPRITE_PTR0+0
@@ -254,6 +243,19 @@ l1:     lda aeiou,x
 .proc init_irq
                                         ; setup IRQ (play music)
 
+        asl $d019                       ; ACK raster interrupt
+        lda $dc0d                       ; ACK CIA 1 interrupts
+        lda $dd0d                       ; ACK CIA 2 interrupt
+
+        lda #50                         ; play animation at 50
+        sta $d012
+
+        lda #$01                        ; enable
+        sta $d01a                       ; raster IRQ
+
+        lda #$7f
+        sta $dc0d                       ; disables timer A and B IRQ
+
         lda #$0                         ; stop timer A
         sta $dc0e
 
@@ -270,12 +272,17 @@ l1:     lda aeiou,x
         sty $dc05                       ; high-cycle-count
 .endif
 
-:       lda $d012                       ; wait for raster at $0
+
+:       lda $d012                       ; play music at rasterline #200
 :       cmp $d012
         beq :-
-        bmi :--
+        cmp #200
+        bne :--
 
-        lda #%10010001                  ; and enable it
+        lda #$81
+        sta $dc0d                       ; turn on CIA 1 interrups
+
+        lda #%10010001                  ; and enable Timer A
         sta $dc0e
 
         rts
@@ -291,7 +298,7 @@ l1:     lda aeiou,x
         stx $fffa
         sty $fffb
 
-        lda #$0                         ; stop timer A
+        lda #$0                         ; stop timer A CIA 2
         sta $dd0e
 
 
@@ -335,7 +342,7 @@ l1:     lda aeiou,x
         stx $dd04                       ; low-cycle-count
         sty $dd05                       ; high-cycle-count
 
-        lda #%10000001                  ; enable timer A interrupt
+        lda #%10000001                  ; enable interrupts in CIA 2
         sta $dd0d
 
 :       lda $d012                       ; wait for raster at #f9
@@ -344,7 +351,7 @@ l1:     lda aeiou,x
         cmp #$f9
         bne :--
 
-        lda #%10010001                  ; and enable it
+        lda #%10010001                  ; and enable Timer
         sta $dd0e
 
         rts
@@ -362,7 +369,7 @@ l1:     lda aeiou,x
 
         lda $dc0d                       ; clears CIA1 timer A interrupt
         inc ZP_SYNC_MUSIC
-        bne @end
+        jmp @end
 
 @raster:
         inc ZP_SYNC_ANIM
@@ -380,7 +387,7 @@ l1:     lda aeiou,x
 
         lda $dd0d                       ; clears CIA1 timer A interrupt
 
-        dec $d020
+;        dec $d020
 
         lda $d011                       ; open vertical borders trick
         and #%11110111                  ; first switch to 24 cols-mode...
@@ -394,8 +401,7 @@ l1:     lda aeiou,x
         ora #%00001000
         sta $d011
 
-        inc $d020
-
+;        inc $d020
 
         pla                             ; restores A
         rti                             ; restores previous PC, status
