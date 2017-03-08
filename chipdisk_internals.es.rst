@@ -2363,7 +2363,7 @@ se scrollean bits de sprites. El código es este:
 
             rts
 
-*Nota*: Ojo que estamos ``rol``eando 163 (7 * 8 * 3) bytes por frame, un total
+*Nota*: Ojo que estamos ``rol`` eando 163 (7 * 8 * 3) bytes por frame, un total
 de 978 (163 * 6) ciclos de CPU. No es muchísimo, pero es mucho más de lo que se usa en
 un scroll de texto normal. Si usaramos los 24 pixeles del sprite,
 sería el triple de costoso. ¡Ojo!
@@ -2532,9 +2532,9 @@ que las divide.
 
    *Arriba de la P y demás letras aparece/desaparece una linea negra. Ese es el "artifact"*
 
-Y eso se soluciona con un "raster IRQ estable". Lo que hace es que el callback
+Y eso se soluciona con un *raster IRQ estable*. Lo que hace es que el callback
 siempre es llamado en el mismo ciclo del rasterline. Después uno lo puede ajustar
-poniendo unos ``nop``s adicionales. Hay distintas técnicas para lograr el
+poniendo unos ``nop`` s adicionales. Hay distintas técnicas para lograr el
 raster estable. El Chipdisk usa la técnica llamada "doble IRQ".
 
 El código es así:
