@@ -1,4 +1,4 @@
-# Fuentes de los sids
+# Fuentes de los SIDs / SID sources
 Los archivos según su extensión corresponden a los siguientes editores de música C64:
 SIDWIZARD .SWM
 GOATTRACKER .SNG
