@@ -174,7 +174,6 @@ Resumiendo:
 -  Los valores del VIC son módulo ``$4000``
 -  En las direcciones ``$1000-$1fff`` y ``$9000-$9fff``, el VIC **ve** el charset por default
 -  Se usa `$dd00`_ para cambiar de banco. Y `$d018`_ para decirle al SID de donde sacar la data
--  El bitmap y el charset comparten el bit 3. Pero es porque ambos no pueden estar habilitados a la vez
 
 
 Los sids, Exomizer, y demás
@@ -681,11 +680,11 @@ sid a la velocidad correcta tanto en las distintas plataformas.
 Asumiendo que el sid fue generado para PAL, la formulita para convertir
 a NTSC es:
 
--  ``((velocidad_del_timer + 1) * 1022727 / 985248) + 1``
+-  ``((velocidad_del_timer + 1) * 1022727 / 985248) - 1``
 
 Y para convertir a Drean es similar:
 
--  ``((velocidad_del_timer + 1) * 1023440 / 985248) + 1``
+-  ``((velocidad_del_timer + 1) * 1023440 / 985248) - 1``
 
 *Nota*: ``985248``, ``1022727``, ``1023440`` son la velocidades del 6510
 en una PAL, NTSC, Drean respectivamente (``0.985248`` Mhz, ``1.022727``
