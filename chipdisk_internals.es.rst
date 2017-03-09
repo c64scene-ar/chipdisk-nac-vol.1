@@ -274,7 +274,7 @@ Código: El Player
 El código del player se puede dividir en:
 
 -  Sprites: Animar rueditas y demás
--  Descomprimir sid, modificarlo para NTSC/Drean tocarlo
+-  Descomprimir sid, modificarlo para tocarlo en NTSC/Drean
 -  Actualizar nombre de canción / autor
 -  Leer eventos: mouse (port #1), joystick (port #2) o teclado
 -  Animar botones apretados
@@ -541,7 +541,7 @@ Raster
 La interrupción por raster es la más común. Uno le dice a la C64 que lo
 llame cuando el raster esta en cierto rasterline.
 
-Por ejemplo, si yo quisiera que la el borde la pantalla fuese negro en
+Por ejemplo, si yo quisiera que el borde la pantalla fuese negro en
 la parte de arriba, y blanco en la de abajo, se usan dos interrupciones
 de raster encadenadas. Es así:
 
@@ -550,7 +550,7 @@ de raster encadenadas. Es así:
     setup_irq:
         sei
         ldx #<raster_top        ; dirección de nuestro callback (IRQ)
-        ldy #>raster_bottom
+        ldy #>raster_top
         stx $0314               ; IRQ vector lo
         sty $0315               ; IRQ vector hi
 
@@ -603,7 +603,7 @@ acá es:
 -  habilitar interrupción de raster con `$d01a`_
 -  usar `$d012`_ para decir en que rasterline se tiene que disparar la interrupción
 -  salir de la interrupción con un ``jmp`` a `$ea81`_ o `$ea31`_
--  el color del borde se cambia con `$d020_`. usar `$d021`_ para color de fondo de pantalla
+-  el color del borde se cambia con `$d020`_. usar `$d021`_ para color de fondo de pantalla
 
 Timers
 ~~~~~~
@@ -619,7 +619,7 @@ La manera de usarlas es muy similar. ej:
     setup_irq:
         sei
         ldx #<timer_top        ; dirección de nuestro callback (IRQ)
-        ldy #>timer_bottom
+        ldy #>timer_top
         stx $0314               ; IRQ vector lo
         sty $0315               ; IRQ vector hi
 
@@ -704,7 +704,7 @@ así:
         sty $dc05           ; Timer A hi
 
 Si el sid esta usando ``$4cc7`` en el timer (un 'tick' por refresco de
-pantalla en PAL), entonces el nuevo valor del timer será:
+pantalla en PAL), entonces el nuevo valor del timer para NTSC será:
 
 -  ``($4cc7 + 1) * 1022727 / 985248 - 1 = $4fb2``
 
@@ -717,7 +717,7 @@ El ``+1`` es porque el timer espera "cantidad de ciclos - 1".
         stx $dc04           ; Timer A lo
         sty $dc05           ; Timer A hi
 
-Y el valor para Drean es: ``$4fc1``
+Y el valor para Drean es: ``$4fc1``.
 
 Como ven las velocidades de Drean y NTSC son muy parecidas. De hecho las
 tablas de frecuencias son muy parecidas entre sí también.
