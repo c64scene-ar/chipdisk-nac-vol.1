@@ -12,7 +12,10 @@ Y luego darle `make`
 
 ## Tracks originales
 
-En el directorio [res/sids](res/sids) se encuentran los archivos los SIDs.
+Los sids y los fuentes de los sids se encuentran aca:
+
+- Fuentes de los sids (archivos SidWizard, CheeseTracker, etc.): [res/sids-source](res/sids-source)
+- sids: [res/sids](res/sids)
 
 ## Internals
 
@@ -23,17 +26,13 @@ En el directorio [res/sids](res/sids) se encuentran los archivos los SIDs.
 - `res`: los assets en formato "original". Ej: archivos .vcharproj, .sid, etc.
 - `bin`: el binario compilado
 
-### Memoria
 
-Más info sobre esto próximamente. Mientrastanto ver los archivos `.cfg` para darse
-una idea de como esta organizada la memoria.
+## Cómo esta hecho
 
-### SIDs comprimidos
+Aca esta documentado como esta hecho el Chipdisk internamente. Comentamos
+los distintos truquitos que usamos y más.
 
-Los SIDs estan comprimidos con exomizer dentro del binario. Para generar los
-archivos .exo, usar este script:
-[sid_to_exo.py](https://github.com/ricardoquesada/c64-misc/blob/master/tools/sid_to_exo.py)
-
+- [chipdisk_internals.es.rst](chipdisk_internals.es.rst)
 
 ## Licencia
 
@@ -41,6 +40,3 @@ Se distribuye el código fuente bajo la licencia Apache 2.
 Ver [LICENSE](LICENSE) para más información.
 
 
-## Documentación
-
-- [chipdisk_internals.es.rst](chipdisk_internals.es.rst)
