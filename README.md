@@ -14,7 +14,7 @@ Y luego darle `make`
 
 Los sids y los fuentes de los sids se encuentran aca:
 
-- Fuentes de los sids (archivos SidWizard, CheeseTracker, etc.): [res/sids-source](res/sids-source)
+- Fuentes de los sids (archivos SidWizard, CheeseCutter, etc.): [res/sids-source](res/sids-source)
 - sids: [res/sids](res/sids)
 
 ## Internals
