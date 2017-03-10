@@ -1644,8 +1644,8 @@ Los posibles valores son:
 | Bit  0    | Joystick Arriba: 0 = Activo     |
 +-----------+---------------------------------+
 
-Importante: 0 significa que esta prendido, y 0 apagado. Si uno quiere
-chequear si el boton del Joystick 2 esta apretado, el código es:
+Importante: 0 significa que esta prendido, y 1 apagado. Si uno quiere
+chequear si el botón del Joystick 2 esta apretado, el código es:
 
 .. code:: asm
 
