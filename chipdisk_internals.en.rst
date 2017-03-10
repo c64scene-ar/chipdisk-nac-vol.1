@@ -3,7 +3,7 @@ Intermediate asm tutorial for the c64: Making a Chipdisk
 
 :Version: 0.1 (`get the latest version <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/chipdisk_internals.es.rst>`__)
 :Author: `riq <http://retro.moe>`__ / `Pungas of Villa Martelli <http://pungas.space>`__
-:Translation: bhz
+:Translation: `Mark Seelye a.k.a. Burning Horizon <mseelye@yahoo.com>`__
 
 .. contents:: Contents
    :depth: 2
