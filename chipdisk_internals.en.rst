@@ -1,8 +1,9 @@
 Intermediate cms for the c64: Making a Chipdisk
 ====================================================================== =========
 
-:Version: 0.1 (`get the latest version <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/chipdisk_internals.es.rst>` __)
-:Author: `riq <http://retro.moe>` __ / `Pungas of Villa Martelli <http://pungas.space>` __
+:Version: 0.1 (`get the latest version <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/chipdisk_internals.es.rst>`__)
+:Author: `riq <http://retro.moe>`__ / `Pungas of Villa Martelli <http://pungas.space>`__
+:Translation: bhz
 
 .. contents:: Contents
    :depth: 2
@@ -13,7 +14,7 @@ Introduction
 Hi. First download the Chipdisk to get an idea of ​​what it covers
 The link:
 
-- `chipdisk-nac.d64 <https://github.com/c64scene-ar/chipdisk-nac-vol.1/raw/master/bin/chipdisk-nac.d64>` __
+- `chipdisk-nac.d64 <https://github.com/c64scene-ar/chipdisk-nac-vol.1/raw/master/bin/chipdisk-nac.d64>`__
 
 Okay, let's start. Playing a sid on a Commodore 64 is very simple:
 
@@ -47,7 +48,7 @@ The call `` jsr $ 1003`` does all the magic, and that code is inside of sid.
 The complicated thing about making a Chipdisk, is not touching the sid, but everything
 else. Let's see why.
 
-   
+
 
 Memory Organization
 ===================
@@ -55,33 +56,31 @@ Memory Organization
 VIC, Banks and others
 ---------------------
 
-* Note *: I guess you already know how to use sprites and graphics modes. If you still
+*Note*: I guess you already know how to use sprites and graphics modes. If you still
 do not know, go to `Bringing Sprites in good Shape <http://dustlayer.com/vic-ii/2013/4/28/vic-ii-for-beginners-part-5-bringing-sprites-in-shape>`__
 and `Screen Modes Cheaper by the Dozen <http://dustlayer.com/vic-ii/2013/4/26/vic-ii-for-beginners-screen-modes-cheaper-by-the-dozen>`__
 
 Let's start with the basics. There are 64k RAM available, but when we turn on the computer
-it says there are `` 38911 BASIC BYTES FREE``. That means that if we are going to use BASIC,
+it says there are ``38911 BASIC BYTES FREE``. That means that if we are going to use BASIC,
 there is only 38k RAM free.
 
 .. figure:: https://lh3.googleusercontent.com/q9Fndsw89AVrXaPtPwr9FUPH42cbtExt4vuyi_VpAFCXG_W_7nMhPqZ2-CAfSbFaERt0IK-9eqAlY2nJrM4FKwZ--hEpjcbTzlCrcIKTXJ5ESBGulrjjiN3KsF-1bcztXnww_a0
    :alt: memory\_free
 
-   * There is 38k free RAM to use from BASIC, but 64k RAM from asm *
+   *There is 38k free RAM to use from BASIC, but 64k RAM from asm*
 
 But since we are not going to use BASIC, we * turn it off * and it releases to us 8k RAM.
 And if we continue to turn everything off, like the KERNAL and so on, then there we will have
 The full 64k of free RAM.
 
-To turn these things on / off, use the address `$ 01`_
+To turn these things on / off, use the address `$01`_
 
 In the Chipdisk we use two configurations:
 
--  All deleted except `` $ d000- $ dfff`` (area reserved for IO:
-   VIC / SID / CIA): it is always used, except with 
-   the sids
--  All Off (64k free RAM): Used with the
-   sids, since the area of ​​`` $ d000- $ dfff`` is used by the sids
-   Tablets
+-  All RAM except ``$d000 - $dfff`` (area reserved for IO:
+   VIC / SID / CIA): it is always used, except with
+   the sids decompressed
+-  All RAM (64k free RAM): Used when the sids are decompressed
 
 It is used like this:
 
@@ -91,14 +90,14 @@ It is used like this:
         sta $01                 ; 0000-9FFF: RAM
                                 ; A000-BFFF: BASIC
                                 ; C000-CFFF: RAM
-                                ; D000-DFFF: IO (VIC,SID/CIA)
+                                ; D000-DFFF: IO (VIC,SID,CIA)
                                 ; E000-FFFF: KERNAL
 
         lda #$35                ; Used by the Chipdisk normally
         sta $01                 ; 0000-9FFF: RAM
                                 ; A000-BFFF: RAM
                                 ; C000-CFFF: RAM
-                                ; D000-DFFF: IO (VIC,SID/CIA)
+                                ; D000-DFFF: IO (VIC,SID,CIA)
                                 ; E000-FFFF: RAM
 
         lda #$34                ; Used by the Chipdisk when it decompresses
@@ -108,7 +107,7 @@ It is used like this:
                                 ; D000-DFFF: RAM
                                 ; E000-FFFF: RAM
 
-There are several possible combinations. Go here for more info <http://unusedino.de/ec64/technical/aay/c64/zp01.htm> `__
+There are several possible combinations. Go here for more info <http://unusedino.de/ec64/technical/aay/c64/zp01.htm>`__
 
 The other thing, is that the VIC (the * GPU * of the compu) needs the RAM.
 If we want to draw a bitmap graphic, we put the graphic in RAM and
@@ -119,10 +118,10 @@ But there is a limitation: The VIC can only see 16k at a time of the 64k RAM.
 There are 4 banks of 16k each (`` 64k / 16k == 4``) of which the VIC can
 read the data.
 
-- Bank 0: `` $ 0000 - $ 3fff``
-- Bank 1: `` $ 4000 - $ 7fff``
-- Bank 2: `` $ 8000 - $ bfff``
-- Bank 3: `` $ c000 - $ ffff``
+- Bank 0: ``$0000 - $3fff``
+- Bank 1: ``$4000 - $7fff``
+- Bank 2: ``$8000 - $bfff``
+- Bank 3: ``$c000 - $ffff``
 
 This means that a bitmap graphic can not be half in one bank and half
 in another. It has to all be in one bank.
@@ -131,7 +130,7 @@ That is not all. It can not be anywhere in the bank. There are places
 special to put bitmaps, charset and screen RAM.
 
 And that adds to other limitations not discussed here. To tell the
-VIC which bank to use is done through the registry `$ dd00`_ of CIA 2, like this:
+VIC which bank to use is done through the registry `$dd00`_ of CIA 2, like this:
 
 .. code:: asm
 
@@ -144,7 +143,7 @@ VIC which bank to use is done through the registry `$ dd00`_ of CIA 2, like this
         sta $dd00
 
 To tell the VIC where to find the bitmap, charset and screen + sprite ptr. is made
-through the registry `$ d018`_ of the VIC.
+through the registry `$d018`_ of the VIC.
 
 .. figure:: https://lh3.googleusercontent.com/hRPBQeC8azhb1h5fmaBBfaLfqA_zQgGvFEI56Dyq-lIpAOzCbQCwsoGiynGc2Zr-XBcLJXGbmnfPsdbK_xwWAjw48-Fs2Lknnx9TGaHGj2ttM5oPYOmZVxhVLdP-YzqILJCZwTk
    :alt: Internals of each bank
@@ -161,20 +160,19 @@ addresses for the VIC to view data ... except to see the default charset.
 
    *The four banks available*
 
-The VIC * sees * the charset by default in those locations because the charset
+The VIC *sees* the charset by default in those locations because the charset
 has to be somewhere. But if it is in RAM it will occupy RAM, and
-then the free 38k for BASIC would now have 4k less. I suppose so that does 
-not happen the engineers of C= decided to map the VIC the charset in those 
+then the free 38k for BASIC would now have 4k less. I suppose so that does
+not happen the engineers of C= decided to map the VIC the charset in those
 locations.
 
 
 Summary:
 
 - There are 4 possible banks where to put the data for the VIC
-- VIC values ​​are modulo `` $ 4000`` 
-- In the locations `` $ 1000- $ 1fff`` and `` $ 9000- $ 9fff``, the VIC ** sees the charset by default
-- `$ dd00`_ is used to change banks. And `$ d018`_ is used to tell SID where to get the data
-- Bitmap and charset share bit 3. But it is because both can not be enabled at the same time
+- VIC values are modulo ``$4000``
+- In the locations ``$1000- $1fff`` and ``$9000- $9fff``, the VIC **sees** the charset by default
+- `$dd00`_ is used to change banks. And `$d018`_ is used to tell SID where to get the data
 
 
 Sids, Exomizer, and others
@@ -206,10 +204,10 @@ How do we put everything in 64k of memory and without accessing the disk?
 The answer is: Compresses everything that can be compressed, and decompresses
 when needed.
 
-- The 9 compressed sids [#] _ using Exomizer_ occupy: ~ 28k
+- The 9 compressed sids [#]_ using Exomizer_ occupy: ~ 28k
 
 But before a sid can be accesed it must be decompressed somewhere.
-For that you need free RAM. So we need a buffer as big as the 
+For that you need free RAM. So we need a buffer as big as the
 biggest sid.
 
 In our case the sid that occupies most is * Fugitive * with 9k. Something
@@ -235,11 +233,11 @@ So far the memory is like this:
 
 ::
 
-    $0000 - $0fff: Libre (4k)
-    $1000 - $32f7: Buffer reservado para tocar un sid (~9k)
-    $32f8 - $7caf: Libre (18k)
-    $7cb0 - $fbdf: Sids comprimidos (28k)
-    $fbe0 - $ffff: Libre (1k)
+    $0000 - $0fff: Free (4k)
+    $1000 - $32f7: Reserved buffer to play a sid (~9k)
+    $32f8 - $7caf: Free (18k)
+    $7cb0 - $fbdf: Compressed Sids (28k)
+    $fbe0 - $ffff: Free (1k)
 
 Bitmap graphic and others
 -------------------------
@@ -302,7 +300,7 @@ In total 8 sprites are used, so there is no need to multiplex the sprites.
 .. figure:: https://lh3.googleusercontent.com/rZIaCnwOg7xCputC0GH9FF4xdUOl5-yW4c4ZgZpemclrt9qH6rbTglj91-NXl4tuC8aXvuheJiEiugWB-iP5o9uN4XW1W6TPFYzAdonBz4e9-et4Yc2VdBIXSaNn9MF7H4yGeWk
    :alt: Sprite locations
 
-* Location of the sprites *
+   *Location of the sprites*
 
 The animation of the casters is trivial. You change the frame sprite every so many
 seconds. Let's see how it is done:
@@ -359,9 +357,9 @@ And that's all about the Player Sprites.
 Decompress sids and modify them ...
 -----------------------------------
 
-The sids are compressed with Exomizer_. The decompression routine we use is from 
-Exomizer [#] _. The interesting thing about this routine is that it is "multi
-tasking". In other words, while decompressing, other things can be done. In our 
+The sids are compressed with Exomizer_. The decompression routine we use is from
+Exomizer [#]_. The interesting thing about this routine is that it is "multi
+tasking". In other words, while decompressing, other things can be done. In our
 case, while we are decompressing the sid, we will be animating the
 cassette:
 
@@ -469,11 +467,11 @@ Sids, and replace them in runtime with an NTSC table.
 
 **IMPORTANT**: Not all tables are the same, but they are very
 similar. For example, the note "A" in the 8th octave may appear as
-$f820, and in others like $f830, or some other value. But the human ear 
+$f820, and in others like $f830, or some other value. But the human ear
 can not differentiate them.
 
 It is best to search for ``$01, $01, $01, $01, $02, $02, $02`` and see if
-it looks like the "hi" chart. Then go 96 bytes up  and see if there 
+it looks like the "hi" chart. Then go 96 bytes up  and see if there
 is a "low" table.
 
 .. figure:: https://lh3.googleusercontent.com/VqNAXgS2DOrbG7bJ729Fz3VWCjzkvTjH_DhtBnZeuL0iIszlmQdtWAnS8qEdBi5FX-fcFL9wfe7hAp0UHkWfmKDCQab5GokBc4vsL6IVRIDMWQdDdezC5bm7I9m2D5d8P8Lph08
@@ -521,7 +519,7 @@ Interruptions, Timers and Raster
 -------------------------------
 
 The other thing to keep in mind is the speed of the the
-Sid. Many trackers generate sids that play at 50.125Hz (PAL's 
+Sid. Many trackers generate sids that play at 50.125Hz (PAL's
 speed). It is ideal, but not all are like that. So double check
 that (eg: SidTracker64).
 
@@ -532,7 +530,7 @@ ways:
 - And / or with timer interrupts
 
 Basically the interrupts are "callbacks" that call us when
-something happens. These callbacks are programmable: you can activate 
+something happens. These callbacks are programmable: you can activate
 or deactivate.
 
 Raster
@@ -598,11 +596,11 @@ in a chained raster. Like this:
 And so one can chain several raster interrupts. The important thing
 here is:
 
-- The `$0314 / $0315`_ vector contains the callback address (IRQ)
+- The `$0314/$0315`_ vector contains the callback address (IRQ)
 - ACK (clean / accept) `$d019`_ when they call us on the interrupt
 - Enable raster interrupt with `$d01a`_
 - Use `$d012`_ to say on which rasterline the interrupt has to be triggered
-- Exit the interrupt with a ``jmp`` to `$ea81`_ or`$ea31`_
+- Exit the interrupt with a ``jmp`` to `$ea81`_ or `$ea31`_
 - The border color is changed with `$d020`_. Use `$d021`_ for background color
 
 Timers
@@ -645,13 +643,13 @@ The way of using them is very similar. Ex:
 
         jmp $ea81               ; Exit interrupt
 
-- `$dc0e`_ is used to activate Timer A. It can be "single-shot" or "continuous"
-- `$dc0d`_ is used to enable CIA1 interrupts
-- `$dc04`_ / ` $dc05`_ is used to tell you how many cycles to count
-   before firing the callback (IRQ)
+-  `$dc0e`_ is used to activate Timer A. It can be "single-shot" or "continuous"
+-  `$dc0d`_ is used to enable CIA1 interrupts
+-  `$dc04`_ / `$dc05`_ is used to tell you how many cycles to count
+    before firing the callback (IRQ)
 
 And that's how interrupts are used. In fact Raster and timer interrupts
-can be used at the same time. Both share the same callback, so to 
+can be used at the same time. Both share the same callback, so to
 tell if it was a raster or timer interrupt you can do the following:
 
 
@@ -681,11 +679,11 @@ sid at the correct speed on both platforms.
 Assuming the sid was generated for PAL, the formula for converting
 to NTSC is:
 
--  ``((speed_of_timer + 1) * 1022727/985248) + 1``
+-  ``((speed_of_timer + 1) * 1022727/985248) - 1``
 
 And to convert to Drean is similar:
 
--  `` ((speed_of_timer + 1) * 1023440/985248) + 1``
+-  `` ((speed_of_timer + 1) * 1023440/985248) - 1``
 
 *Note*: ``985248``, ``1022727``, ``1023440`` are the speeds of the 6510
 In a PAL, NTSC, Drean respectively (``0.985248`` Mhz, ``1.022727``
@@ -703,7 +701,7 @@ like:
         stx $dc04           ; Timer A lo
         sty $dc05           ; Timer A hi
 
-If the sid is using ``$4cc7`` on the timer (a 'tick' of 
+If the sid is using ``$4cc7`` on the timer (a 'tick' of
 screen in PAL), then the new timer value for NTSC will be:
 
 -  ``($4cc7 + 1) * 1022727 / 985248 - 1 = $4fb2``
@@ -731,7 +729,7 @@ Detecting between PAL, NTSC and Drean
 The other important thing is how to detect if a machine is Drean, NTSC or
 PAL.
 
-The trick is as follows. Each of these machines has a different screen 
+The trick is as follows. Each of these machines has a different screen
 resolution:
 
 - PAL: 312 x 63
@@ -773,7 +771,7 @@ get:
 - 2561 cycles / 65 cycles = 39.4.
 
 So, the raster after 19656 cycles will have drawn a full screen
-and will be somewhere on rasterline 39. The formula is similar 
+and will be somewhere on rasterline 39. The formula is similar
 for Drean (you, the reader, can try this).
 
 The code that detects PAL / NTSC / Drean is as follows:
@@ -897,12 +895,12 @@ per pixel, then the graph would occupy:
 
 Something very expensive for a 64k RAM computer. In addition,
 VIC can not see more than 16k at a time. Added to that if one uses
-BASIC, then it only has 38k free. That is why his graphic mode 
+BASIC, then it only has 38k free. That is why his graphic mode
 does not exist in the C64.
 
 When using cells, the foreground and background color is stored in
 A buffer of 40 x 25. Each byte represents the color of the cell: the 4
-High bits are "foreground", and the 4 low bits are the "background". 
+High bits are "foreground", and the 4 low bits are the "background".
 With this a bitmap + color graphic occupies:
 
 -  ((320 \* 200 \* 1 bit) / 8) + (40 \* 25) = 9000 bytes.
@@ -952,7 +950,7 @@ We see that it has an inclination of:
 .. figure:: https://lh3.googleusercontent.com/TpaSLAM6xyEgB80FWG8R8QsEKmNvBfuTrYpy8bwkECpVF4dtFZs3NqCkKw98dC-PzjtZMu3-ZKEC5Fs3wsyI1aatB9z0r5MyStkOsJOU0gj2SNlNIld4ztQdSXXq6SipWNktL2k
    :alt: Tilt
 
-   *Tilt you want to search*
+   *The slope that we want*
 
 Basically, what we want to accomplish is something like this:
 
@@ -1041,11 +1039,11 @@ With this algorithm we can print things like this:
 
    *Letters have empty pixels in the middle*
 
-But that is ** NOT ** what we want because:
-   
-- It occupies a lot of screen space, they will not enter the names of the
-  songs
-- There are empty pixels in the middle of the letters
+But that is **NOT** what we want because:
+
+-  It occupies a lot of screen space, they will not enter the names of the
+   songs
+-  There are empty pixels in the middle of the letters
 
 And why are there empty pixels? The answer is to see this rotation:
 
@@ -1076,7 +1074,7 @@ And four letters would look like this:
    *Empty pixels are at the end of each letter*
 
 What we want to do is have the empty pixels be like
-"Separators" of the characters, and not be in the middle of 
+"Separators" of the characters, and not be in the middle of
 each character. With this in mind, the new algorithm looks like this:
 
 .. code:: c
@@ -1119,7 +1117,7 @@ each character. With this in mind, the new algorithm looks like this:
         }
     }
 
-What you have to do now is to have a charset [#] _ that tilts
+What you have to do now is to have a charset [#]_ that tilts
 only horizontally. For example, a charset like
 this:
 
@@ -1136,7 +1134,7 @@ And so are some of the sloping letters:
    *Example of how 'a', 'b', 'c' and 'd' look like*
 
 But we need to figure out wide letters like ``m``, ``M``, ``W``
-and ``w``. This is solved by using two chars for those letters 
+and ``w``. This is solved by using two chars for those letters
 and let the letters occupy 8x8 and not 4x8. It would be like this:
 
 .. figure:: https://lh3.googleusercontent.com/5fnDgzMLnIjb6wNdSE-WdqTxR1lvl42si2gr57JpF_fXMd5J7g0SrG6yuCjTV9TLjMq-gJOvHk4kTEIIPvhGVzybZgPbSUz9PtkdIty4QYurb_gF6rGc40XLvrDFzeZJlAuP1Wc
@@ -1146,11 +1144,11 @@ and let the letters occupy 8x8 and not 4x8. It would be like this:
 
 Then, the final algorithm is:
 
-- An 8x8 charset is used. But most of the letters are 4x8.
+-  An 8x8 charset is used. But most of the letters are 4x8.
    The right side of most letters is empty
-- The 8x8 pixels of the letters are copied using the algorithm of
+-  The 8x8 pixels of the letters are copied using the algorithm of
    ``Semi_inclination``
-- Some letters like the ``m`` and ``w`` will use two characters. Ex:
+-  Some letters like the ``m`` and ``w`` will use two characters. Ex:
    ``Mama`` is written as ``m&am&a``, since char ``&`` will have the
    second part of the the ``m``
 
@@ -1180,7 +1178,7 @@ Final algorithm to print the sloped letters:
     void plot_char_semi_inclinado(char c, int offset_x, int offset_y)
     {
         char* char_data = charset[c * 8];   // each char occupies 8 bytes.
-        
+
         // fix_x gives tilt effect in X
         int fix_x = 0;
 
@@ -1210,18 +1208,17 @@ has no multiplication instructions.
 The Player uses a slightly more complicated version to improve the
 performance. It takes into account the following:
 
-- Characters can only start in the following offsets
+-  Characters can only start in the following offsets
    relative to the cells: (0,0), (4,2), (0,4), (4,6)
-- A character needs two cells to be printed. These cells are
+-  A character needs two cells to be printed. These cells are
    contiguous.
-- The next character to print will be, at most, a cell's
+-  The next character to print will be, at most, a cell's
    distance in both X and Y
-- There are specific functions to draw the possible 4 offsets
+-  There are specific functions to draw the possible 4 offsets
    ``plot_char_0()``, ..., ``plot_char_3()``
-- There are specific functions to draw each of the 8 rows:
-   ``plot_row_0()``, ..., ``plot_row_7() ``
-- There are three global pointers:
-
+-  There are specific functions to draw each of the 8 rows:
+   ``plot_row_0()``, ..., ``plot_row_7()``
+-  There are three global pointers:
    - ``$f6/$f7`` charset offset pointing to the character to be printed
    - ``$f8/$f9``, and `` $fa/$fb`` pointing to the current cell, and
       next cell in the bitmap
@@ -1621,8 +1618,8 @@ The Player supports 3 methods to control the "arrow":
 Joystick
 ~~~~~~~~
 
-Reading the joystick is relatively simple on the C64. The values ​​of the
-Joystick 1 are in `$dc01`_ and those in joystick 2 are in`$dc00`_
+Reading the joystick is relatively simple on the C64. The values of the
+Joystick 1 are in `$dc01`_ and those in Joystick 2 are in `$dc00`_
 
 .. code:: asm
 
@@ -1654,7 +1651,7 @@ check if the Joystick 2 button is pressed, the code is:
         and #%00010000                  ; I'm just interested in the button status
         beq boton_apretado              ; If it is 0 then the button is pressed
 
-And something similar for Joystick 1, but with `$dc01`_ instead of` $dc00`_.
+And something similar for Joystick 1, but with `$dc01`_ instead of `$dc00`_.
 
 Keyboard
 ~~~~~~~~
@@ -1713,7 +1710,7 @@ If we want to know if the key ``Q`` was pressed then we must do the following:
 Like the joystick, a value of 0 indicates that it was pressed, and a 1 indicates that it was not.
 
 **IMPORTANT**: The joysticks and keyboard share the same controller (CIA)
-So you must differentiate between a joystick movement and keys pressed 
+So you must differentiate between a joystick movement and keys pressed
 sometimes it gets complicated. Note that both use both `$dc00`_ and `$dc01`_ for
 reading the data.
 
@@ -1892,7 +1889,7 @@ was pressed
 To better understand how to enable/disable the mouse/joystick.
 This is how the ``main_loop()`` of the Player works:
 
-code:: asm
+.. code:: asm
 
     main_loop:
         ...
@@ -1927,7 +1924,7 @@ for another.
 .. figure:: https://lh3.googleusercontent.com/gGQcvRrOcIv8tWfcliz_qTAveG2UALJxt9JYd-3JjOKYBzqM9FBiZ0U6nZMknEQt-87LYgH-H_OVP-V_HlMEr4W93M4H1WHOXkL2atCm5TePAqrK2s8CGaXHBg6apUN75M1xnzA
    :alt: 7x7 cells
 
-* Copies a block of 7x7 cells *
+   *Copies a block of 7x7 cells*
 
 The algorithm looks something like this:
 
@@ -2150,7 +2147,7 @@ One way to make the border always open is to use the NMI interrupt
 (Non-Maskable Interrupt) to trigger the edge code. The NMI interrupt has
 priority over other interruptions. If the Raster interrupt is
 Is running when the NMI has to be executed, the NMI Interrupt
-interrupts the Raster interrupt. But no one can interrupt an 
+interrupts the Raster interrupt. But no one can interrupt an
 NMI interrupt.
 
 The NMI interrupt can be triggered with the following events:
@@ -2371,7 +2368,7 @@ qould be three times as expensive. Wow!
 .. figure:: https://lh3.googleusercontent.com/7j8O3TKZuljEjbSTtlfsd1xLsErRXOsI8W147As4KsvjfNXetZUhP8-BFk3AjiWW1tA7FcGjHrGRQrjOtvjbo38lfcLyaRo1GWP7p_RCFIshxOm3Gb7pOOTug6eVFLZeQ4zcagY
    :alt: rasterbars
 
-   *All of rasterbars. A: Scroll, B: Music, C: Open border *
+   *All of rasterbars. A: Scroll, B: Music, C: Open border*
 
 Unpacking the Easter Egg
 -----------------------------
@@ -2481,7 +2478,7 @@ They occupy 63427 bytes. The C64 only has 64k RAM, so the decompression routine
 will step on the compressed data at some point. The idea is to step it just one
 time you after you have used the compressed data.
 
-The Exomizer_ decompression routine goes from the end 
+The Exomizer_ decompression routine goes from the end
 forwards. That is, it begins to decompress the last byte first.
 
 ::
@@ -2500,10 +2497,10 @@ forwards. That is, it begins to decompress the last byte first.
 
 So to prevent it from treading on the unused data, something like this is done:
 
-- The address of the last compressed byte is in ``$afff``, and that byte
+-  The address of the last compressed byte is in ``$afff``, and that byte
    once decompressed goes to ``$fff0``. So it does not "step" the compressed data.
 
-- And the address of the first compressed byte is at ``$0800``, and that byte
+-  And the address of the first compressed byte is at ``$0800``, and that byte
    once decompressed goes to ``$0820``. On top of the compressed data, but only
    after is was already decompressed.
 
@@ -2538,7 +2535,7 @@ putting in additional ``nop``s. There are different techniques for achieving
 a stable raster. Chipdisk uses the technique called "double IRQ".
 
 The code looks like this:
-   
+
 .. code:: asm
 
         ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -2680,14 +2677,14 @@ The code is **not** just as an example. It's real code
 written for the Chipdisk that we present in the Datastorm 2017.
 That means you have all the "real code" problems.
 
-- It is based on the Chipdisk code *Up The Hands* that we present in DeCrunch 2016
-- The requirements were changing. The code changed also. There may be
+-  It is based on the Chipdisk code *Hands Up* that we presented in DeCrunch 2016
+-  The requirements were changing. The code changed also. There may be
    code that is not used, or code that no longer makes sense.
-- Too many macros / unrolled-loops were used. Perhaps it would have been better to use less
+-  Too many macros / unrolled-loops were used. Perhaps it would have been better to use less
    To take additional place for a possible new topic.
-- There are few comments
-- The Easter Egg has some bugs in the scroll. With time we will fix
-- There may be other bugs too.
+-  There are few comments
+-  The Easter Egg has some bugs in the scroll. With time we will fix
+-  There may be other bugs too.
 
 Questions and others
 ===================
@@ -2706,7 +2703,7 @@ References
 .. [#] The decompression routine is in the .zip of the Exomizer_, but you can also see it here: `exodecrunch.s <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/exodecrunch.s>`__
 .. [#] The great idea of ​​making a special charset to simplify the performance is from Alakran
 .. [#] Or as Acid recommends, you could only optimize ``set_pixel() `` with tables to avoid multiplication.
-.. [#] More tricks on how to optimize 6502 are here: `6502 assembly optimisations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ y acá `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. And also here: `CodeBase64 <http://codebase64.org/>`__
+.. [#] More tricks on how to optimize 6502 are here: `6502 assembly optimisations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ and here `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. And also here: `CodeBase64 <http://codebase64.org/>`__
 .. [#] For more information about Bad Lines go to `Beyond the Screen: Rasters and Cycles <http://dustlayer.com/vic-ii/2013/4/25/vic-ii-for-beginners-beyond-the-screen-rasters-cycle>`__
 
 
@@ -2743,35 +2740,3 @@ References
 .. _$ea81: http://unusedino.de/ec64/technical/aay/c64/romea81.htm
 .. _$ffe4: http://unusedino.de/ec64/technical/aay/c64/romffe4.htm
 
-
-
-
-
-
-
-
-
-
-
-
-
-.. _ $ d018: http://unusedino.de/ec64/technical/aay/c64/vic24.htm
-.. _ $ d019: http://unusedino.de/ec64/technical/aay/c64/vic25.htm
-.. _ $ d01a: http://unusedino.de/ec64/technical/aay/c64/vic26.htm
-.. _ $ d020: http://unusedino.de/ec64/technical/aay/c64/vic32.htm
-.. _ $ d021: http://unusedino.de/ec64/technical/aay/c64/vic33.htm
-.. _ $ d022: http://unusedino.de/ec64/technical/aay/c64/vic34.htm
-.. _ $ d023: http://unusedino.de/ec64/technical/aay/c64/vic35.htm
-.. _ $ d419: http://unusedino.de/ec64/technical/aay/c64/sid25.htm
-.. _ $ d41a: http://unusedino.de/ec64/technical/aay/c64/sid26.htm
-.. _ $ dc00: http://unusedino.de/ec64/technical/aay/c64/cia10.htm
-.. _ $ dc01: http://unusedino.de/ec64/technical/aay/c64/cia11.htm
-.. _ $ dc04: http://unusedino.de/ec64/technical/aay/c64/cia14.htm
-.. _ $ dc05: http://unusedino.de/ec64/technical/aay/c64/cia15.htm
-.. _ $ dc0e: http://unusedino.de/ec64/technical/aay/c64/cia114.htm
-.. _ $ dc0d: http://unusedino.de/ec64/technical/aay/c64/cia113.htm
-.. _ $ dd00: http://unusedino.de/ec64/technical/aay/c64/cia20.htm
-.. _ $ dd0d: http://unusedino.de/ec64/technical/aay/c64/cia213.htm
-.. _ $ ea31: http://unusedino.de/ec64/technical/aay/c64/romea31.htm
-.. _ $ ea81: http://unusedino.de/ec64/technical/aay/c64/romea81.htm
-.. _ $ ffe4: http://unusedino.de/ec64/technical/aay/c64/romffe4.htm
