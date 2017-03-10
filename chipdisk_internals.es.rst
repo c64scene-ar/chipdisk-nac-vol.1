@@ -174,7 +174,6 @@ Resumiendo:
 -  Los valores del VIC son módulo ``$4000``
 -  En las direcciones ``$1000-$1fff`` y ``$9000-$9fff``, el VIC **ve** el charset por default
 -  Se usa `$dd00`_ para cambiar de banco. Y `$d018`_ para decirle al SID de donde sacar la data
--  El bitmap y el charset comparten el bit 3. Pero es porque ambos no pueden estar habilitados a la vez
 
 
 Los sids, Exomizer, y demás
@@ -541,7 +540,7 @@ Raster
 La interrupción por raster es la más común. Uno le dice a la C64 que lo
 llame cuando el raster esta en cierto rasterline.
 
-Por ejemplo, si yo quisiera que el borde la pantalla fuese negro en
+Por ejemplo, si yo quisiera que el borde de la pantalla fuese negro en
 la parte de arriba, y blanco en la de abajo, se usan dos interrupciones
 de raster encadenadas. Es así:
 
@@ -681,11 +680,11 @@ sid a la velocidad correcta tanto en las distintas plataformas.
 Asumiendo que el sid fue generado para PAL, la formulita para convertir
 a NTSC es:
 
--  ``((velocidad_del_timer + 1) * 1022727 / 985248) + 1``
+-  ``((velocidad_del_timer + 1) * 1022727 / 985248) - 1``
 
 Y para convertir a Drean es similar:
 
--  ``((velocidad_del_timer + 1) * 1023440 / 985248) + 1``
+-  ``((velocidad_del_timer + 1) * 1023440 / 985248) - 1``
 
 *Nota*: ``985248``, ``1022727``, ``1023440`` son la velocidades del 6510
 en una PAL, NTSC, Drean respectivamente (``0.985248`` Mhz, ``1.022727``
@@ -889,7 +888,7 @@ El modo bitmap funciona por celdas. La pantalla esta dividida en:
    *En modo Bitmap Standard las celdas no pueden tener más de 2 colores a la vez*
 
 El gráfico en total usa 16 colores. Pero si prestan atención, cada celda
-no tiene más de 2 colores a la vez. Esto modo gráfico existe para
+no tiene más de 2 colores a la vez. Este modo gráfico existe para
 ahorrar memoria. Por ejemplo, si uno pudiera elegir 16 colores (4 bits)
 por pixel, entonces el gráfico ocuparía:
 
@@ -1222,7 +1221,7 @@ performance. Tiene en cuenta lo siguiente:
    ``plot_row_0()``, ..., ``plot_row_7()``
 -  Hay tres punteros globales:
 
-   -  ``$f6/$f6`` offset del charset que apunta al caracter a imprimir
+   -  ``$f6/$f7`` offset del charset que apunta al caracter a imprimir
    -  ``$f8/f9``, y ``$fa/$fb`` que apuntan a la celda actual, y a la
       siguiente celda del bitmap
 
@@ -1645,8 +1644,8 @@ Los posibles valores son:
 | Bit  0    | Joystick Arriba: 0 = Activo     |
 +-----------+---------------------------------+
 
-Importante: 0 significa que esta prendido, y 0 apagado. Si uno quiere
-chequear si el boton del Joystick 2 esta apretado, el código es:
+Importante: 0 significa que esta prendido, y 1 apagado. Si uno quiere
+chequear si el botón del Joystick 2 esta apretado, el código es:
 
 .. code:: asm
 
@@ -2659,7 +2658,7 @@ Para compilarlo se necesita:
 -  VICE_ (opcional, usado para generar el .d64)
 -  ``make``
 
-Poner todo es en el path, clonar el repositorio, y hacer:
+Poner todo en el path, clonar el repositorio, y hacer:
 
 .. code:: bash
 
