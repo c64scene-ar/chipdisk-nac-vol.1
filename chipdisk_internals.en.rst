@@ -1,5 +1,5 @@
-Intermediate cms for the c64: Making a Chipdisk
-====================================================================== =========
+Intermediate asm tutorial for the c64: Making a Chipdisk
+========================================================
 
 :Version: 0.1 (`get the latest version <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/chipdisk_internals.es.rst>`__)
 :Author: `riq <http://retro.moe>`__ / `Pungas of Villa Martelli <http://pungas.space>`__
@@ -69,7 +69,7 @@ there is only 38k RAM free.
 
    *There is 38k free RAM to use from BASIC, but 64k RAM from asm*
 
-But since we are not going to use BASIC, we * turn it off * and it releases to us 8k RAM.
+But since we are not going to use BASIC, we *turn it off* and it releases to us 8k RAM.
 And if we continue to turn everything off, like the KERNAL and so on, then there we will have
 The full 64k of free RAM.
 
@@ -107,9 +107,9 @@ It is used like this:
                                 ; D000-DFFF: RAM
                                 ; E000-FFFF: RAM
 
-There are several possible combinations. Go here for more info <http://unusedino.de/ec64/technical/aay/c64/zp01.htm>`__
+There are several possible combinations. Go here for more info `<http://unusedino.de/ec64/technical/aay/c64/zp01.htm>`__
 
-The other thing, is that the VIC (the * GPU * of the compu) needs the RAM.
+The other thing, is that the VIC (the *GPU*) needs the RAM as well.
 If we want to draw a bitmap graphic, we put the graphic in RAM and
 The VIC reads it from there (from RAM). So the RAM is shared between the CPU (the 6510)
 and the GPU (the VIC).
@@ -150,8 +150,8 @@ through the registry `$d018`_ of the VIC.
 
    *Internal memory of each bank*
 
-But that is not all. Banks 0 and 2 (`` $ 0000- $ 3fff`` and `` $ 8000- $ bfff``) have
-mapped between `` $ 1000- $ 1fff`` and `` $ 9000- $ 9fff`` respectively to the charset
+But that is not all. Banks 0 and 2 (``$0000- $3fff`` and ``$8000- $bfff``) have
+mapped between ``$1000- $1fff`` and ``$9000- $9fff`` respectively to the charset
 default (uppercase and lowercase). That means we can not use those
 addresses for the VIC to view data ... except to see the default charset.
 
@@ -210,7 +210,7 @@ But before a sid can be accesed it must be decompressed somewhere.
 For that you need free RAM. So we need a buffer as big as the
 biggest sid.
 
-In our case the sid that occupies most is * Fugitive * with 9k. Something
+In our case the sid that occupies most is *Prófugos* with 9k. Something
 quite unusual for a sid (they usually do not occupy more than 4k), for
 instruments and data, you can not reduce more than that without
 losing sound quality.
