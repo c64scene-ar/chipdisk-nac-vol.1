@@ -2658,7 +2658,7 @@ Para compilarlo se necesita:
 -  VICE_ (opcional, usado para generar el .d64)
 -  ``make``
 
-Poner todo es en el path, clonar el repositorio, y hacer:
+Poner todo en el path, clonar el repositorio, y hacer:
 
 .. code:: bash
 
