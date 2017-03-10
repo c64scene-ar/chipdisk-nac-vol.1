@@ -1221,7 +1221,7 @@ performance. Tiene en cuenta lo siguiente:
    ``plot_row_0()``, ..., ``plot_row_7()``
 -  Hay tres punteros globales:
 
-   -  ``$f6/$f6`` offset del charset que apunta al caracter a imprimir
+   -  ``$f6/$f7`` offset del charset que apunta al caracter a imprimir
    -  ``$f8/f9``, y ``$fa/$fb`` que apuntan a la celda actual, y a la
       siguiente celda del bitmap
 
