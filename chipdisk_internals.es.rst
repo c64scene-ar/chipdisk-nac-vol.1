@@ -540,7 +540,7 @@ Raster
 La interrupción por raster es la más común. Uno le dice a la C64 que lo
 llame cuando el raster esta en cierto rasterline.
 
-Por ejemplo, si yo quisiera que el borde la pantalla fuese negro en
+Por ejemplo, si yo quisiera que el borde de la pantalla fuese negro en
 la parte de arriba, y blanco en la de abajo, se usan dos interrupciones
 de raster encadenadas. Es así:
 
@@ -888,7 +888,7 @@ El modo bitmap funciona por celdas. La pantalla esta dividida en:
    *En modo Bitmap Standard las celdas no pueden tener más de 2 colores a la vez*
 
 El gráfico en total usa 16 colores. Pero si prestan atención, cada celda
-no tiene más de 2 colores a la vez. Esto modo gráfico existe para
+no tiene más de 2 colores a la vez. Este modo gráfico existe para
 ahorrar memoria. Por ejemplo, si uno pudiera elegir 16 colores (4 bits)
 por pixel, entonces el gráfico ocuparía:
 
