@@ -2576,16 +2576,10 @@ The code looks like this:
             bne *-1         ; +3 * 7, +2, 50~51
             bit $00         ; +3, 53~54
 
-        ;   .repeat 21
-        ;       nop         ; 2 * 21
-        ;   .endrepeat
-
             lda $d012       ; +4, 57~58
             cmp $d012       ; +4, 61~62
             beq *+2         ; +2/+3, 64
         .endmacro
-
-
 
         ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
         ; IRQ raster splitting screen between bitmap mode and text mode
