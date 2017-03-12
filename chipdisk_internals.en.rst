@@ -2,7 +2,7 @@ Intermediate asm tutorial for the c64: Making a Chipdisk
 ========================================================
 
 :Version: 0.1 (`get the latest version <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/chipdisk_internals.es.rst>`__)
-:Author: `riq <http://retro.moe>`__ / `Pungas of Villa Martelli <http://pungas.space>`__
+:Author: `riq <http://retro.moe>`__ / `Pungas de Villa Martelli <http://pungas.space>`__
 :Translation: `Mark Seelye a.k.a. Burning Horizon <mseelye@yahoo.com>`__
 
 .. contents:: Contents
@@ -206,7 +206,7 @@ when needed.
 
 - The 9 compressed sids [#]_ using Exomizer_ occupy: ~ 28k
 
-But before a sid can be accesed it must be decompressed somewhere.
+But before a sid can be accessed it must be decompressed somewhere.
 For that you need free RAM. So we need a buffer as big as the
 biggest sid.
 
@@ -1006,7 +1006,7 @@ similar, but every now and then we have to go down and then left:
 .. code:: c
 
     // pseudo code
-    void plot_char_inclinado(char c, int offset_x, int offset_y)
+    void plot_char_sloped(char c, int offset_x, int offset_y)
     {
         char* char_data = charset[c * 8];   // each char occupies 8 bytes.
 
@@ -1088,13 +1088,13 @@ each character. With this in mind, the new algorithm looks like this:
         int l = strlen(name);
         for (int i=0; i<l; ++i)
         {
-            plot_char_semi_inclinado(name[i], x, y);
+            plot_char_semi_sloped(name[i], x, y);
             x += 4;                     // next char starts: 4 pixels on the right
             y += 2;                     // and 2 pixels below
         }
     }
 
-    void plot_char_semi_inclinado(char c, int offset_x, int offset_y)
+    void plot_char_semi_sloped(char c, int offset_x, int offset_y)
     {
         char* char_data = charset[c * 8];   // each char occupies 8 bytes.
 
@@ -1169,13 +1169,13 @@ Final algorithm to print the sloped letters:
         int l = strlen(name);
         for (int i=0; i<l; ++i)
         {
-            plot_char_semi_inclinado(name[i], x, y);
+            plot_char_semi_sloped(name[i], x, y);
             x += 4;                     // next char starts: 4 pixels on the right
             y += 2;                     // and 2 pixels below
         }
     }
 
-    void plot_char_semi_inclinado(char c, int offset_x, int offset_y)
+    void plot_char_semi_sloped(char c, int offset_x, int offset_y)
     {
         char* char_data = charset[c * 8];   // each char occupies 8 bytes.
 
@@ -1251,7 +1251,7 @@ Here's how the optimized algorithm works (pseudo code):
         g_bitmap_offset_1 = ORIGIN_CELL_Y * 40 + (ORIGIN_CELL_X + 1) * 8;
         char c;
 
-        while (no_se_hayan_impreso_todos_los_chars) {
+        while (remaining_chars) {
 
             c = fetch_next_char();
             plot_char_0(c);     // print first char (offset 0,0)
@@ -1629,7 +1629,7 @@ Joystick 1 are in `$dc01`_ and those in Joystick 2 are in `$dc00`_
 The possible values ​​are:
 
 +-----------+---------------------------------+
-|$dc00/$dc01| Significado                     |
+|$dc00/$dc01| Meaning                         |
 +===========+=================================+
 | Bit  4    | Joystick Button: 0 = Active     |
 +-----------+---------------------------------+
@@ -1649,7 +1649,7 @@ check if the Joystick 2 button is pressed, the code is:
 
         lda $dc00                       ; Read status of Joystick 2
         and #%00010000                  ; I'm just interested in the button status
-        beq boton_apretado              ; If it is 0 then the button is pressed
+        beq button_pressed              ; If it is 0 then the button is pressed
 
 And something similar for Joystick 1, but with `$dc01`_ instead of `$dc00`_.
 
@@ -1705,7 +1705,7 @@ If we want to know if the key ``Q`` was pressed then we must do the following:
         sta $dc00
         lda $dc01
         and #%01000000              ; Column 6
-        beq tecla_apretada          ; If it is 0, then it was pressed
+        beq pressed_key             ; If it is 0, then it was pressed
 
 Like the joystick, a value of 0 indicates that it was pressed, and a 1 indicates that it was not.
 
@@ -2121,7 +2121,7 @@ with a raster interrupt ... something like:
 That works in 99% of cases. But remember that we have to play
 The sid to work well on PAL, NTSC and Drean. Also for the sid
 we have to use a timer to attain the correct speed, a speed
-that can be different than the raster irq speed.
+that can be different than the raster IRQ speed.
 
 Suppose we are running the program in an NTSC (see *Detecting between ...* for more info):
 
@@ -2363,7 +2363,7 @@ Sprites are scrolled. Here is the code:
 *Note*: Note that we are "rol" at 163 (7 * 8 * 3) bytes per frame, a total
 of 978 (163 * 6) CPU cycles. It is not a lot, but it is much more than what is used in
 a normal text scroll. If we use the 24 pixels of the sprite,
-qould be three times as expensive. Wow!
+could be three times as expensive. Wow!
 
 .. figure:: https://lh3.googleusercontent.com/7j8O3TKZuljEjbSTtlfsd1xLsErRXOsI8W147As4KsvjfNXetZUhP8-BFk3AjiWW1tA7FcGjHrGRQrjOtvjbo38lfcLyaRo1GWP7p_RCFIshxOm3Gb7pOOTug6eVFLZeQ4zcagY
    :alt: rasterbars
@@ -2408,7 +2408,7 @@ The Player's memory with the compressed Easter Egg looks like this:
     $6900 - $6cff: Charset (1k)
     $6d00 - $73ff: Sid White Noise (1.7k)
     $7400 - $7caf: Pressed button images + temporary buffer (~ 2k)
-    $7cb0 - $fbdf: Compresswd Sids, including the Sid of the Easter Egg (28k)
+    $7cb0 - $fbdf: Compressed Sids, including the Sid of the Easter Egg (28k)
     $7be0 - $7ccf: Player Code (3/3)
     $fcd0 - $fff0: Text Scroll Easter Egg Compressed (~ 800 bytes)
 
@@ -2506,7 +2506,7 @@ So to prevent it from treading on the unused data, something like this is done:
 
 **Rules**: Both the address of the first byte of origin and that of the last one
 must be less than the addresses of the first and last destination byte
-eespectively: ``$0800 < $0820`` and ``$afff < $fff0``.
+respectively: ``$0800 < $0820`` and ``$afff < $fff0``.
 
 Stable IRQ Raster
 ------------------
@@ -2540,46 +2540,51 @@ The code looks like this:
 
         ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
         ; STABILIZE_RASTER
-        ; Routine for a stable raster using Double-IRQ
-        ; Sourced from: http://codebase64.org/doku.php?id=base:stable_raster_routine
+        ; Double-IRQ Stable raster routine
+        ; code and comments taken from: http://codebase64.org/doku.php?id=base:stable_raster_routine
         ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
         .macro STABILIZE_RASTER
-                ; The IRQ Raster is triggered in cycle 0 of the current rasterline ($d012)
-                ; But the CPU has to finish the opcode that is running before calling the IRQ
-                ; So there may be a delay of 0 to 7 cycles, depending on the opcode
-                ; Then there is a delay of about 7 cycles calling the "Interrupt Handler" (Push SR / PC to stack ++)
-                ; And then another 13 more cycles are consumed to keep the records (pha, txa, pha, tya, pha)
+            ; A Raster Compare IRQ is triggered on cycle 0 on the current $d012 line
+            ; The MPU needs to finish it's current OP code before starting the Interrupt Handler,
+            ; meaning a 0 -> 7 cycles delay depending on OP code.
+            ; Then a 7 cycle delay is spent invoking the Interrupt Handler (Push SR/PC to stack++)
+            ; Then 13 cycles for storing registers (pha, txa, pha, tya, pha)
 
-                ; Cycles consumed so far: 20 ~ 27
-                lda #<@irq_stable   ; +2, 2
-                ldx #>@irq_stable   ; +2, 4
-                sta $fffe       ; +4, 8
-                stx $ffff       ; +4, 12
-                inc $d012       ; +6, 18
-                asl $d019       ; +6, 24
-                tsx             ; +2, 26
-                cli             ; +2, 28
+            ; prev cycle count: 20~27
+            lda #<@irq_stable   ; +2, 2
+            ldx #>@irq_stable   ; +2, 4
+            sta $fffe       ; +4, 8
+            stx $ffff       ; +4, 12
+            inc $d012       ; +6, 18
+            asl $d019       ; +6, 24
+            tsx             ; +2, 26
+            cli             ; +2, 28
 
-               .repeat 10
-                        ;  The next IRQ will be called while running these nops
-                        nop         ; +2 * 10, 48.
-                .endrepeat
-                ; Cycle count: 68 ~ 75. The new IRQ raster has already been called at this point
+            .repeat 10
+                ; Next IRQ will be triggered while executing these nops
+                nop         ; +2 * 10, 48.
+            .endrepeat
+            ; cycle count: 68~75. New raster already triggered at this point
 
         @irq_stable:
-                ; Cycle count: 7 ~ 8 .7 cycles for the interrupt handler + 0 ~ 1 cycle Jitter for the NOP
-                txs         ; +2, 9~10
+            ; cycle count: 7~8 .7 cycles for the interrupt handler + 0~1 cycle Jitter for the NOP
+            txs         ; +2, 9~10
 
-                ; 42 cycles
-                ldx #$08        ; +2, 11~12
-                dex             ; +2 * 8, 27~28
-                bne *-1         ; +3 * 7, +2, 50~51
-                bit $00         ; +3, 53~54
+            ; 42 cycles
+            ldx #$08        ; +2, 11~12
+            dex             ; +2 * 8, 27~28
+            bne *-1         ; +3 * 7, +2, 50~51
+            bit $00         ; +3, 53~54
 
-                lda $d012       ; +4, 57~58
-                cmp $d012       ; +4, 61~62
-                beq *+2         ; +2/+3, 64
+        ;   .repeat 21
+        ;       nop         ; 2 * 21
+        ;   .endrepeat
+
+            lda $d012       ; +4, 57~58
+            cmp $d012       ; +4, 61~62
+            beq *+2         ; +2/+3, 64
         .endmacro
+
 
 
         ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -2673,17 +2678,17 @@ License
 Additional comments
 -------------------
 
-The code is **not** just as an example. It's real code
-written for the Chipdisk that we present in the Datastorm 2017.
-That means you have all the "real code" problems.
+The code is was **not** developed to be used as a sample. It's real code
+written for the Chipdisk that we presented in the Datastorm 2017.
+That means you have all the "real code" issues.
 
 -  It is based on the Chipdisk code *Hands Up* that we presented in DeCrunch 2016
 -  The requirements were changing. The code changed also. There may be
    code that is not used, or code that no longer makes sense.
 -  Too many macros / unrolled-loops were used. Perhaps it would have been better to use less
-   To take additional place for a possible new topic.
+   to take additional place for a possible new song.
 -  There are few comments
--  The Easter Egg has some bugs in the scroll. With time we will fix
+-  The Easter Egg has some bugs in the scroll. With time we will fix them
 -  There may be other bugs too.
 
 Questions and others
@@ -2703,7 +2708,7 @@ References
 .. [#] The decompression routine is in the .zip of the Exomizer_, but you can also see it here: `exodecrunch.s <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/exodecrunch.s>`__
 .. [#] The great idea of ​​making a special charset to simplify the performance is from Alakran
 .. [#] Or as Acid recommends, you could only optimize ``set_pixel() `` with tables to avoid multiplication.
-.. [#] More tricks on how to optimize 6502 are here: `6502 assembly optimisations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ and here `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. And also here: `CodeBase64 <http://codebase64.org/>`__
+.. [#] More tricks on how to optimize 6502 are here: `6502 assembly optimizations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ and here `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. And also here: `CodeBase64 <http://codebase64.org/>`__
 .. [#] For more information about Bad Lines go to `Beyond the Screen: Rasters and Cycles <http://dustlayer.com/vic-ii/2013/4/25/vic-ii-for-beginners-beyond-the-screen-rasters-cycle>`__
 
 
@@ -2739,4 +2744,3 @@ References
 .. _$ea31: http://unusedino.de/ec64/technical/aay/c64/romea31.htm
 .. _$ea81: http://unusedino.de/ec64/technical/aay/c64/romea81.htm
 .. _$ffe4: http://unusedino.de/ec64/technical/aay/c64/romffe4.htm
-
