@@ -11,7 +11,7 @@ Intermediate asm tutorial for the c64: Making a Chipdisk
 Introduction
 ============
 
-Hi. First download the Chipdisk to get an idea of ​​what it covers
+Hi. First download the Chipdisk to get an idea of what it covers
 The link:
 
 - `chipdisk-nac.d64 <https://github.com/c64scene-ar/chipdisk-nac-vol.1/raw/master/bin/chipdisk-nac.d64>`__
@@ -479,7 +479,7 @@ is a "low" table.
 
    *Looking for the table of frequencies in a sid*
 
-Once the values ​​are found, they are replaced by the NTSC values.
+Once the values are found, they are replaced by the NTSC values.
 Here there is just a simple loop to copy the tables. Ex:
 
 
@@ -691,7 +691,7 @@ Mhz, "1.023440" Mhz). As you can see, the fastest of all is the Drean, and
 The slowest is PAL.
 
 To know the speed of the timer, it is necessary to notice in the code of the sid
-and see if it modifies the values ​​of the CIA timer. For example, if you see something
+and see if it modifies the values of the CIA timer. For example, if you see something
 like:
 
 .. code:: asm
@@ -739,7 +739,7 @@ resolution:
 This is measured in CPU cycles. In a PAL machine, to refresh the entire screen
 it takes 312 x 63 = 19,656 ($4cc8) cycles. Do you hear the number
 ``$4cc8``? It's the one we used on the timer to play music at
-PAL speed (``$4cc8 - 1``, ​​since in the timers you subtract 1 to get
+PAL speed (``$4cc8 - 1``, since in the timers you subtract 1 to get
 the desired value). That means if I set the timer to
 ``$4cc7``, on a PAL machine it will be called once per screen refresh.
 
@@ -1626,7 +1626,7 @@ Joystick 1 are in `$dc01`_ and those in Joystick 2 are in `$dc00`_
         ldx $dc00                       ; "X" has the value of joystick #2
         ldy $dc01                       ; "Y" has the value of joystick #1
 
-The possible values ​​are:
+The possible values are:
 
 +-----------+---------------------------------+
 |$dc00/$dc01| Meaning                         |
@@ -1669,8 +1669,8 @@ cases. The Player, however, uses the other option that is reading the
 
 - The keyboard of the Commodore 64 has 64 keys (not counting RESTORE)
 - The keys are arranged in an 8 x 8 matrix (8 \* 8 = 64)
-- `$dc01`_ contains the values ​​of the columns
-- and `$dc00`_ contains the values ​​of the rows
+- `$dc01`_ contains the values of the columns
+- and `$dc00`_ contains the values of the rows
 
 You can determine which keys are pressed by reading the
 following matrix:
@@ -2706,7 +2706,7 @@ References
 
 .. [#] The tool used to compress sids is this: `sid_to_exo.py <https://github.com/ricardoquesada/c64-misc/blob/master/tools/sid_to_exo.py>`__
 .. [#] The decompression routine is in the .zip of the Exomizer_, but you can also see it here: `exodecrunch.s <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/exodecrunch.s>`__
-.. [#] The great idea of ​​making a special charset to simplify the performance is from Alakran
+.. [#] The great idea of making a special charset to simplify the performance is from Alakran
 .. [#] Or as Acid recommends, you could only optimize ``set_pixel() `` with tables to avoid multiplication.
 .. [#] More tricks on how to optimize 6502 are here: `6502 assembly optimizations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ and here `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. And also here: `CodeBase64 <http://codebase64.org/>`__
 .. [#] For more information about Bad Lines go to `Beyond the Screen: Rasters and Cycles <http://dustlayer.com/vic-ii/2013/4/25/vic-ii-for-beginners-beyond-the-screen-rasters-cycle>`__
