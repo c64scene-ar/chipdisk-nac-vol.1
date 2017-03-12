@@ -1,9 +1,9 @@
 # Fuentes de los SIDs / SID sources
 Los archivos según su extensión corresponden a los siguientes editores de música C64:
 
-- SIDWIZARD: `.SWM`
-- GOATTRACKER: `.SNG`
-- CHEESECUTTER: `.CT`
+- SIDWIZARD 1.7: `.SWM`
+- GOATTRACKER 2.73: `.SNG`
+- CHEESECUTTER 2.8: `.CT`
 
 **NOTA**: Los nombres de los archivos de SIDWIZARD fueron acortados para poder ser abiertos con comodidad desde WINVICE con el sistema de archivo Virtual FS, se pone el archivo SID-Wizard-1.7.prg en la misma carpeta de Windows que los archivos .SWM, y se hace drag and drop sobre el VICE. Si Winvice está configurado para usar Virtual FS en la configuración de AutoStart, va a tomar la carpeta como si fuera el disco de una C64 en device 8 dentro de SidWizard.
 
