@@ -1,7 +1,7 @@
-Intermediate asm tutorial for the c64: Making a Chipdisk
+C64 Assembler tutorial: Making a Chipdisk (intermediate)
 ========================================================
 
-:Version: 0.1 (`get the latest version <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/chipdisk_internals.es.rst>`__)
+:Version: 0.1 (`get the latest version <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/chipdisk_internals.en.rst>`__)
 :Author: `riq <http://retro.moe>`__ / `Pungas de Villa Martelli <http://pungas.space>`__
 :Translation: `Mark Seelye a.k.a. Burning Horizon <mseelye@yahoo.com>`__
 
@@ -12,7 +12,6 @@ Introduction
 ============
 
 Hi. First download the Chipdisk to get an idea of what it covers
-The link:
 
 - `chipdisk-nac.d64 <https://github.com/c64scene-ar/chipdisk-nac-vol.1/raw/master/bin/chipdisk-nac.d64>`__
 
@@ -43,9 +42,9 @@ Okay, let's start. Playing a sid on a Commodore 64 is very simple:
         jmp $ea31           ; Exit interrupt
 
 ...and done. Each sid knows how to play all by itself, since a sid is code + data.
-The call `` jsr $ 1003`` does all the magic, and that code is inside of sid.
+The call ``jsr $1003`` does all the magic, and that code is inside the sid.
 
-The complicated thing about making a Chipdisk, is not touching the sid, but everything
+The complicated thing about making a Chipdisk, is not playing the sid, but everything
 else. Let's see why.
 
 
@@ -69,18 +68,17 @@ there is only 38k RAM free.
 
    *There is 38k free RAM to use from BASIC, but 64k RAM from asm*
 
-But since we are not going to use BASIC, we *turn it off* and it releases to us 8k RAM.
-And if we continue to turn everything off, like the KERNAL and so on, then there we will have
-The full 64k of free RAM.
+But since we are not going to use BASIC, we *turn it off* and it releases 8k RAM.
+And if we continue to turn everything off, like the KERNAL and so on, then the 64k
+RAM will be available for us.
 
 To turn these things on / off, use the address `$01`_
 
 In the Chipdisk we use two configurations:
 
 -  All RAM except ``$d000 - $dfff`` (area reserved for IO:
-   VIC / SID / CIA): it is always used, except with
-   the sids decompressed
--  All RAM (64k free RAM): Used when the sids are decompressed
+   VIC / SID / CIA): always used, except when the sids are decompressed
+-  All RAM (64k free RAM): Used only when the sids are decompressed
 
 It is used like this:
 
@@ -100,7 +98,7 @@ It is used like this:
                                 ; D000-DFFF: IO (VIC,SID,CIA)
                                 ; E000-FFFF: RAM
 
-        lda #$34                ; Used by the Chipdisk when it decompresses
+        lda #$34                ; Used by the Chipdisk when it decompresses the sids
         sta $01                 ; 0000-9FFF: RAM
                                 ; A000-BFFF: RAM
                                 ; C000-CFFF: RAM
@@ -111,11 +109,11 @@ There are several possible combinations. Go here for more info `<http://unusedin
 
 The other thing, is that the VIC (the *GPU*) needs the RAM as well.
 If we want to draw a bitmap graphic, we put the graphic in RAM and
-The VIC reads it from there (from RAM). So the RAM is shared between the CPU (the 6510)
+the VIC reads it from there (from RAM). So the RAM is shared between the CPU (the 6510)
 and the GPU (the VIC).
 
-But there is a limitation: The VIC can only see 16k at a time of the 64k RAM.
-There are 4 banks of 16k each (`` 64k / 16k == 4``) of which the VIC can
+But there is a limitation: The VIC can only see 16k RAM at a time.
+There are 4 banks of 16k each (``64k / 16k == 4``) of which the VIC can
 read the data.
 
 - Bank 0: ``$0000 - $3fff``
@@ -123,14 +121,14 @@ read the data.
 - Bank 2: ``$8000 - $bfff``
 - Bank 3: ``$c000 - $ffff``
 
-This means that a bitmap graphic can not be half in one bank and half
-in another. It has to all be in one bank.
+This means that a bitmap graphic can not be half in one bank and the other half
+in another. The entire bitmap must be in only one bank.
 
-That is not all. It can not be anywhere in the bank. There are places
-special to put bitmaps, charset and screen RAM.
+That is not all. It can not be anywhere in the bank. There are special places
+to put bitmaps, charset and screen RAM.
 
-And that adds to other limitations not discussed here. To tell the
-VIC which bank to use is done through the registry `$dd00`_ of CIA 2, like this:
+To tell the VIC which bank to use is done through the registry `$dd00`_ of CIA 2,
+like this:
 
 .. code:: asm
 
@@ -151,20 +149,18 @@ through the registry `$d018`_ of the VIC.
    *Internal memory of each bank*
 
 But that is not all. Banks 0 and 2 (``$0000- $3fff`` and ``$8000- $bfff``) have
-mapped between ``$1000- $1fff`` and ``$9000- $9fff`` respectively to the charset
-default (uppercase and lowercase). That means we can not use those
-addresses for the VIC to view data ... except to see the default charset.
+the default charset mapped between ``$1000- $1fff`` and ``$9000- $9fff`` respectively.
+That means we can not use those addresses to place data for the VIC, since the VIC
+will only see the default charset.
 
 .. figure:: https://lh3.googleusercontent.com/hgGTs3AF3tFO6FuL3F1aWGujcLNspxEFnY6JARm53sRvWik8hTKNJAPDgMFbzeoJCu_LPDy7Tyaz7tjrMUO9tHwwiHQXw74_W87_uIbPpQR_cZCVCE8oRHikpQ2WrGpDp_DC46A
    :alt: banks of the VIC
 
    *The four banks available*
 
-The VIC *sees* the charset by default in those locations because the charset
-has to be somewhere. But if it is in RAM it will occupy RAM, and
-then the free 38k for BASIC would now have 4k less. I suppose so that does
-not happen the engineers of C= decided to map the VIC the charset in those
-locations.
+The VIC *sees* the default charset in those locations because the charset
+has to be somewhere. But if it were placed in RAM it will occupy RAM. That means
+4k RAM less available for BASIC.
 
 
 Summary:
@@ -179,7 +175,7 @@ Sids, Exomizer, and others
 ---------------------------
 
 How much RAM do we need for Chipdisk? Let's figure it out.
-The Chipdisk is composed of 3 modules:
+The Chipdisk is composed of 3 main modules:
 
 -  Intro: Half graphic multi-color + half screen PETSCII + charset +
    code
@@ -198,7 +194,7 @@ The Player module alone occupies:
 - Charset (used in oblique letters): 1k
 - Sprites (cursors, casters, counter): ~ 1k
 
-That gives us a total of: ~ 65k, not counting code, nor the intro and easter egg.
+That gives us a total of: ~65k, not counting code, nor the intro and easter egg.
 How do we put everything in 64k of memory and without accessing the disk?
 
 The answer is: Compresses everything that can be compressed, and decompresses
@@ -211,17 +207,15 @@ For that you need free RAM. So we need a buffer as big as the
 biggest sid.
 
 In our case the sid that occupies most is *Prófugos* with 9k. Something
-quite unusual for a sid (they usually do not occupy more than 4k), for
-instruments and data, you can not reduce more than that without
-losing sound quality.
+quite unusual for a sid (they usually do not occupy more than 4k). Its size
+can not reduced without losing sound quality.
 
 Then we need a total of 37k (28k + 9k) for sids. This is
 much better than the original 53k (16k less!).
 
-The 9k buffer starts at the address ``$1000``. You can start at any
-place, but by default sids run in ``$1000``, so we follow
-using ``$1000``. So from ``$1000`` to ``$3328`` (8952 bytes) is
-reserved to decompress the sids.
+The 9k buffer starts at the address ``$1000``. It can be at any
+address, but by default sids run in ``$1000``.
+So from ``$1000`` to ``$3328`` (8952 bytes) is reserved to decompress the sids.
 
 *Note*: Do you know why almost all sids start at ``$1000``? See section
 above to know.
