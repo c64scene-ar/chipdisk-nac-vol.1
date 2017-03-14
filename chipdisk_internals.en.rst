@@ -851,39 +851,39 @@ Update song / author name
 Perhaps the most tedious part of the Player is to update the song's and author's
 names. Let's see why:
 
-Bitmap mode works by cells. The screen is divided into:
+Bitmap mode uses cells. The screen is divided into:
 
 - 40 x 25 cells
 - Each cell is 8x8 pixels (8 bytes)
-- Each cell can not have more than 2 colors
+- Each cell can not have more than 2 colors at once
 
 .. figure:: https://lh3.googleusercontent.com/W9abCQZfIhLIFlxyodyd5BhMr0JioeCj9SSTgwhjkqfB0KH1J8PEta4SsS_tq7w8GiEXaOY0WFuobe1ngDv3vBwjgLs3MJMa5cpFkBjdFfbnC8AP6umui1-s8R0H8urtX1WG7_c
    :alt: cells
 
    *In Standard Bitmap mode cells can not have more than 2 colors at once*
 
-The total graphic uses 16 colors. But if you pay attention, each cell
-has no more than 2 colors at a time. This graphical mode exists to
+Our graphic uses 16 colors. But if you pay attention, each cell
+has no more than 2 colors at a time. This graphics mode exists to
 save memory. For example, if one could choose 16 colors (4 bits)
-per pixel, then the graph would occupy:
+per pixel, then the graphic would occupy:
 
 -  (320 \* 200 \* 4 bits) / 8 = 32000 bytes.
 
 Something very expensive for a 64k RAM computer. In addition,
 VIC can not see more than 16k at a time. Added to that if one uses
-BASIC, then it only has 38k free. That is why his graphic mode
-does not exist in the C64.
+BASIC, then only 6k RAM free would be available (38k - 32k).
+That is why his graphic mode (16 colors per pixel) does not exist in the C64.
 
 When using cells, the foreground and background color is stored in
-A buffer of 40 x 25. Each byte represents the color of the cell: the 4
-High bits are "foreground", and the 4 low bits are the "background".
+a buffer of 40 x 25. Each byte represents the color of the cell: bits #4 - #7
+are used for the "foreground", and bits #0 - #3 are used for the "background".
 With this a bitmap + color graphic occupies:
 
 -  ((320 \* 200 \* 1 bit) / 8) + (40 \* 25) = 9000 bytes.
 
 And 9000 bytes is somewhat acceptable for a 64k RAM machine.
 
-To turn a pixel on at x,y and color it, works like this:
+To turn a pixel on at ``x, y`` and color it, works like this:
 
 .. code:: c
 
@@ -917,8 +917,8 @@ To turn a pixel on at x,y and color it, works like this:
     }
 
 Now that we know how to turn on (and turn off) a pixel, what we need to do
-is drawn the letters diagonally. If we look at the graphic
-We see that it has an inclination of:
+is draw the letters diagonally. If we look at the graphic we see that it has an
+slope of:
 
 -  vertical: of 1 x 1. straight: ``Y = -X``. Slope of -1
 -  horizontal: of 2 x 1. straight: ``Y = X/2``. Slope of 0.5
@@ -933,7 +933,7 @@ Basically, what we want to accomplish is something like this:
 .. figure:: https://lh3.googleusercontent.com/j-TXraycC52OgY3wO-9OTl2wf6X0q1F3jmr5ygvRwJ-NFfd99OicecuzuUa1viUYF3nWsCighJtpFf0QXqXyTpcNY0HWgakFwZ43-jjrcvfx5UYty7IL4T-hMvk6cjprPMxf5LU
    :alt: result
 
-   *Example of how it should be for the tilt of the letters*
+   *Example of how it should look*
 
 The algorithm to draw the letters would look something like this:
 
@@ -1196,7 +1196,7 @@ performance. It takes into account the following:
    ``plot_row_0()``, ..., ``plot_row_7()``
 -  There are three global pointers:
    - ``$f6/$f7`` charset offset pointing to the character to be printed
-   - ``$f8/$f9``, and `` $fa/$fb`` pointing to the current cell, and
+   - ``$f8/$f9``, and ``$fa/$fb`` pointing to the current cell, and
       next cell in the bitmap
 
 With that in mind, it is not necessary to calculate the offset of the pixels for
@@ -1565,7 +1565,7 @@ I'm not sure that Chipdisk requires so many *unrolled loops*.
 Trick: Add 320
 ^^^^^^^^^^^^^^
 
-The other thing to speed up, is how ``bitmap_next_y() `` works. What
+The other thing to speed up, is how ``bitmap_next_y()`` works. What
 it does is add ``320`` to the pointer ``$f8/$f9``. And as ``320 = 256 + 64``,
 It does this by adding 64 to ``$f8`` and incrementing ``$f9``.
 
@@ -2507,7 +2507,7 @@ in between them.
 
 That is solved with a stable *IRQ raster*. What it does is that the callback
 to always be called in the same rasterline cycle. Then you can adjust it
-putting in additional ``nop``s. There are different techniques for achieving
+putting in additional ``nop`` s. There are different techniques for achieving
 a stable raster. Chipdisk uses the technique called "double IRQ".
 
 The code looks like this:
@@ -2677,7 +2677,7 @@ References
 .. [#] The tool used to compress sids is this: `sid_to_exo.py <https://github.com/ricardoquesada/c64-misc/blob/master/tools/sid_to_exo.py>`__
 .. [#] The decompression routine is in the .zip of the Exomizer_, but you can also see it here: `exodecrunch.s <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/exodecrunch.s>`__
 .. [#] The great idea of making a special charset to simplify the performance is from Alakran
-.. [#] Or as Acid recommends, you could only optimize ``set_pixel() `` with tables to avoid multiplication.
+.. [#] Or as Acid recommends, you could only optimize ``set_pixel()`` with tables to avoid multiplication.
 .. [#] More tricks on how to optimize 6502 are here: `6502 assembly optimizations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ and here `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. And also here: `CodeBase64 <http://codebase64.org/>`__
 .. [#] For more information about Bad Lines go to `Beyond the Screen: Rasters and Cycles <http://dustlayer.com/vic-ii/2013/4/25/vic-ii-for-beginners-beyond-the-screen-rasters-cycle>`__
 
