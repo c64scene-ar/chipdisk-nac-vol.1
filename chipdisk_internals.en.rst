@@ -236,9 +236,9 @@ So far the memory is like this:
 Bitmap graphic and others
 -------------------------
 
-Now you have to put the graphics some place. A good place to put it in Bank 1.
-Use ``$4000-6000`` for the bitmap, and ``$6000- $6400`` for colors.
-If we add the sprites, sid of white noise and so on, it looks like this:
+We have to find an address for the graphics. A good place to put it in Bank 1:
+``$4000-6000`` for the bitmap, and ``$6000-$6400`` for the bitmap colors.
+And if we add the sprites, white noise sid, and so on, it looks like this:
 
 ::
 
@@ -246,44 +246,44 @@ If we add the sprites, sid of white noise and so on, it looks like this:
     $1000 - $32f7: Buffer to decompress at least the largest sid (~9k)
     $32f8 - $3fff: Free (~3k)
     $4000 - $5fff: Bitmap graphic (8k)
-    $6000 - $63ff: Colors (Screen RAM) (1k)
+    $6000 - $63ff: Bitmap colors (Screen RAM) (1k)
     $6400 - $68ff: Sprites (~1k)
     $6900 - $6cff: Charset (1k)
-    $6d00 - $73ff: White Noise Sid (1.7k)
+    $6d00 - $73ff: White Noise sid (1.7k)
     $7400 - $7caf: Pressed button images and temporary buffer (~2k)
-    $7cb0 - $fbdf: Compressed Sids (28k)
+    $7cb0 - $fbdf: Compressed sids (28k)
     $fbe0 - $ffff: Free (1k)
 
-There is 9k left to put the player code. But remember that in those
-9k also has to be the Easter Egg. This complicates things a bit.
-Putting the intro does not take place in the 9k, I'll explain later
+There is 9k RAM left to put the player code. But remember that in those
+9k, we also have to include the Easter Egg. This complicates things a bit.
+Putting the Intro does not take place in the 9k, I'll explain later
 why.
 
 
 Code: The Player
 =================
 
-The player code can be divided into:
+The Player code can be divided into:
 
-- Sprites: Animated casters and more
-- Unzip sid, modify it to play on NTSC / Drean
+- Sprites: Animated cassette wheels and more
+- Decompress sid, modify it to play on NTSC / Drean
 - Update song / author name
-- Read events: mouse (port # 1), joystick (port # 2) or keyboard
+- Read events: mouse (port #1), joystick (port #2) or keyboard
 - Animate pressed buttons
-- Patching bitmap graphic with sprites
+- Patch bitmap graphic with sprites
 - Update song number
 
-Sprites: Animated casters and more
-----------------------------------
+Sprites: Animated cassette wheels and more
+------------------------------------------
 
 .. figure:: https://lh3.googleusercontent.com/5gtsDGNPpV8eU6wD3jYBJnJmpG23iXHaXga_NbVDUpKQa5gCSbN_2_bmCAaJP7DLaaiBOauma2cJHrBYQmMnXsYUB7erJ2c4bUCdkFAcQjPgYyEPZCc2bpb9_db66AQ0pKdo9rM
    :alt: sprites
 
-   *Sprites used by the player*
+   *Sprites used by the Player*
 
-Inside the player sprites are used in different places:
+Inside the Player sprites are used in different places:
 
-- Animation of the wheels: one sprite for each wheel
+- Animation of the casette wheels: one sprite for each wheel
 - Pointer: 2 sprites "overlayed"
 - Power button: 1 sprite
 - Counter for songs: 1 sprite
@@ -296,8 +296,8 @@ In total 8 sprites are used, so there is no need to multiplex the sprites.
 
    *Location of the sprites*
 
-The animation of the casters is trivial. You change the frame sprite every so many
-seconds. Let's see how it is done:
+The animation of the wheels is trivial. You change the frame sprite every NN
+refreshes. Let's see how it is done:
 
 .. code:: asm
 
@@ -324,112 +324,101 @@ seconds. Let's see how it is done:
     delay:
             .byte 1
 
-And the sprites pointers are from ``$63f8`` to ``$63ff`` since it is being used
-Bank 1 (``$4000-$7fff``) and we told the VIC that the Screen will be in
-``$6000``.
+And the sprites pointers are from ``$63f8`` to ``$63ff`` since Bank 1 (``$4000-$7fff``)
+and we told VIC that the Screen will be in ``$6000``.
 
-A useful trick for sprites to look better is to draw a standard sprite
-onto another sprite (standard or multi-color).
-
-This is how that idea works:
+A useful trick to make the sprites look better is to "overlay" them: draw an
+standard sprite on top of anotehr standard/multi-color sprite. This is how it works:
 
 .. figure:: https://lh3.googleusercontent.com/T1TmdjKnu_7BrDTvQr3L1Sre2jmwlM-KTsnBpCuEjK9g7esu5pQyd1gXsVoUOR2_L4w4jsZKX7w_RkhfgsCdztt1wWJbuu1zkJ9X8DpM7Xp8CxEJY_hX-YqFkdBxQDrxObXxi1Y
    :alt: overlay sprites
 
    *Overlayed sprites*
 
-This idea is used a lot. Games like Bruce Lee (and hundreds of others) use it.
+Games like Bruce Lee (and hundreds of others) use it.
 The only drawback is that it uses 2 sprites instead of one.
 
 Another trick we use is to fix bitmap bugs with sprites. Remember
-That the cells in the bitmap can not have more than 2 colors. And to solve
-some pixels that look bad, we cover them with sprites.
+that cells in the bitmap can not have more than 2 colors. And to add
+a third (and fourth color), we place an sprite on that cell.
 
-And that's all about the Player Sprites.
+And that's all about the sprites on the Player.
 
 
-Decompress sids and modify them ...
------------------------------------
+Decompress sids and modify them...
+----------------------------------
 
 The sids are compressed with Exomizer_. The decompression routine we use is from
 Exomizer [#]_. The interesting thing about this routine is that it is "multi
-tasking". In other words, while decompressing, other things can be done. In our
-case, while we are decompressing the sid, we will be animating the
-cassette:
+tasking". In other words, while decompressing, other tasks can be executed. In our
+case, while we are decompressing the sid, we animate the cassette wheels:
 
 .. code:: asm
 
-    ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-    ; get_crunched_byte()
-    ; This subroutine is called by the decruncher. X, Y and Carry must be preserved.
-    ; Update the decruncher pointer and animate casette casters
-    ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-    get_crunched_byte:
-            lda _crunched_byte_lo           ; _crunched_byte_lo & _crunched_byte_hi
-            bne @byte_skip_hi               ; are used by the decruncher (exomizer)
-            dec _crunched_byte_hi           ; to know which byte has to decompress
-                                            ; every time this routine is called
-                                            ; you must decrease the pointer by one
-                                            ;
-    @byte_skip_hi:
+        ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+        ; get_crunched_byte
+        ; The decruncher jsr:s to the get_crunched_byte address when it wants to
+        ; read a crunched byte. This subroutine has to preserve x and y register
+        ; and must not modify the state of the carry flag.
+        ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+        get_crunched_byte:
+                lda _crunched_byte_lo
+                bne @byte_skip_hi
+                dec _crunched_byte_hi
+        @byte_skip_hi:
 
-            dec delay                       ; Occasianally we want to advance the wheels
-            bne @cont                       ; of the cassette.
-                                            ; "Delay" is a timer to animate the wheels
-                                            ; at the correct speed
+                dec ff_delay
+                bne @cont
 
-            lda wheel_delay_counter         ; Reset the delay
-            sta delay
+                lda wheel_delay_counter
+                sta ff_delay
 
-            php                             ; Saves Status (Carry and others) because
-                                            ; The decruncher needs these values.
-                                            ; Do not change this.
+                php
 
-            lda is_rewinding                ; If you skip to the previous song, then
-            beq @anim_ff                    ; animate the caster backwards instead of forwards.
-            inc $63f8 + 6                   ; $63f8 + 6 and + 7 are the sprite frames
-            lda $63f8 + 6                   ; of the sprites for the wheels
-            cmp #(SPRITE0_POINTER + TOTAL_FRAMES)
-            bne :+
-            lda #SPRITE0_POINTER
-    :       sta $63f8 + 6                   ; Update sprite pointer 6
-            sta $63f8 + 7                   ; and sprite pointer 7
-            jmp @done_anim
-    @anim_ff:
-            dec $63f8 + 6                   ; Here is the same, but with animation
-            lda $63f8 + 6                   ; on "fast forward" (the other was "rewind")
-            cmp #(SPRITE0_POINTER - 1)
-            bne :+
-            lda #(SPRITE0_POINTER + TOTAL_FRAMES - 1)
-    :       sta $63f8 + 6                   ; Update the sprite pointers 6
-            sta $63f8 + 7                   ; and 7
-    @done_anim:
-            plp                             ; Restore Status (Carry and others)
+                lda is_rewinding
+                beq @anim_ff
+                inc $63f8 + 6                   ; sprite pointer for sprite #0
+                lda $63f8 + 6                   ; sprite pointer for sprite #0
+                cmp #(WHEEL_BASE_FRAME + WHEEL_FRAMES)
+                bne :+
+                lda #WHEEL_BASE_FRAME
+        :       sta $63f8 + 6                   ; turning wheel sprite pointer #0
+                sta $63f8 + 7                   ; turning wheel sprite pointer #1
+                jmp @done_anim
+        @anim_ff:
+                dec $63f8 + 6                   ; sprite pointer for sprite #0
+                lda $63f8 + 6                   ; sprite pointer for sprite #0
+                cmp #(WHEEL_BASE_FRAME - 1)
+                bne :+
+                lda #(WHEEL_BASE_FRAME + WHEEL_FRAMES - 1)
+        :       sta $63f8 + 6                   ; turning wheel sprite pointer #0
+                sta $63f8 + 7                   ; turning wheel sprite pointer #1
+        @done_anim:
+                plp
 
-    @cont:
-            dec _crunched_byte_lo
-    _crunched_byte_lo = * + 1
-    _crunched_byte_hi = * + 2
-            lda $caca                       ; self-modyfing. Has to contain the last
-                                            ; Byte + 1 of what you want to decompress
-                                            ; Before calling this routine
-            rts
-    delay:
-            .byte 5
+        @cont:
+                dec _crunched_byte_lo
+        _crunched_byte_lo = * + 1
+        _crunched_byte_hi = * + 2
+                lda song_end_addrs              ; self-modyfing. needs to be set correctly before
+                rts                             ; decrunch_file is called.
+        ; end_of_data needs to point to the address just after the address
+        ; of the last byte of crunched data.
+        ff_delay:
+                .byte 5
 
-Once the sid is decompressed, the frequency table must be modified
-So it sounds the same in PAL, NTSC and Drean (PAL-N).
+Once the sid is decompressed, the frequency table must be modified so it sounds
+the same in PAL, NTSC and Drean (PAL-N).
 
-For that, you have to go to each sid and look where
-the table of frequencies are for each one.
+For that, you have to go to each sid and look where the table of frequencies
+are for each one.
 
 Frequency tables generally have 96 values:
 
-- 8 octaves
-- of 12 semi-tones each
+-  8 octaves
+-  of 12 semi-tones each
 
-Each half-tone occupies 2 bytes, so usually the sids store
-The tables as follows:
+Each half-tone occupies 2 bytes, so usually the sids store the tables as follows:
 
 .. code:: asm
 
@@ -465,8 +454,8 @@ $f820, and in others like $f830, or some other value. But the human ear
 can not differentiate them.
 
 It is best to search for ``$01, $01, $01, $01, $02, $02, $02`` and see if
-it looks like the "hi" chart. Then go 96 bytes up  and see if there
-is a "low" table.
+it looks like the "hi" chart. Then go 96 bytes up (or down) and see if there
+is the "low" table.
 
 .. figure:: https://lh3.googleusercontent.com/VqNAXgS2DOrbG7bJ729Fz3VWCjzkvTjH_DhtBnZeuL0iIszlmQdtWAnS8qEdBi5FX-fcFL9wfe7hAp0UHkWfmKDCQab5GokBc4vsL6IVRIDMWQdDdezC5bm7I9m2D5d8P8Lph08
    :alt: Lookup Table
@@ -474,8 +463,7 @@ is a "low" table.
    *Looking for the table of frequencies in a sid*
 
 Once the values are found, they are replaced by the NTSC values.
-Here there is just a simple loop to copy the tables. Ex:
-
+Ex: Simple loop to copy the tables:
 
 .. code:: asm
 
@@ -513,9 +501,9 @@ Interruptions, Timers and Raster
 -------------------------------
 
 The other thing to keep in mind is the speed of the the
-Sid. Many trackers generate sids that play at 50.125Hz (PAL's
-speed). It is ideal, but not all are like that. So double check
-that (eg: SidTracker64).
+sid. Many trackers generate sids that play at 50.125Hz (PAL's
+speed). That is ideal, but not all trackers are like that. So double check
+that (eg: SidTracker64 doesn't use 50.125Hz).
 
 To make something work at a certain speed on the C64, there are two
 ways:
@@ -531,11 +519,10 @@ Raster
 ~~~~~~
 
 Raster interrupts are the most common. You tell the C64 that you
-want a call when the raster is on a certain rasterline.
+want to get called when the raster is on a certain rasterline.
 
-For example, if I wanted the edge of the screen to be black in
-the top, and white on the bottom, two interrupts are used
-in a chained raster. Like this:
+For example, if I wanted the top of the screen to be black,
+and bottom to be white, two chained interrupts can be used for that: 
 
 .. code:: asm
 
@@ -587,11 +574,10 @@ in a chained raster. Like this:
 
         jmp $ea81               ; Exit the interrupt
 
-And so one can chain several raster interrupts. The important thing
-here is:
+We can chaing as many raster interrupts as we want. The important thing is:
 
 - The `$0314/$0315`_ vector contains the callback address (IRQ)
-- ACK (clean / accept) `$d019`_ when they call us on the interrupt
+- ACK (clean / accept) `$d019`_ when the callback is triggered
 - Enable raster interrupt with `$d01a`_
 - Use `$d012`_ to say on which rasterline the interrupt has to be triggered
 - Exit the interrupt with a ``jmp`` to `$ea81`_ or `$ea31`_
@@ -639,12 +625,12 @@ The way of using them is very similar. Ex:
 
 -  `$dc0e`_ is used to activate Timer A. It can be "single-shot" or "continuous"
 -  `$dc0d`_ is used to enable CIA1 interrupts
--  `$dc04`_ / `$dc05`_ is used to tell you how many cycles to count
+-  `$dc04`_ / `$dc05`_ is used to tell you how many CPU cycles to count
     before firing the callback (IRQ)
 
-And that's how interrupts are used. In fact Raster and timer interrupts
+And that's how interrupts are used. In fact Raster and Timer interrupts
 can be used at the same time. Both share the same callback, so to
-tell if it was a raster or timer interrupt you can do the following:
+tell if it was a Taster or Timer interrupt you can do the following:
 
 
 .. code:: asm
@@ -677,12 +663,11 @@ to NTSC is:
 
 And to convert to Drean is similar:
 
--  `` ((speed_of_timer + 1) * 1023440/985248) - 1``
+-  ``((speed_of_timer + 1) * 1023440/985248) - 1``
 
 *Note*: ``985248``, ``1022727``, ``1023440`` are the speeds of the 6510
-In a PAL, NTSC, Drean respectively (``0.985248`` Mhz, ``1.022727``
-Mhz, "1.023440" Mhz). As you can see, the fastest of all is the Drean, and
-The slowest is PAL.
+in a PAL, NTSC, Drean respectively (``0.985248`` Mhz, ``1.022727``
+Mhz, ``1.023440`` Mhz). The fastest is the Drean, and the slowest is PAL.
 
 To know the speed of the timer, it is necessary to notice in the code of the sid
 and see if it modifies the values of the CIA timer. For example, if you see something
