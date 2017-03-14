@@ -623,10 +623,9 @@ The way of using them is very similar. Ex:
 
         jmp $ea81               ; Exit interrupt
 
--  `$dc0e`_ is used to activate Timer A. It can be "single-shot" or "continuous"
+-  `$dc0e`_ is used to activate Timer A. Its Run Mode can be *Single-Shot* or *Continuous*
 -  `$dc0d`_ is used to enable CIA1 interrupts
--  `$dc04`_ / `$dc05`_ is used to tell you how many CPU cycles to count
-    before firing the callback (IRQ)
+-  `$dc04`_ / `$dc05`_ is used to tell you how many CPU cycles to count before firing the callback (IRQ)
 
 And that's how interrupts are used. In fact Raster and Timer interrupts
 can be used at the same time. Both share the same callback, so to
@@ -669,9 +668,9 @@ And to convert to Drean is similar:
 in a PAL, NTSC, Drean respectively (``0.985248`` Mhz, ``1.022727``
 Mhz, ``1.023440`` Mhz). The fastest is the Drean, and the slowest is PAL.
 
-To know the speed of the timer, it is necessary to notice in the code of the sid
-and see if it modifies the values of the CIA timer. For example, if you see something
-like:
+To know the speed of an existing sid, some dessasembly is required. We have
+to search for code that changes registers ``$dc04/$dc05``. Eg: something
+like this:
 
 .. code:: asm
 
@@ -680,8 +679,8 @@ like:
         stx $dc04           ; Timer A lo
         sty $dc05           ; Timer A hi
 
-If the sid is using ``$4cc7`` on the timer (a 'tick' of
-screen in PAL), then the new timer value for NTSC will be:
+If the sid is using ``$4cc7`` on the timer (one 'tick' per screen refresh in
+PAL), then the new timer value, for NTSC, should be:
 
 -  ``($4cc7 + 1) * 1022727 / 985248 - 1 = $4fb2``
 
@@ -694,7 +693,7 @@ The ``+1`` is because the timer expects "number of cycles - 1".
         stx $dc04           ; Timer A lo
         sty $dc05           ; Timer A hi
 
-The value for Drean is: ``$4fc1``.
+The value for Drean should be: ``$4fc1``.
 
 As you can see the speeds of Drean and NTSC are very similar. In fact the
 Frequency tables are very similar to each other as well.
@@ -716,29 +715,28 @@ resolution:
 - Drean: 312 x 65
 
 This is measured in CPU cycles. In a PAL machine, to refresh the entire screen
-it takes 312 x 63 = 19,656 ($4cc8) cycles. Do you hear the number
+takes 312 x 63 = 19,656 ($4cc8) cycles. Do you recall the number
 ``$4cc8``? It's the one we used on the timer to play music at
 PAL speed (``$4cc8 - 1``, since in the timers you subtract 1 to get
-the desired value). That means if I set the timer to
+the desired value). That means if we set the timer to
 ``$4cc7``, on a PAL machine it will be called once per screen refresh.
 
-The other thing to know is that one can read on which rasterline
-the raster is on. The raster is the beam of light that sweeps
+The other thing to know is that we know in which rasterline the raster is on
+by reading `$d012`_. Just in case, the raster is the beam of light that sweeps
 the screen from left to right, top to bottom.
 
-By joining these two things, one can know if the machine is PAL, Drean or
+By these two things, one can determine whether the machine is PAL, Drean or
 NTSC.
 
 The trick works like this:
 
-- I wait for the raster to be on line 0 (read `$d012`_)
-- Once it's there, I fire the CIA timer with ``$4cc7``
-- When the timer calls me, it will have given just one whole loop and `$d012`_
-  will be 0, for a PAL machine.
+-  We wait for the raster to be on line 0 (read `$d012`_)
+-  Once it's there, we trigger the CIA timer with ``$4cc7``
+-  When the timer calls us, the rasterline (`$d012`_) should be 0 again, at least on PAL machines
 
-But what value should it have for an NTSC?
+But what should be the value for NTSC and Drean machines?
 
-The NTSC has a resolution of 263 \* 65. That is 17095 cycles are
+The NTSC has a resolution of 263 x 65. That is 17095 cycles are
 required to draw the entire screen. If the timer is set to 19656
 cycles, then there is an overflow of:
 
@@ -751,7 +749,7 @@ get:
 
 So, the raster after 19656 cycles will have drawn a full screen
 and will be somewhere on rasterline 39. The formula is similar
-for Drean (you, the reader, can try this).
+for Drean (left as exercise for the reader).
 
 The code that detects PAL / NTSC / Drean is as follows:
 
@@ -845,14 +843,13 @@ The code that detects PAL / NTSC / Drean is as follows:
 
     sync:  .byte $00
 
-With this we should be able to play sids on any machine at
-a correct speed.
+With this we should be able to play sids on any machine at a correct speed.
 
 Update song / author name
 -------------------------
 
-Perhaps the most tedious part of all the Player is to update the
-Names of the song and author. Let's see why:
+Perhaps the most tedious part of the Player is to update the song's and author's
+names. Let's see why:
 
 Bitmap mode works by cells. The screen is divided into:
 
@@ -2356,9 +2353,9 @@ Once the Easter Egg is activated you have to unzip it. The little problem
 here is that the Easter Egg is not in a continuous chunk. It is in 3
 parts:
 
-- compressed code: ``$0118 - $07ff``
-- compressed sid: Somewhere near ``$e000``
-- compressed scroll text: Somewhere near ``$f800``
+-  compressed code: ``$0118 - $07ff``
+-  compressed sid: Somewhere near ``$e000``
+-  compressed scroll text: Somewhere near ``$f800``
 
 The interesting thing here is the compressed code that uses part of the c64 stack.
 To prevent the stack from mangling the compressed code, we tell the stack
