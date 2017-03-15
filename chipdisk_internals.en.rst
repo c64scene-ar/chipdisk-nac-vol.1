@@ -1303,13 +1303,13 @@ Here's how the optimized algorithm works (pseudo code):
     {
         rotate_left(c, 1);              // character is rotated one place to the left
 
-        // actualizo celda izquierda
+        // update left cell
         char value_left = g_bitmap[g_bitmap_offset_0];
         value_left &= 0b11111110;        // I turn off the 1st bit LSB
         value_left |= (c & 0b00000001);  // put what is in the 1st bit LSB of char
         g_bitmap[g_bitmap_offset_0] = value_left;
 
-        // actualizo celda derecha
+        // update right cell
         char value_right = g_bitmap[g_bitmap_offset_1];
         value_right &= 0b00000001;        // I turn off the first 7 bit MSB
         value_right |= (c & 0b11111110);  // I put what is in the first 7 bit MSB of char
@@ -1344,15 +1344,14 @@ but in assembler. With this it was possible to avoid multiplication.
 
 For those who want to see the complete code in assembler, here:
 
--  `plotter in
-   assembler <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/chipdisk.s#L1313>`__
+-  `plotter in assembler <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/chipdisk.s#L1313>`__
 
 Some tricks we use to render the letters:
 
 Trick: Macros
 ^^^^^^^^^^^^^
 
-It is worth highlighting the ``.IDENT``, ``.CONCAT`` that is used to call
+It is worth highlighting the ``.IDENT``, ``.CONCAT`` [#]_ that is used to call
 the correct functions according to the parameters that are passed to the
 macro. Let's see how it works:
 
@@ -2098,12 +2097,12 @@ create some "interrupt collisions".
 Suppose we are running the program in an NTSC (see *Detecting between ...* for more info):
 
 - We will have a timer that fires every ``$4fb3`` (20403) cycles to play the sid
-- In addition the IRQ raster fires every ``$42c7`` (263 * 65 = 17095) cycles to open the edge
+- In addition the IRQ raster fires every ``$42c7`` (263 * 65 = 17095) cycles to open the border
 
 .. figure:: https://lh3.googleusercontent.com/D50glqRSR3V8MMi-aXe41TiXWk9tHjyTKkTcrhQmUZFfdPHs07WbWRPhok07di0ydzyAkn16MeOLsQzOdxVipXaSjv6diR9pmNJHB2MCG-yg0kSJ8HcqRBvIPInhU3t30N34yXc
    :alt: collision in interrupts
 
-   *Collision between IRQ Raster and IRQ Timer in NTSC. Which one runs first?*
+   *Collision between IRQ Raster and IRQ Timer in NTSC. Which one gets triggered first?*
 
 It is possible that the border will not open at any time because the interruption of the sid
 is executed just when you had to call the raster interrupt. In
@@ -2210,7 +2209,7 @@ In our case, we are going to use Timer A of the CIA 2. It works like this:
 
             lda $dd0d                       ; ACK the interrupt of Timer CIA 2
 
-            lda $d011                       ; Open vertical edge
+            lda $d011                       ; Open vertical border
             and #%11110111                  ; Switch to 24 row mode
             sta $d011
 
@@ -2674,6 +2673,7 @@ References
 .. [#] The decompression routine is in the .zip of the Exomizer_, but you can also see it here: `exodecrunch.s <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/exodecrunch.s>`__
 .. [#] The great idea of making a special charset to simplify the performance is from Alakran
 .. [#] Or as Acid recommends, you could optimize ``set_pixel()`` with tables to avoid multiplication.
+.. [#] More CA65 Pseudo Functions here: https://cc65.github.io/doc/ca65.html#s10
 .. [#] More tricks on how to optimize 6502 are here: `6502 assembly optimizations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ and here `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. And also here: `CodeBase64 <http://codebase64.org/>`__
 .. [#] For more information about Bad Lines go to `Beyond the Screen: Rasters and Cycles <http://dustlayer.com/vic-ii/2013/4/25/vic-ii-for-beginners-beyond-the-screen-rasters-cycle>`__
 

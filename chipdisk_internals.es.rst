@@ -1372,16 +1372,15 @@ pero en assembler. Con esto se logra que no se hagan multiplicaciones.
 
 Para los que quieran ver el código en completo en assembler, esta acá:
 
--  `plotter en
-   assembler <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/chipdisk.s#L1313>`__
+-  `plotter en assembler <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/chipdisk.s#L1313>`__
 
-No vale la pena ponerlo acá, salvo algunas cosas interesantes, como las
-macros que se usan. Por ejemplo, en vez de repetir código una y otra
-vez, el Chipisk usa las macros del ensamblador.
+Algunos truquitos que usamos en el plotter:
 
-Vale la pena resaltar el ``.IDENT``, ``.CONCAT`` que se usa para llamar
-a la funciones correctas de acuerdo a los parámetros que se le pase a la
-macro. Veamos como funciona:
+Truquito: Macros y demás
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Usamos macros y algunos *Pseudo Functions* [#]_ como ``.IDENT``, ``.CONCAT``
+para simplificar el código. Veamos como se usan:
 
 .. code:: asm
 
@@ -1526,8 +1525,6 @@ macro. Veamos como funciona:
     plot_row_3:
             ; y así hasta el plot_row_7
             ...
-
-Algunos truquitos que usamos:
 
 Truquito: Rotar In-Place
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2705,6 +2702,7 @@ Referencias
 .. [#] La rutina de descompresión esta en el .zip del Exomizer_, pero también la pueden ver acá: `exodecrunch.s <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/exodecrunch.s>`__
 .. [#] La gran idea de hacer un charset especial para simplificar el rendereo es de Alakran
 .. [#] O como bien recomienda Acid, se podría optimizar solamente ``set_pixel()`` con tablas para evitar la multiplicación.
+.. [#] CA65 Pseudo Functions: https://cc65.github.io/doc/ca65.html#s10
 .. [#] Más truquitos de como optimizar el 6502 están acá: `6502 assembly optimisations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ y acá `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. Y también acá: `CodeBase64 <http://codebase64.org/>`__
 .. [#] Para más información sobre Bad Lines ir a `Beyond the Screen: Rasters and Cycles <http://dustlayer.com/vic-ii/2013/4/25/vic-ii-for-beginners-beyond-the-screen-rasters-cycle>`__
 
