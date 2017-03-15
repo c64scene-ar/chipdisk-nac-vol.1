@@ -1,5 +1,5 @@
-Intermediate C64 Assembler Tutorial: Making a Chipdisk
-======================================================
+C64 Assembler Tutorial: Making a Chipdisk (intermediate)
+========================================================
 
 :Version: 0.1.1 (`get the latest version <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/chipdisk_internals.en.rst>`__)
 :Author: `riq <http://retro.moe>`__ / `Pungas de Villa Martelli <http://pungas.space>`__

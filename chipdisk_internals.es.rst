@@ -1,7 +1,7 @@
 Cursito intermedio de asm para la c64: Haciendo un Chipdisk
 ===========================================================
 
-:Versión: 0.1 (`ir a última versión <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/chipdisk_internals.es.rst>`__)
+:Versión: 0.1.1 (`ir a última versión <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/chipdisk_internals.es.rst>`__)
 :Autor: `riq <http://retro.moe>`__ / `Pungas de Villa Martelli <http://pungas.space>`__
 
 .. contents:: Contenidos
