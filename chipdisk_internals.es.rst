@@ -55,9 +55,9 @@ Organizando la memoria
 VIC, bancos y demás
 -------------------
 
-*Nota*: Supongo que ya sabes como usar sprites y modos gráficos. Si aún
-no lo sabes, ir a `Bringing Sprites in good Shape <http://dustlayer.com/vic-ii/2013/4/28/vic-ii-for-beginners-part-5-bringing-sprites-in-shape>`__
-y a `Screen Modes Cheaper by the Dozen <http://dustlayer.com/vic-ii/2013/4/26/vic-ii-for-beginners-screen-modes-cheaper-by-the-dozen>`__
+    .. note:: Supongo que ya sabes como usar sprites y modos gráficos. Si aún
+      no lo sabes, ir a `Bringing Sprites in good Shape <http://dustlayer.com/vic-ii/2013/4/28/vic-ii-for-beginners-part-5-bringing-sprites-in-shape>`__
+      y a `Screen Modes Cheaper by the Dozen <http://dustlayer.com/vic-ii/2013/4/26/vic-ii-for-beginners-screen-modes-cheaper-by-the-dozen>`__
 
 Empecemos por lo básico. Hay 64k RAM disponibles, pero cuando prendemos la compu
 dice que hay ``38911 BASIC BYTES FREE``. Eso significa que si vamos a usar BASIC,
@@ -224,8 +224,8 @@ otro lado, pero como los sids por defecto corren en ``$1000``, seguimos
 usando ``$1000``. Así que de ``$1000`` a ``$3328`` (8952 bytes) están
 reservados para descomprimir los sids.
 
-*Nota*: ¿Y saben por qué casi todos los sids empiezan en ``$1000``? Vean la sección
-anterior para saberlo.
+    .. note:: ¿Y saben por qué casi todos los sids empiezan en ``$1000``? Vean la sección
+      anterior para saberlo.
 
 Los sids comprimidos están a partir de ``$7cb0``. Cuanto más arriba
 mejor, así libera lugar para el gráfico bitmap (ver más abajo).
@@ -466,10 +466,10 @@ las tablas de la siguiente manera:
 Entonces lo que hay que hacer es buscar esas tablas (o similares) en los
 sids, y reemplazarlas en runtime por una de NTSC.
 
-**IMPORTANTE**: No todas las tablas son iguales, pero si son muy
-parecidas. Por ejemplo, un "La" en la 8va octava puede que aparezca como
-$f820, y en otras como $f830, u algún otro valor. Pero el oído humano no
-las diferenciaría.
+    .. note:: No todas las tablas son iguales, pero si son muy
+      parecidas. Por ejemplo, un "La" en la 8va octava puede que aparezca como
+      ``$f820``, y en otras como ``$f830``, u algún otro valor. Pero el oído humano no
+      las diferenciaría.
 
 Lo mejor es buscar por ``$01, $01, $01, $01, $02, $02, $02`` y ver si
 tiene pinta de ser la tabla "hi". Y luego ir 96 bytes para arriba o
@@ -686,10 +686,12 @@ Y para convertir a Drean es similar:
 
 -  ``((velocidad_del_timer + 1) * 1023440 / 985248) - 1``
 
-*Nota*: ``985248``, ``1022727``, ``1023440`` son la velocidades del 6510
-en una PAL, NTSC, Drean respectivamente (``0.985248`` Mhz, ``1.022727``
-Mhz, ``1.023440`` Mhz). Como ven, la más rápida de todas es la Drean, y
-la más lenta es la PAL.
+..
+
+    .. note:: ``985248``, ``1022727``, ``1023440`` son la velocidades del 6510
+      en una PAL, NTSC, Drean respectivamente (``0.985248`` Mhz, ``1.022727``
+      Mhz, ``1.023440`` Mhz). Como ven, la más rápida de todas es la Drean, y
+      la más lenta es la PAL.
 
 Para saber la velocidad del timer, hay que fijarse en el código del sid
 y ver si modifica los valores del timer CIA. Por ejemplo, si ven algo
@@ -1708,10 +1710,10 @@ Si queremos saber si la tecla ``Q`` fue apretada entonces hay que hacer lo sigui
 
 Al igual que el joystick, un valor 0 indica que fue apretada, y un 1 que no.
 
-**IMPORTANTE**: Los joysticks y el teclado comparten el mismo controlador (CIA)
-por lo que diferencia entre un movimiento de joystick y teclas apretadas a
-veces se complica. Notaran que ambos usan tanto `$dc00`_ como  `$dc01`_ para
-leer los datos.
+    .. note:: Los joysticks y el teclado comparten el mismo controlador (CIA)
+      por lo que diferencia entre un movimiento de joystick y teclas apretadas a
+      veces se complica. Notaran que ambos usan tanto `$dc00`_ como  `$dc01`_ para
+      leer los datos.
 
 Si queremos saber si el *cursor izquierda* esta apretado, entonces hay que
 chequear si las teclas *Shift* y *cursor izquierda/derecha* están apretadas.
@@ -2359,10 +2361,12 @@ se scrollean bits de sprites. El código es este:
 
             rts
 
-*Nota*: Ojo que estamos ``rol`` eando 163 (7 * 8 * 3) bytes por frame, un total
-de 978 (163 * 6) ciclos de CPU. No es muchísimo, pero es mucho más de lo que se usa en
-un scroll de texto normal. Si usaramos los 24 pixeles del sprite,
-sería el triple de costoso. ¡Ojo!
+..
+
+    .. note:: Ojo que estamos ``rol`` eando 163 (7 * 8 * 3) bytes por frame, un total
+      de 978 (163 * 6) ciclos de CPU. No es muchísimo, pero es mucho más de lo que se usa en
+      un scroll de texto normal. Si usaramos los 24 pixeles del sprite,
+      sería el triple de costoso. ¡Ojo!
 
 .. figure:: https://lh3.googleusercontent.com/7j8O3TKZuljEjbSTtlfsd1xLsErRXOsI8W147As4KsvjfNXetZUhP8-BFk3AjiWW1tA7FcGjHrGRQrjOtvjbo38lfcLyaRo1GWP7p_RCFIshxOm3Gb7pOOTug6eVFLZeQ4zcagY
    :alt: rasterbars
@@ -2702,7 +2706,7 @@ Referencias
 .. [#] La rutina de descompresión esta en el .zip del Exomizer_, pero también la pueden ver acá: `exodecrunch.s <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/exodecrunch.s>`__
 .. [#] La gran idea de hacer un charset especial para simplificar el rendereo es de Alakran
 .. [#] O como bien recomienda Acid, se podría optimizar solamente ``set_pixel()`` con tablas para evitar la multiplicación.
-.. [#] CA65 Pseudo Functions: https://cc65.github.io/doc/ca65.html#s10
+.. [#] Más ca65 Pseudo Functions: https://cc65.github.io/doc/ca65.html#s10
 .. [#] Más truquitos de como optimizar el 6502 están acá: `6502 assembly optimisations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ y acá `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. Y también acá: `CodeBase64 <http://codebase64.org/>`__
 .. [#] Para más información sobre Bad Lines ir a `Beyond the Screen: Rasters and Cycles <http://dustlayer.com/vic-ii/2013/4/25/vic-ii-for-beginners-beyond-the-screen-rasters-cycle>`__
 

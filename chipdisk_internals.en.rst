@@ -2676,7 +2676,7 @@ References
 .. [#] The decompression routine is in the .zip of the Exomizer_, but you can also see it here: `exodecrunch.s <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/exodecrunch.s>`__
 .. [#] The great idea of making a special charset to simplify the performance is from Alakran
 .. [#] Or as Acid recommends, you could optimize ``set_pixel()`` with tables to avoid multiplication.
-.. [#] More CA65 Pseudo Functions here: https://cc65.github.io/doc/ca65.html#s10
+.. [#] More ca65 Pseudo Functions here: https://cc65.github.io/doc/ca65.html#s10
 .. [#] More tricks on how to optimize 6502 are here: `6502 assembly optimizations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ and here `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. And also here: `CodeBase64 <http://codebase64.org/>`__
 .. [#] For more information about Bad Lines go to `Beyond the Screen: Rasters and Cycles <http://dustlayer.com/vic-ii/2013/4/25/vic-ii-for-beginners-beyond-the-screen-rasters-cycle>`__
 
