@@ -55,9 +55,9 @@ Memory Organization
 VIC, Banks and others
 ---------------------
 
-    .. note:: I guess you already know how to use sprites and graphics modes. If you still
-       do not know, go to `Bringing Sprites in good Shape <http://dustlayer.com/vic-ii/2013/4/28/vic-ii-for-beginners-part-5-bringing-sprites-in-shape>`__
-       and `Screen Modes Cheaper by the Dozen <http://dustlayer.com/vic-ii/2013/4/26/vic-ii-for-beginners-screen-modes-cheaper-by-the-dozen>`__
+.. note:: I guess you already know how to use sprites and graphics modes. If you still
+   do not know, go to `Bringing Sprites in good Shape <http://dustlayer.com/vic-ii/2013/4/28/vic-ii-for-beginners-part-5-bringing-sprites-in-shape>`__
+   and `Screen Modes Cheaper by the Dozen <http://dustlayer.com/vic-ii/2013/4/26/vic-ii-for-beginners-screen-modes-cheaper-by-the-dozen>`__
 
 Let's start with the basics. There are 64k RAM available, but when we turn on the computer
 it says there are ``38911 BASIC BYTES FREE``. That means that if we are going to use BASIC,
@@ -217,7 +217,7 @@ The 9k buffer starts at the address ``$1000``. It can be at any
 address, but by default sids run in ``$1000``.
 So from ``$1000`` to ``$3328`` (8952 bytes) is reserved to decompress the sids.
 
-    .. note:: Do you know why almost all sids start at ``$1000``? See section above
+.. note:: Do you know why almost all sids start at ``$1000``? See section above
 
 The compressed sids start from ``$7cb0``. The higher up
 the better, thus freeing up place for the bitmap graphic (see below).
@@ -447,10 +447,10 @@ Each half-tone occupies 2 bytes, so usually the sids store the tables as follows
 So what you have to do is look for those tables (or similar) in the
 Sids, and replace them in runtime with an NTSC table.
 
-    .. note:: Not all tables are the same, but they are very
-       similar. For example, the note "A" in the 8th octave may appear as
-       ``$f820``, and in others like ``$f830``, or some other value. But the human ear
-       can not differentiate them.
+.. note:: Not all tables are the same, but they are very
+   similar. For example, the note "A" in the 8th octave may appear as
+   ``$f820``, and in others like ``$f830``, or some other value. But the human ear
+   can not differentiate them.
 
 It is best to search for ``$01, $01, $01, $01, $02, $02, $02`` and see if
 it looks like the "hi" chart. Then go 96 bytes up (or down) and see if there
@@ -663,9 +663,9 @@ And to convert to Drean is similar:
 
 -  ``((speed_of_timer + 1) * 1023440/985248) - 1``
 
-    .. note:: ``985248``, ``1022727``, ``1023440`` are the speeds of the 6510
-       in a PAL, NTSC, Drean respectively (``0.985248`` Mhz, ``1.022727``
-       Mhz, ``1.023440`` Mhz). The fastest is the Drean, and the slowest is PAL.
+.. note:: ``985248``, ``1022727``, ``1023440`` are the speeds of the 6510
+   in a PAL, NTSC, Drean respectively (``0.985248`` Mhz, ``1.022727``
+   Mhz, ``1.023440`` Mhz). The fastest is the Drean, and the slowest is PAL.
 
 To know the speed of an existing sid, some disassembly is required. We have
 to search for code that changes registers ``$dc04/$dc05``. Eg: something
@@ -1679,9 +1679,9 @@ If we want to know if the key ``Q`` was pressed then we must do the following:
 
 Like the joystick, a value of 0 indicates that it was pressed, and a 1 indicates that it was not.
 
-**IMPORTANT**: The joysticks and keyboard share the same controller (CIA).
-So we should be careful if we want to read both the joystick and the keybarod
-at the same time. Note that both use `$dc00`_ and `$dc01`_ for reading the data.
+.. note:: The joysticks and keyboard share the same controller (CIA).
+   So we should be careful if we want to read both the joystick and the keyboard
+   at the same time. Note that both use `$dc00`_ and `$dc01`_ for reading the data.
 
 If we want to know if the *cursor left* is pressed, then we must
 check if the *Shift* and *cursor left / right* keys are pressed.
@@ -2330,11 +2330,12 @@ Here is the code:
 
             rts
 
-    .. note:: We ``rol`` 163 (7 sprites \* 8 pixels per sprite \* 3 columns per sprite)
-       bytes per frame. It takes a total of 978 (163 * 6) CPU cycles. It is not a lot,
-       but it is much more than what is used in a normal text scroll.
-       If we want to use the full 24 pixels (instead of 8) of the sprite,
-       it will be three times slower. Be careful!
+
+.. note:: We ``rol`` 163 (7 sprites \* 8 pixels per sprite \* 3 columns per sprite)
+   bytes per frame. It takes a total of 978 (163 * 6) CPU cycles. It is not a lot,
+   but it is much more than what is used in a normal text scroll.
+   If we want to use the full 24 pixels (instead of 8) of the sprite,
+   it will be three times slower. Be careful!
 
 .. figure:: https://lh3.googleusercontent.com/7j8O3TKZuljEjbSTtlfsd1xLsErRXOsI8W147As4KsvjfNXetZUhP8-BFk3AjiWW1tA7FcGjHrGRQrjOtvjbo38lfcLyaRo1GWP7p_RCFIshxOm3Gb7pOOTug6eVFLZeQ4zcagY
    :alt: rasterbars
