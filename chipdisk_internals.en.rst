@@ -663,9 +663,9 @@ And to convert to Drean is similar:
 
 -  ``((speed_of_timer + 1) * 1023440/985248) - 1``
 
-*Note*: ``985248``, ``1022727``, ``1023440`` are the speeds of the 6510
-in a PAL, NTSC, Drean respectively (``0.985248`` Mhz, ``1.022727``
-Mhz, ``1.023440`` Mhz). The fastest is the Drean, and the slowest is PAL.
+    .. note:: ``985248``, ``1022727``, ``1023440`` are the speeds of the 6510
+       in a PAL, NTSC, Drean respectively (``0.985248`` Mhz, ``1.022727``
+       Mhz, ``1.023440`` Mhz). The fastest is the Drean, and the slowest is PAL.
 
 To know the speed of an existing sid, some disassembly is required. We have
 to search for code that changes registers ``$dc04/$dc05``. Eg: something
@@ -2330,11 +2330,11 @@ Here is the code:
 
             rts
 
-*Note*: We ``rol`` 163 (7 sprites \* 8 pixels per sprite \* 3 columns per sprite)
-bytes per frame. It takes a total of 978 (163 * 6) CPU cycles. It is not a lot,
-but it is much more than what is used in a normal text scroll.
-If we want to use the full 24 pixels (instead of 8) of the sprite,
-it will be three times slower. Be careful!
+    .. note:: We ``rol`` 163 (7 sprites \* 8 pixels per sprite \* 3 columns per sprite)
+       bytes per frame. It takes a total of 978 (163 * 6) CPU cycles. It is not a lot,
+       but it is much more than what is used in a normal text scroll.
+       If we want to use the full 24 pixels (instead of 8) of the sprite,
+       it will be three times slower. Be careful!
 
 .. figure:: https://lh3.googleusercontent.com/7j8O3TKZuljEjbSTtlfsd1xLsErRXOsI8W147As4KsvjfNXetZUhP8-BFk3AjiWW1tA7FcGjHrGRQrjOtvjbo38lfcLyaRo1GWP7p_RCFIshxOm3Gb7pOOTug6eVFLZeQ4zcagY
    :alt: rasterbars
