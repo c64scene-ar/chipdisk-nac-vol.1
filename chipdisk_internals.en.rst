@@ -522,7 +522,7 @@ Raster interrupts are the most common. You tell the C64 that you
 want to get called when the raster is on a certain rasterline.
 
 For example, if I wanted the top of the screen to be black,
-and bottom to be white, two chained interrupts can be used for that: 
+and bottom to be white, two chained interrupts can be used for that:
 
 .. code:: asm
 
@@ -851,7 +851,8 @@ Update song / author name
 Perhaps the most tedious part of the Player is to update the song's and author's
 names. Let's see why:
 
-Bitmap mode uses cells. The screen is divided into:
+The datasette graphic is a bitmap in Standard mode. That means that the
+screen is divided into:
 
 - 40 x 25 cells
 - Each cell is 8x8 pixels (8 bytes)
@@ -862,7 +863,7 @@ Bitmap mode uses cells. The screen is divided into:
 
    *In Standard Bitmap mode cells can not have more than 2 colors at once*
 
-Our graphic uses 16 colors. But if you pay attention, each cell
+The datasette graphic uses 16 colors. But if you pay attention, each cell
 has no more than 2 colors at a time. This graphics mode exists to
 save memory. For example, if one could choose 16 colors (4 bits)
 per pixel, then the graphic would occupy:
@@ -872,18 +873,18 @@ per pixel, then the graphic would occupy:
 Something very expensive for a 64k RAM computer. In addition,
 VIC can not see more than 16k at a time. Added to that if one uses
 BASIC, then only 6k RAM free would be available (38k - 32k).
-That is why his graphic mode (16 colors per pixel) does not exist in the C64.
+That is why this graphic mode (16 colors per pixel) does not exist in the C64.
 
 When using cells, the foreground and background color is stored in
 a buffer of 40 x 25. Each byte represents the color of the cell: bits #4 - #7
 are used for the "foreground", and bits #0 - #3 are used for the "background".
-With this a bitmap + color graphic occupies:
+With this a bitmap + color occupies:
 
 -  ((320 \* 200 \* 1 bit) / 8) + (40 \* 25) = 9000 bytes.
 
 And 9000 bytes is somewhat acceptable for a 64k RAM machine.
 
-To turn a pixel on at ``x, y`` and color it, works like this:
+To turn on a pixel at ``x, y`` and color it, works like this:
 
 .. code:: c
 
@@ -977,7 +978,7 @@ tilt the char, the solution would look something like this:
     }
 
 But what we want to do is print it with a slope. The solution is
-similar, but every now and then we have to go down and then left:
+similar, but every now and then we have to go down and left:
 
 .. code:: c
 
@@ -1017,11 +1018,10 @@ With this algorithm we can print things like this:
 
 But that is **NOT** what we want because:
 
--  It occupies a lot of screen space, they will not enter the names of the
-   songs
+-  It occupies a lot of screen space, the song's names will not enter
 -  There are empty pixels in the middle of the letters
 
-And why are there empty pixels? The answer is to see this rotation:
+And why are there empty pixels? The answer is in this image:
 
 .. figure:: https://lh3.googleusercontent.com/K4ylCjj6GgzdI9DEhTjikkcc14C_bnQEHCBk1OvXtOh3ReUK28f0vTnyGnyu6Q1x67mLLNw5qUuec_CtAWUztv-5wFeDvf7LKpq2-KDqtn_qw93OUAQmhNGKJU0pKg8QpQc6N-U
    :alt: rotated
@@ -1034,8 +1034,7 @@ since it does not occupy as much screen space. The second is to fix the
 empty pixels.
 
 A possible solution to avoid empty pixels is to have the algorithm
-tilt the chars horizontally rather than vertically. Something like
-this:
+tilt the chars only horizontally. Something like this:
 
 .. figure:: https://lh3.googleusercontent.com/gcnEulu7AuMlM2TmwusHLe5-iS3UqUVeTJnHFhKT9d_9JjqdCG7_nFijuyWpQKHzGVeTGfXlbbF-mOi_Y-TRxyuTs1H-xy-BUqfz55rMitmiSJApwRI5M_BTRTzDR47oRk1_iw8
    :alt: rotated2
@@ -1049,9 +1048,9 @@ And four letters would look like this:
 
    *Empty pixels are at the end of each letter*
 
-What we want to do is have the empty pixels be like
-"Separators" of the characters, and not be in the middle of
-each character. With this in mind, the new algorithm looks like this:
+What we want to do is have the empty pixels like "Separators" of the characters,
+and not be in the middle of each character. With this in mind, the new algorithm
+looks like this:
 
 .. code:: c
 
@@ -1093,23 +1092,22 @@ each character. With this in mind, the new algorithm looks like this:
         }
     }
 
-What you have to do now is to have a charset [#]_ that tilts
-only horizontally. For example, a charset like
-this:
+What we have to do now is to have a charset [#]_, that when tilted, it will
+look Ok. For example, a charset like this:
 
 .. figure:: https://lh3.googleusercontent.com/bEDUkJFBU44Uc6vjfmyCPDHVO3jrSTvW0SQzBSoYsQkwuZ7Q1ij8Gl0K6SBfm0LyD8yg6ZaEHsOsJqAgpd2g0CUZUZ1Wvowg72MaX9JjW7GZ058yNLQrtgURQ7NyFOe7RhYbwmI
    :alt: charset
 
    *Complete charset with letters ready to be tilted*
 
-And so are some of the sloping letters:
+And here are some letters before and after the tilt:
 
 .. figure:: https://lh3.googleusercontent.com/K2eFlXjp7iAn72AjmoREX7GsKBPSxmnSi6s02-fFhtfw0JZhdNG1EnyGPJG_KEYPS6T5pBR3ZhmEaeTsH-7dyogYnlm-J7oFN6gjcYB9k_VeY0UJs8Yy0cES7uGD_NMaLhMFTxk
    :alt: charset\_rotated
 
    *Example of how 'a', 'b', 'c' and 'd' look like*
 
-But we need to figure out wide letters like ``m``, ``M``, ``W``
+But we need to figure out how to render wide letters like ``m``, ``M``, ``W``
 and ``w``. This is solved by using two chars for those letters
 and let the letters occupy 8x8 and not 4x8. It would be like this:
 
@@ -1123,14 +1121,14 @@ Then, the final algorithm is:
 -  An 8x8 charset is used. But most of the letters are 4x8.
    The right side of most letters is empty
 -  The 8x8 pixels of the letters are copied using the algorithm of
-   ``Semi_inclination``
+   ``semi_sloped``
 -  Some letters like the ``m`` and ``w`` will use two characters. Ex:
-   ``Mama`` is written as ``m&am&a``, since char ``&`` will have the
+   ``mama`` is written as ``m&am&a``, since char ``&`` will have the
    second part of the the ``m``
 
-So the code is quite simple, which is good (minus
-bugs), but it puts more effort into the data. But it's 10 times better
-to have simple code and complex data, than the other way around.
+So the code is quite simple, which is good (less bugs), but the tradeoff is
+that the data is more complex. But it's 10 times better to have simple code
+and complex data, than the other way around.
 
 Final algorithm to print the sloped letters:
 
@@ -1178,7 +1176,7 @@ Optimized Version
 ~~~~~~~~~~~~~~~~~
 
 The above algorithm works fine, but the problem is that it uses a lot
-of multiplication in ``set_pixel()`` [#]_, and remember that the 6510
+of multiplications in ``set_pixel()`` [#]_, and remember that the 6510
 has no multiplication instructions.
 
 The Player uses a slightly more complicated version to improve the
@@ -1190,12 +1188,12 @@ performance. It takes into account the following:
    contiguous.
 -  The next character to print will be, at most, a cell's
    distance in both X and Y
--  There are specific functions to draw the possible 4 offsets
+-  There are specific functions to draw the 4 possible offsets
    ``plot_char_0()``, ..., ``plot_char_3()``
 -  There are specific functions to draw each of the 8 rows:
    ``plot_row_0()``, ..., ``plot_row_7()``
 -  There are three global pointers:
-   - ``$f6/$f7`` charset offset pointing to the character to be printed
+   - ``$f6/$f7`` offset to charset. Points to the character to be printed
    - ``$f8/$f9``, and ``$fa/$fb`` pointing to the current cell, and
       next cell in the bitmap
 
@@ -1349,9 +1347,10 @@ For those who want to see the complete code in assembler, here:
 -  `plotter in
    assembler <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/chipdisk.s#L1313>`__
 
-It is not worth putting it here, except for some interesting things, such as
-macros that are used. For example, instead of repeating code over and over,
-Chipisk uses assembler macros.
+Some tricks we use to render the letters:
+
+Trick: Macros
+^^^^^^^^^^^^^
 
 It is worth highlighting the ``.IDENT``, ``.CONCAT`` that is used to call
 the correct functions according to the parameters that are passed to the
@@ -1501,8 +1500,6 @@ macro. Let's see how it works:
             ; And so on to plot_row_7
             ...
 
-Some tricks we use:
-
 Trick: Rotate In-Place
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1514,7 +1511,7 @@ The trick we use to rotate "in-place" [#]_ is nice:
             adc #0                  ; And bit 0 has the value of "C"
 
 Trick: Unrolled-loops
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 *Unrolled loops* are used a lot within games/demos/intros they
 help achieve fast code (in exchange for RAM space):
@@ -1595,7 +1592,7 @@ Joystick
 ~~~~~~~~
 
 Reading the joystick is relatively simple on the C64. The values of the
-Joystick 1 are in `$dc01`_ and those in Joystick 2 are in `$dc00`_
+Joystick #1 are in `$dc01`_ and those in Joystick #2 are in `$dc00`_
 
 .. code:: asm
 
@@ -1618,8 +1615,8 @@ The possible values are:
 | Bit  0    | Joystick Up: 0 = Active         |
 +-----------+---------------------------------+
 
-Important: 0 means it is on, and 1 is off. If you want
-check if the Joystick 2 button is pressed, the code is:
+Important: 0 means it is On, and 1 is Off. If you want
+check if the Joystick #2 button is pressed, the code is:
 
 .. code:: asm
 
@@ -1627,7 +1624,7 @@ check if the Joystick 2 button is pressed, the code is:
         and #%00010000                  ; I'm just interested in the button status
         beq button_pressed              ; If it is 0 then the button is pressed
 
-And something similar for Joystick 1, but with `$dc01`_ instead of `$dc00`_.
+And something similar for Joystick #1, but with `$dc01`_ instead of `$dc00`_.
 
 Keyboard
 ~~~~~~~~
@@ -1639,17 +1636,16 @@ need. There is a KERNAL function that returns the pressed key: `$ffe4`_
 
         jsr $ffe4                       ; Returns in A the keyboard byte read
 
-And using the KERNAL for this is more than fine for most
-cases. The Player, however, uses the other option that is reading the
-"Hardware" directly, and it works like this:
+And using the KERNAL function is more than fine for most cases.
+The Player, however, uses the other option that is reading the hardware
+directly, and it works like this:
 
 - The keyboard of the Commodore 64 has 64 keys (not counting RESTORE)
 - The keys are arranged in an 8 x 8 matrix (8 \* 8 = 64)
 - `$dc01`_ contains the values of the columns
 - and `$dc00`_ contains the values of the rows
 
-You can determine which keys are pressed by reading the
-following matrix:
+You can determine which keys are pressed by reading the following matrix:
 
 +---------------+--------------------------------------------------------------------------------+
 |Keyboard 8x8   |                                      $DC01                                     |
@@ -1685,10 +1681,9 @@ If we want to know if the key ``Q`` was pressed then we must do the following:
 
 Like the joystick, a value of 0 indicates that it was pressed, and a 1 indicates that it was not.
 
-**IMPORTANT**: The joysticks and keyboard share the same controller (CIA)
-So you must differentiate between a joystick movement and keys pressed
-sometimes it gets complicated. Note that both use both `$dc00`_ and `$dc01`_ for
-reading the data.
+**IMPORTANT**: The joysticks and keyboard share the same controller (CIA).
+So we should be careful if we want to read both the joystick and the keybarod
+at the same time. Note that both use `$dc00`_ and `$dc01`_ for reading the data.
 
 If we want to know if the *cursor left* is pressed, then we must
 check if the *Shift* and *cursor left / right* keys are pressed.
@@ -1785,108 +1780,109 @@ was pressed
 
 .. code:: asm
 
-    ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-    ; read_mouse
-    ;       exit    x = delta x movement
-    ;               y = delta y movement
-    ;               C = 0 if button pressed
-    ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-    read_mouse:
-            lda $d419                       ; Read delta X (pot x)
-            ldy opotx
-            jsr mouse_move_check            ; Calculate delta
-            sty opotx
-            sta ret_x_value
+        ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+        ; read_mouse
+        ;       exit    x = delta x movement
+        ;               y = delta y movement
+        ;               C = 0 if button pressed
+        ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+        read_mouse:
+                lda $d419                       ; Read delta X (pot x)
+                ldy opotx
+                jsr mouse_move_check            ; Calculate delta
+                sty opotx
+                sta ret_x_value
 
-            lda $d41a                       ; Read delta Y (pot y)
-            ldy opoty
-            jsr mouse_move_check            ; Calculate delta
-            sty opoty
+                lda $d41a                       ; Read delta Y (pot y)
+                ldy opoty
+                jsr mouse_move_check            ; Calculate delta
+                sty opoty
 
-            eor #$ff                        ; Delta is inverted ... fix it
-            tay
-            iny
+                eor #$ff                        ; Delta is inverted ... fix it
+                tay
+                iny
 
-            sec                             ; C = 1 (means button not pressed)
+                sec                             ; C = 1 (means button not pressed)
 
-    ret_x_value = * + 1
-            ldx #00                         ; self modifying
+        ret_x_value = * + 1
+                ldx #00                         ; self modifying
 
-            lda $dc01                       ; Read joy button # 1: bit 4
-            asl
-            asl
-            asl
-            asl                             ; C = 0 (means button was pressed)
-            rts
+                lda $dc01                       ; Read joy button # 1: bit 4
+                asl
+                asl
+                asl
+                asl                             ; C = 0 (means button was pressed)
+                rts
 
-    opotx: .byte $00
-    opoty: .byte $00
+        opotx: .byte $00
+        opoty: .byte $00
 
-    ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-    ; mouse_move_check
-    ; Taken from here:
-    ; https://github.com/cc65/cc65/blob/master/libsrc/c64/mou/c64-1351.s
-    ;
-    ;       entry   y = old value of pot register
-    ;               a = current value of pot register
-    ;       exit    y = value to use for old value
-    ;               x,a = delta value for position
-    ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
-    mouse_move_check:
-            sty     old_value
-            sta     new_value
-            ldx     #$00
+        ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+        ; mouse_move_check
+        ; Taken from here:
+        ; https://github.com/cc65/cc65/blob/master/libsrc/c64/mou/c64-1351.s
+        ;
+        ;       entry   y = old value of pot register
+        ;               a = currrent value of pot register
+        ;       exit    y = value to use for old value
+        ;               x,a = delta value for position
+        ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
+        .proc mouse_move_check
+                sty     old_value
+                sta     new_value
+                ldx     #$00
 
-            sec
-            sbc     old_value               ; a = mod64 (new - old)
-            and     #%01111111
-            cmp     #%01000000              ; if (a > 0)
-            bcs     @L1                     ;
-            lsr     a                       ;   a /= 2;
-            beq     @L2                     ;   if (a != 0)
-            ldy     new_value               ;     y = NewValue
-            rts                             ;   return
+                sec
+                sbc     old_value               ; a = mod64 (new - old)
+                and     #%01111111
+                cmp     #%01000000              ; if (a > 0)
+                bcs     @L1                     ;
+                lsr     a                       ;   a /= 2;
+                beq     @L2                     ;   if (a != 0)
+                ldy     new_value               ;     y = NewValue
+                rts                             ;   return
 
-    @L1:    ora     #%11000000              ; else or in high order bits
-            cmp     #$ff                    ; if (a != -1)
-            beq     @L2
-            sec
-            ror     a                       ;   a /= 2
-            dex                             ;   high byte = -1 (X = $FF)
-            ldy     new_value
-            rts
+        @L1:    ora     #%11000000              ; else or in high order bits
+                cmp     #$ff                    ; if (a != -1)
+                beq     @L2
+                sec
+                ror     a                       ;   a /= 2
+                dex                             ;   high byte = -1 (X = $FF)
+                ldy     new_value
+                rts
 
-    @L2:    txa                             ; A = $00
-            rts
+        @L2:    txa                             ; A = $00
+                rts
 
-    old_value: .byte 0
-    new_value: .byte 0
+        old_value: .byte 0
+        new_value: .byte 0
+
 
 To better understand how to enable/disable the mouse/joystick.
-This is how the ``main_loop()`` of the Player works:
+This is how the Player's ``main_loop()`` works:
 
 .. code:: asm
 
-    main_loop:
-        ...
+        main_loop:
+                ...
 
-        lda #%01000000                  ; Enable mouse
-        sta $dc00                       ; (disable joystick)
+                lda #%01000000                  ; Enable mouse
+                sta $dc00                       ; (disable joystick)
 
-        jsr read_mouse
-        jsr process_mouse
+                jsr read_mouse
+                jsr process_mouse
 
-        jsr read_keyboard
-        jsr process_keyboard
+                jsr read_keyboard
+                jsr process_keyboard
 
-        lda #%00111111                  ; Enable joystick
-        sta $dc00                       ; (disable the mouse)
+                lda #%00111111                  ; Enable joystick
+                sta $dc00                       ; (disable the mouse)
 
-        jsr read_joystick
-        jsr process_joystick
+                jsr read_joystick
+                jsr process_joystick
 
-        ...
-        jmp main_loop
+                ...
+                jmp main_loop
 
 
 
@@ -1894,8 +1890,8 @@ This is how the ``main_loop()`` of the Player works:
 Animate Pressed Buttons
 -----------------------
 
-We are not doing anything strange here. We simply replace a bitmap piece
-for another.
+We are not doing anything strange here. We simply replace a piece of the bitmap
+with another one.
 
 .. figure:: https://lh3.googleusercontent.com/gGQcvRrOcIv8tWfcliz_qTAveG2UALJxt9JYd-3JjOKYBzqM9FBiZ0U6nZMknEQt-87LYgH-H_OVP-V_HlMEr4W93M4H1WHOXkL2atCm5TePAqrK2s8CGaXHBg6apUN75M1xnzA
    :alt: 7x7 cells
@@ -1908,7 +1904,7 @@ The algorithm looks something like this:
 2. The content of the button to be pressed is copied to the buffer
 3. Copy the contents of the pressed button to destination
 
-What is copied is a 7x7 block for each button. Both the bitmap
+What is copied is a 7x7 block for each button: both the bitmap
 and its color. Each button occupies:
 
 - bitmap: 7 * 7 * 8 (8 bytes per cell) + color: 7 * 7 = 441 bytes
@@ -2016,7 +2012,7 @@ The Easter Egg is made with:
 
 - Use text mode (pure PETSCII) for the sun and its animations
 - 7 sprites extended in X and Y for the scroll
-- Open the vertical edge for use with sprites under the sun
+- Open the vertical border to place the 7 sprites there
 - Play a sid that has to play well in PAL / NTSC / Drean
 
 Vertical Frame
@@ -2025,7 +2021,7 @@ Vertical Frame
 One way to open the vertical border is more or less like this:
 
 1. 24-row mode is changed when the VIC is drawing row 25 (between rasterlines ``$f2`` and ``$fa``)
-2. It is changed to 25 rows mode once the raster has passed row 25.
+2. It is changed back to 25-row mode once the raster has passed row 25.
 
 That has to be done in every frame.
 
@@ -2056,7 +2052,7 @@ Example:
 
 That is the logic in general. But what needs to be changed is how to wait for the
 rasterline ``$f9`` without consuming all the cycles. The simplest way is
-with a raster interrupt ... something like:
+with a raster interrupt. Something like:
 
 
 .. code:: asm
@@ -2094,10 +2090,10 @@ with a raster interrupt ... something like:
             pla                             ; Restore "A"
             rti                             ; Restore "PC" and "Status"
 
-That works in 99% of cases. But remember that we have to play
-The sid to work well on PAL, NTSC and Drean. Also for the sid
-we have to use a timer to attain the correct speed, a speed
-that can be different than the raster IRQ speed.
+That works in 99% of cases. But remember that the sid must sound correctly
+in all platforms: PAL, NTSC and Drean. We will use a Timer interrupt for the
+the sid speed. But having both the Raster interrupt and Timer interrupt might
+create some "interrupt collisions".
 
 Suppose we are running the program in an NTSC (see *Detecting between ...* for more info):
 
@@ -2109,20 +2105,22 @@ Suppose we are running the program in an NTSC (see *Detecting between ...* for m
 
    *Collision between IRQ Raster and IRQ Timer in NTSC. Which one runs first?*
 
-It is possible that the edge will not open at any time because the interruption of the sid
+It is possible that the border will not open at any time because the interruption of the sid
 is executed just when you had to call the raster interrupt. In
-the animation above the white bar that "low" shows when running
-the IRQ Timer and its duration. The little bar below shows the Raster
-IRQ. As you can see, sometimes they "collide" and you do not know which one is executed.
+the above animation, the white that moves down shows the IRQ Timer and its duration.
+The bar at the bottom shows the Raster IRQ. As you can see, sometimes they
+"collide" and it is possible that one interrupt gets skipped, or delayed. And
+we don't want that for the Raster IRQ, since the border might not get open
+generating a ugly flicker in the effect.
 
 
 NMI Interrupts
 --------------
 
-One way to make the border always open is to use the NMI interrupt
-(Non-Maskable Interrupt) to trigger the edge code. The NMI interrupt has
-priority over other interruptions. If the Raster interrupt is
-Is running when the NMI has to be executed, the NMI Interrupt
+One way to always open the  border is to use a NMI interrupt
+(Non-Maskable Interrupt) to trigger the border code. The NMI interrupt has
+priority over other interrupts. If the Raster interrupt is
+running when the NMI has to be executed, the NMI Interrupt
 interrupts the Raster interrupt. But no one can interrupt an
 NMI interrupt.
 
@@ -2130,7 +2128,7 @@ The NMI interrupt can be triggered with the following events:
 
 - Pressing the Restore key
 - Hardware
-- With CIA Timer A 2: `$dd0d`_ and other friends
+- With CIA 2 Timer A: `$dd0d`_ and its friends
 
 In our case, we are going to use Timer A of the CIA 2. It works like this:
 
@@ -2228,14 +2226,14 @@ In our case, we are going to use Timer A of the CIA 2. It works like this:
             rti                             ; Restore "PC" and "Status"
 
 
-And that way the edge is always going to open, regardless of whether the interruption
-IRQ is activated.
+And that way the vertical border is always be open, regardless of whether an
+IRQ interrupt is triggered.
 
 Scroll with Sprites
 -------------------
 
-The Scroll is made with 7 sprites expanded in both X and Y, covering everything
-the length of the screen. The length of the screen is 320 pixels. With 7 sprites
+The Scroll is made with 7 sprites expanded in both X and Y, covering the entire
+length of the screen. The length of the screen is 320 pixels. With 7 sprites
 expanded in X we cover: 7 * 24 * 2 = 336 pixels.
 
 .. figure:: https://lh3.googleusercontent.com/wqwavZCFHLGy1xzLNMvtDXbfbzDTqjBEZ4rUNuq4R1GR8N-UK4Olh63-YYColFjcexYR_2PnoquipJDkYuf4NDGbcb2hMgCHbeJPDlB2-LriVoEkVfC0c5gpH3xhUwLuBrEBc8Q
@@ -2243,19 +2241,17 @@ expanded in X we cover: 7 * 24 * 2 = 336 pixels.
 
    *Scroll with 7 sprites*
 
-The scroll can not be done with characters because it is done under row
-25. The only thing that can be out there are sprites.
+A text scroll can not placed below row 25. The only way to do it,
+is with sprites.
 
 The trick is very simple:
 
 1. Put 7 expanded sprites in X, side by side
 2. At first the sprites are "empty"
-3. Calculate the ``C`` (*carry*) to update the rightmost sprite
-4. Each row of the sprite is ``rol``. And ``carry`` is used for the previous column of the same row
+3. Calculate the ``C`` (*carry*) to update the LSB in the rightmost sprite
+4. Each row of the sprite is ``rol`` ed. And ``carry`` is used for the previous column of the same row
 
-A normal text scroll is similar, but instead of scrolling through characters,
-Sprites are scrolled. Here is the code:
-
+Here is the code:
 
 .. code:: asm
 
@@ -2336,22 +2332,23 @@ Sprites are scrolled. Here is the code:
 
             rts
 
-*Note*: Note that we are "rol" at 163 (7 * 8 * 3) bytes per frame, a total
-of 978 (163 * 6) CPU cycles. It is not a lot, but it is much more than what is used in
-a normal text scroll. If we use the 24 pixels of the sprite,
-could be three times as expensive. Wow!
+*Note*: We ``rol`` 163 (7 sprites \* 8 pixels per sprite \* 3 columns per sprite)
+bytes per frame. It takes a total of 978 (163 * 6) CPU cycles. It is not a lot,
+but it is much more than what is used in a normal text scroll.
+If we want to use the full 24 pixels (instead of 8) of the sprite,
+it will be three times slower. Be careful!
 
 .. figure:: https://lh3.googleusercontent.com/7j8O3TKZuljEjbSTtlfsd1xLsErRXOsI8W147As4KsvjfNXetZUhP8-BFk3AjiWW1tA7FcGjHrGRQrjOtvjbo38lfcLyaRo1GWP7p_RCFIshxOm3Gb7pOOTug6eVFLZeQ4zcagY
    :alt: rasterbars
 
-   *All of rasterbars. A: Scroll, B: Music, C: Open border*
+   *Rasterbars. A: Scroll, B: Music, C: Open border*
 
 Unpacking the Easter Egg
------------------------------
+------------------------
 
-Once the Easter Egg is activated you have to unzip it. The little problem
+Once the Easter Egg is activated we have to decompress it. The little problem
 here is that the Easter Egg is not in a continuous chunk. It is in 3
-parts:
+different parts:
 
 -  compressed code: ``$0118 - $07ff``
 -  compressed sid: Somewhere near ``$e000``
@@ -2359,11 +2356,11 @@ parts:
 
 The interesting thing here is the compressed code that uses part of the c64 stack.
 To prevent the stack from mangling the compressed code, we tell the stack
-That the "top" of the stack is "$0117" with the following instructions:
+That the "top" of the stack is ``$0117`` with the following instructions:
 
 .. code:: asm
 
-        ldx #$17                        ; Only 24 bytes are used for the stack
+        ldx #$17                        ; Only 24 ($18) bytes are used for the stack
         txs                             ; The rest is reserved for the easter egg
 
 
@@ -2388,7 +2385,7 @@ The Player's memory with the compressed Easter Egg looks like this:
     $7be0 - $7ccf: Player Code (3/3)
     $fcd0 - $fff0: Text Scroll Easter Egg Compressed (~ 800 bytes)
 
-When the Easter Egg is fired, the three pieces of Easter Egg are decompressed
+When the Easter Egg is triggered, the three pieces of Easter Egg are decompressed
 in the correct location.
 
 Code: The Intro
@@ -2408,12 +2405,12 @@ Rasterbars
 
 Perhaps the most interesting thing is how to achieve the "inverted color". It's simple:
 
-1. The typical effect of rasterbars is done like so:
+1. The typical rasterbar effect is executed:
 
 .. figure:: https://lh3.googleusercontent.com/IAw3ncdKryj8scLeYa5HpEK-CUChYbFRoTjvT5oNYwmsccQMj6iN1JCmd9xO3aoCUFqJGQEk-rtKjmMECm1hrvyjRILJowwIbQwXc1XvQAJ6AC4Gkj5bnRxty-6gH_WWgHeTIIY
    :alt: intro-rasterbar
 
-2. Text is overwritten
+2. Text is written on top of the rasterbars
 
 .. figure:: https://lh3.googleusercontent.com/rXTTYVOZKkL5GbZRE01CcRoiRdhjZYQ4rcNd_Y5jlTk9AJvzMIkiMycnhdnJGTlWuqmfsjTELB5Zf_8s43yPObuXVAIGB68sOdWQk43HHUk6KosqHifntMtqmrA9wrKJaAk-FcA
 
@@ -2425,37 +2422,36 @@ Perhaps the most interesting thing is how to achieve the "inverted color". It's 
 Intro-linker
 ------------
 
-The Intro, once it is finished, decompresses the Player. For that you have to have
+The Intro, once it is finished, decompresses the Player. For that we have to have
 consider two things:
 
-- The decompression code can not get "stepped on" while decompressing
-- The data to decompress can not get "stepped on" while it is decompressed
+- **A)** The decompression code can not get "stepped on" while decompressing
+- **B)** The data to decompress can not get "stepped on" while it is decompressed
 
-For the first thing, what is done, is to put the decompression code in a
-address that will not be used, such as ``$0400`` (Screen address). To
-prevent it from being "ugly", we paint everything in black:
-
+For **A)**, we put the decompression code in a address that will not be used,
+such as ``$0400`` (Screen address). To prevent it from look "ugly",
+we paint everything in black:
 
 .. figure:: https://lh3.googleusercontent.com/Az0sLlckuc5AZ11CAEMfEHt5Qhytwjo5pF8VoXPMUOrXPdhah23WTuGCQ5OHHjImepzFYRMuDoMV6Pj_keYu7i5InAxd5shUcByNSwLibPkMDoTOBi9edcjgBEsKe4IZkIZ9m5U
    :alt: intro-linker black
 
-   *With Everything black. We can not see the decompression code*
+   *Black screen. The decrompress code cannot be seen*
 
 But if the background were not black, it would look like this:
 
 .. figure:: https://lh3.googleusercontent.com/4HefvIHOzC2oM23jOjZGUgnR6ChVb4Jj8hm-2_w8MpHTAWKjvFdWt0YDl-KQwV4ox6kVlyNSxbpfqvrtk7KuOesAi8XnnFHebSxmmXL5gk1r5m-ouYBrsAqvgg-X3DKianQIfQs
    :alt: intro-linker not blacked out
 
-   *What you would see if the screen had no black background*
+   *What we would see if the screen had no black background*
 
-For the second, it is simple too, but it was complicated in the Chipdisk.
-The Player + Easter Egg tablets occupy 40585 bytes, and when they decompress
-They occupy 63427 bytes. The C64 only has 64k RAM, so the decompression routine
-will step on the compressed data at some point. The idea is to step it just one
-time you after you have used the compressed data.
+For **B)**, it is not difficult, but it got a bit complicated with the Chipdisk.
+The Player + Easter Egg occupy 40585 bytes, and when they are decompressed
+they occupy 63427 bytes. The C64 only has 64k RAM, so the compressed data
+will be overwritten by the decompressed data at some point. The key is that
+the compressed data should only be overwritten once it was used, not before!
 
-The Exomizer_ decompression routine goes from the end
-forwards. That is, it begins to decompress the last byte first.
+The Exomizer_ decompression routine starts from the end of the data. That is,
+it begins to decompress the last byte first.
 
 ::
 
@@ -2471,44 +2467,44 @@ forwards. That is, it begins to decompress the last byte first.
         |                     | Player Code + Easter Egg                                   |
         +---------------------+------------------------------------------------------------+
 
-So to prevent it from treading on the unused data, something like this is done:
+So to prevent from "yet-to-be-used compressed data", something like this is done:
 
 -  The address of the last compressed byte is in ``$afff``, and that byte
-   once decompressed goes to ``$fff0``. So it does not "step" the compressed data.
+   once decompressed goes to ``$fff0``. So it does not "overwrite" the compressed data.
 
 -  And the address of the first compressed byte is at ``$0800``, and that byte
-   once decompressed goes to ``$0820``. On top of the compressed data, but only
-   after is was already decompressed.
+   once decompressed goes to ``$0820``. It overwrittes some compressed data,
+   but only after is was already used.
 
-**Rules**: Both the address of the first byte of origin and that of the last one
-must be less than the addresses of the first and last destination byte
-respectively: ``$0800 < $0820`` and ``$afff < $fff0``.
+**Rule**: Both the start and end addresses of the compressed data (origin),
+should be lower than the start and end addresses of the destination.
+In our case: ``$0800 < $0820`` and ``$afff < $fff0``.
 
-Stable IRQ Raster
-------------------
+Stable Raster IRQ
+-----------------
 
-When one uses raster interrupts, the callback is not always called
-where one wants if you use: ``lda #$80; sta $d012``, the
-raster will call us when the rasterline is in ``$80``, but in which part
-of the rasterline ``$80``? Sometimes it is called in the middle of the line, and other
-times ahead or behind.
+When one uses Raster interrupts, the callback is not always called
+where at the an exact cycle. Eg: With ``lda #$80; sta $d012``, the callback
+will be called when the rasterline is ``$80``, but in which part
+of the rasterline ``$80`` exactly? Sometimes it is called in the middle of
+the line, and other times ahead or behind.
 
-That makes a simple effect like rasterbar look "unstable" ...
-With a line of color split in half, or the like.
+That makes a simple effect like rasterbar look "unstable", with a
+generating a flicker effect in that rasterline.
 
-Well, something similar happens in the Intro when we change the mode screen
-Bitmap to text mode. Sometimes a black line appears / disappears in the rasterline
-in between them.
+Something similar happens in the Intro when we change the mode screen from
+Bitmap to Text mode. Sometimes a black line appears / disappears in the
+rasterline between them.
 
 .. figure:: https://lh3.googleusercontent.com/kvWKJs7IEaFXfR8dKVI21ans9NSVY9WMXZ_qr9MuM6ugq7TCIiGyzSkDb-YCMWw_15bN_1TJ-J0FerIf2D8K1j_f37xjTixXUFIP6Bl8E-F89jFnaIJj51qrAsTdTUJSmI_VwCk
    :alt: artifact
 
    *A black line appears / disappears above the P and other letters. That is the "artifact"*
 
-That is solved with a stable *IRQ raster*. What it does is that the callback
-to always be called in the same rasterline cycle. Then you can adjust it
+That is solved with a *stable Raster IRQ*. What it does is that the callback
+is always called in the same rasterline cycle. Then you can adjust it
 putting in additional ``nop`` s. There are different techniques for achieving
-a stable raster. Chipdisk uses the technique called "double IRQ".
+a stable Raster IRQ. Chipdisk uses the technique called "double-IRQ".
 
 The code looks like this:
 
@@ -2611,8 +2607,8 @@ The code looks like this:
 
 The Double IRQ technique works quite well but with certain limitations:
 
-- Consumes additional cycles
-- You can not use it during *bad lines* [#]_
+- Consumes additional CPU cycles
+- You can not trigger it during *bad lines* [#]_
 
 Chipdisk and other sources
 ==========================
@@ -2648,18 +2644,18 @@ License
 Additional comments
 -------------------
 
-The code is was **not** developed to be used as a sample. It's real code
+The code was **not** developed to be used as a sample. It's real code
 written for the Chipdisk that we presented in the Datastorm 2017.
-That means you have all the "real code" issues.
+That means that it has all the "real code" issues.
 
--  It is based on the Chipdisk code *Hands Up* that we presented in DeCrunch 2016
+-  It is based on the previous work *Hands Up* that we presented in DeCrunch 2016
 -  The requirements were changing. The code changed also. There may be
    code that is not used, or code that no longer makes sense.
 -  Too many macros / unrolled-loops were used. Perhaps it would have been better to use less
-   to take additional place for a possible new song.
--  There are few comments
--  The Easter Egg has some bugs in the scroll. With time we will fix them
--  There may be other bugs too.
+   to reserve additional place for a possible new song.
+-  There are only a few comments in the code
+-  The Easter Egg has some bugs in the scroll. Eventually, we will fix them
+-  There may be other bugs as well.
 
 Questions and others
 ===================
@@ -2677,7 +2673,7 @@ References
 .. [#] The tool used to compress sids is this: `sid_to_exo.py <https://github.com/ricardoquesada/c64-misc/blob/master/tools/sid_to_exo.py>`__
 .. [#] The decompression routine is in the .zip of the Exomizer_, but you can also see it here: `exodecrunch.s <https://github.com/c64scene-ar/chipdisk-nac-vol.1/blob/master/src/exodecrunch.s>`__
 .. [#] The great idea of making a special charset to simplify the performance is from Alakran
-.. [#] Or as Acid recommends, you could only optimize ``set_pixel()`` with tables to avoid multiplication.
+.. [#] Or as Acid recommends, you could optimize ``set_pixel()`` with tables to avoid multiplication.
 .. [#] More tricks on how to optimize 6502 are here: `6502 assembly optimizations <https://wiki.nesdev.com/w/index.php/6502_assembly_optimisations>`__ and here `Synthetic instructions <https://wiki.nesdev.com/w/index.php/Synthetic_instructions>`__. And also here: `CodeBase64 <http://codebase64.org/>`__
 .. [#] For more information about Bad Lines go to `Beyond the Screen: Rasters and Cycles <http://dustlayer.com/vic-ii/2013/4/25/vic-ii-for-beginners-beyond-the-screen-rasters-cycle>`__
 
