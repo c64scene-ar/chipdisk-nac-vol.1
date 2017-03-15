@@ -291,7 +291,7 @@ Sprites: Animar rueditas y demás
 Dentro del player se usan sprites en los distintos lugares:
 
 - Animación de las rueditas: un sprite para cada ruedita
-- Puntero: 2 sprites "overlayed"
+- Puntero: 2 sprites "overlaid"
 - Boton de encendido: 1 sprite
 - Contador para canciones: 1 sprite
 - Arreglar "artifacs" del bitmap: 2 sprites
@@ -343,7 +343,7 @@ La idea es esta:
 .. figure:: https://lh3.googleusercontent.com/T1TmdjKnu_7BrDTvQr3L1Sre2jmwlM-KTsnBpCuEjK9g7esu5pQyd1gXsVoUOR2_L4w4jsZKX7w_RkhfgsCdztt1wWJbuu1zkJ9X8DpM7Xp8CxEJY_hX-YqFkdBxQDrxObXxi1Y
    :alt: overlay sprites
 
-   *Overlayed sprites*
+   *Overlaid sprites*
 
 Esta idea se usa mucho. Jueguitos como el Bruce Lee (y cientos de otros) la usan.
 El único inconveniente es que usa 2 sprites en vez de uno.

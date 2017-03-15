@@ -283,11 +283,11 @@ Sprites: Animated cassette wheels and more
 
 Inside the Player sprites are used in different places:
 
-- Animation of the casette wheels: one sprite for each wheel
-- Pointer: 2 sprites "overlayed"
+- Animation of the cassette wheels: one sprite for each wheel
+- Pointer: 2 overlaid sprites
 - Power button: 1 sprite
 - Counter for songs: 1 sprite
-- Fix "artifacs" of the bitmap: 2 sprites
+- Fix "artifacts" of the bitmap: 2 sprites
 
 In total 8 sprites are used, so there is no need to multiplex the sprites.
 
@@ -328,12 +328,12 @@ And the sprites pointers are from ``$63f8`` to ``$63ff`` since Bank 1 (``$4000-$
 and we told VIC that the Screen will be in ``$6000``.
 
 A useful trick to make the sprites look better is to "overlay" them: draw an
-standard sprite on top of anotehr standard/multi-color sprite. This is how it works:
+standard sprite on top of another standard/multi-color sprite. This is how it works:
 
 .. figure:: https://lh3.googleusercontent.com/T1TmdjKnu_7BrDTvQr3L1Sre2jmwlM-KTsnBpCuEjK9g7esu5pQyd1gXsVoUOR2_L4w4jsZKX7w_RkhfgsCdztt1wWJbuu1zkJ9X8DpM7Xp8CxEJY_hX-YqFkdBxQDrxObXxi1Y
    :alt: overlay sprites
 
-   *Overlayed sprites*
+   *Overlaid sprites*
 
 Games like Bruce Lee (and hundreds of others) use it.
 The only drawback is that it uses 2 sprites instead of one.
@@ -400,7 +400,7 @@ case, while we are decompressing the sid, we animate the cassette wheels:
                 dec _crunched_byte_lo
         _crunched_byte_lo = * + 1
         _crunched_byte_hi = * + 2
-                lda song_end_addrs              ; self-modyfing. needs to be set correctly before
+                lda song_end_addrs              ; self-modifying. needs to be set correctly before
                 rts                             ; decrunch_file is called.
         ; end_of_data needs to point to the address just after the address
         ; of the last byte of crunched data.
@@ -574,7 +574,7 @@ and bottom to be white, two chained interrupts can be used for that:
 
         jmp $ea81               ; Exit the interrupt
 
-We can chaing as many raster interrupts as we want. The important thing is:
+We can chain as many raster interrupts as we want. The important thing is:
 
 - The `$0314/$0315`_ vector contains the callback address (IRQ)
 - ACK (clean / accept) `$d019`_ when the callback is triggered
@@ -668,7 +668,7 @@ And to convert to Drean is similar:
 in a PAL, NTSC, Drean respectively (``0.985248`` Mhz, ``1.022727``
 Mhz, ``1.023440`` Mhz). The fastest is the Drean, and the slowest is PAL.
 
-To know the speed of an existing sid, some dessasembly is required. We have
+To know the speed of an existing sid, some disassembly is required. We have
 to search for code that changes registers ``$dc04/$dc05``. Eg: something
 like this:
 
@@ -1304,16 +1304,16 @@ Here's how the optimized algorithm works (pseudo code):
         rotate_left(c, 1);              // character is rotated one place to the left
 
         // actualizo celda izquierda
-        char value_izq = g_bitmap[g_bitmap_offset_0];
-        value_izq &= 0b11111110;        // I turn off the 1st bit LSB
-        value_izq |= (c & 0b00000001);  // put what is in the 1st bit LSB of char
-        g_bitmap[g_bitmap_offset_0] = value_izq;
+        char value_left = g_bitmap[g_bitmap_offset_0];
+        value_left &= 0b11111110;        // I turn off the 1st bit LSB
+        value_left |= (c & 0b00000001);  // put what is in the 1st bit LSB of char
+        g_bitmap[g_bitmap_offset_0] = value_left;
 
         // actualizo celda derecha
-        char value_der = g_bitmap[g_bitmap_offset_1];
-        value_der &= 0b00000001;        // I turn off the first 7 bit MSB
-        value_der |= (c & 0b11111110);  // I put what is in the first 7 bit MSB of char
-        g_bitmap[g_bitmap_offset_1] = value_der;
+        char value_right = g_bitmap[g_bitmap_offset_1];
+        value_right &= 0b00000001;        // I turn off the first 7 bit MSB
+        value_right |= (c & 0b11111110);  // I put what is in the first 7 bit MSB of char
+        g_bitmap[g_bitmap_offset_1] = value_right;
     }
 
     void plot_row_2(char c)
@@ -1321,16 +1321,16 @@ Here's how the optimized algorithm works (pseudo code):
         rotate_left(c, 2);              // character is rotated two places to the left
 
         // update left cell
-        char value_izq = g_bitmap[g_bitmap_offset_0];
-        value_izq &= 0b11111100;        // I turn off both LSB bit
-        value_izq |= (c & 0b00000011);  // put what is in the two LSB bits of char
-        g_bitmap[g_bitmap_offset_0] = value_izq;
+        char value_left = g_bitmap[g_bitmap_offset_0];
+        value_left &= 0b11111100;        // I turn off both LSB bit
+        value_left |= (c & 0b00000011);  // put what is in the two LSB bits of char
+        g_bitmap[g_bitmap_offset_0] = value_left;
 
         // update right cell
-        char value_der = g_bitmap[g_bitmap_offset_1];
-        value_der &= 0b00000011;        // I turn off the first 6 bit MSB
-        value_der |= (c & 0b11111100);  // put what is in the first 6 bit MSB of char
-        g_bitmap[g_bitmap_offset_1] = value_der;
+        char value_right = g_bitmap[g_bitmap_offset_1];
+        value_right &= 0b00000011;        // I turn off the first 6 bit MSB
+        value_right |= (c & 0b11111100);  // put what is in the first 6 bit MSB of char
+        g_bitmap[g_bitmap_offset_1] = value_right;
     }
 
     void plot_row_3(char c)
@@ -1823,7 +1823,7 @@ was pressed
         ; https://github.com/cc65/cc65/blob/master/libsrc/c64/mou/c64-1351.s
         ;
         ;       entry   y = old value of pot register
-        ;               a = currrent value of pot register
+        ;               a = current value of pot register
         ;       exit    y = value to use for old value
         ;               x,a = delta value for position
         ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
@@ -2435,7 +2435,7 @@ we paint everything in black:
 .. figure:: https://lh3.googleusercontent.com/Az0sLlckuc5AZ11CAEMfEHt5Qhytwjo5pF8VoXPMUOrXPdhah23WTuGCQ5OHHjImepzFYRMuDoMV6Pj_keYu7i5InAxd5shUcByNSwLibPkMDoTOBi9edcjgBEsKe4IZkIZ9m5U
    :alt: intro-linker black
 
-   *Black screen. The decrompress code cannot be seen*
+   *Black screen. The decompress routine cannot be seen*
 
 But if the background were not black, it would look like this:
 
@@ -2473,7 +2473,7 @@ So to prevent from "yet-to-be-used compressed data", something like this is done
    once decompressed goes to ``$fff0``. So it does not "overwrite" the compressed data.
 
 -  And the address of the first compressed byte is at ``$0800``, and that byte
-   once decompressed goes to ``$0820``. It overwrittes some compressed data,
+   once decompressed goes to ``$0820``. It overwrites some compressed data,
    but only after is was already used.
 
 **Rule**: Both the start and end addresses of the compressed data (origin),
