@@ -55,9 +55,9 @@ Memory Organization
 VIC, Banks and others
 ---------------------
 
-*Note*: I guess you already know how to use sprites and graphics modes. If you still
-do not know, go to `Bringing Sprites in good Shape <http://dustlayer.com/vic-ii/2013/4/28/vic-ii-for-beginners-part-5-bringing-sprites-in-shape>`__
-and `Screen Modes Cheaper by the Dozen <http://dustlayer.com/vic-ii/2013/4/26/vic-ii-for-beginners-screen-modes-cheaper-by-the-dozen>`__
+    .. note:: I guess you already know how to use sprites and graphics modes. If you still
+       do not know, go to `Bringing Sprites in good Shape <http://dustlayer.com/vic-ii/2013/4/28/vic-ii-for-beginners-part-5-bringing-sprites-in-shape>`__
+       and `Screen Modes Cheaper by the Dozen <http://dustlayer.com/vic-ii/2013/4/26/vic-ii-for-beginners-screen-modes-cheaper-by-the-dozen>`__
 
 Let's start with the basics. There are 64k RAM available, but when we turn on the computer
 it says there are ``38911 BASIC BYTES FREE``. That means that if we are going to use BASIC,
@@ -217,8 +217,7 @@ The 9k buffer starts at the address ``$1000``. It can be at any
 address, but by default sids run in ``$1000``.
 So from ``$1000`` to ``$3328`` (8952 bytes) is reserved to decompress the sids.
 
-*Note*: Do you know why almost all sids start at ``$1000``? See section
-above to know.
+    .. note:: Do you know why almost all sids start at ``$1000``? See section above
 
 The compressed sids start from ``$7cb0``. The higher up
 the better, thus freeing up place for the bitmap graphic (see below).
@@ -448,10 +447,10 @@ Each half-tone occupies 2 bytes, so usually the sids store the tables as follows
 So what you have to do is look for those tables (or similar) in the
 Sids, and replace them in runtime with an NTSC table.
 
-**IMPORTANT**: Not all tables are the same, but they are very
-similar. For example, the note "A" in the 8th octave may appear as
-$f820, and in others like $f830, or some other value. But the human ear
-can not differentiate them.
+    .. note:: Not all tables are the same, but they are very
+       similar. For example, the note "A" in the 8th octave may appear as
+       ``$f820``, and in others like ``$f830``, or some other value. But the human ear
+       can not differentiate them.
 
 It is best to search for ``$01, $01, $01, $01, $02, $02, $02`` and see if
 it looks like the "hi" chart. Then go 96 bytes up (or down) and see if there
