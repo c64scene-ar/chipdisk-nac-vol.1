@@ -663,6 +663,7 @@ And to convert to Drean is similar:
 
 -  ``((speed_of_timer + 1) * 1023440/985248) - 1``
 
+..
 
     .. note:: ``985248``, ``1022727``, ``1023440`` are the speeds of the 6510
        in a PAL, NTSC, Drean respectively (``0.985248`` Mhz, ``1.022727``
