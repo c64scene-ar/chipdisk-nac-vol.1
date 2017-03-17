@@ -1,4 +1,4 @@
-# Chipdisk Nacional Volumen 1
+# Chipdisk Nacional Volumen 1 (english)
 
 Recommended setup:
 
@@ -42,7 +42,7 @@ The sids and its sources are here:
 [Apache v2 License](LICENSE)
 
 
-# Chipdisk Nacional Volumen 1
+# Chipdisk Nacional Volumen 1 (español)
 
 Se recomienda correrlo en una Commodore 64 con SID 8580. Funciona en PAL-B, NTSC y PAL-N (Drean).
 
