@@ -1,5 +1,49 @@
 # Chipdisk Nacional Volumen 1
 
+Recommended setup:
+
+- Commodore 64 with SID 8580
+- Works with PAL, NTSC, PAL-N (Drean)
+
+## How to compile it
+
+- Download [cc65](http://cc65.github.io/cc65/) and add it to the path
+- Download [exomizer](http://hem.bredband.net/magli143/exo/) and add it to the path
+- Download [VICE](http://vice-emu.sourceforge.net/) and add it to the path
+
+and then do `make`
+
+        $ git clone https://github.com/c64scene-ar/chipdisk-nac-vol.1.git
+        $ cd chipdisk-nac-vol.1.git
+        $ make
+
+## Original Tracks
+
+The sids and its sources are here:
+
+- Sid sources (SidWizard and CheeseCutter files): [res/sids-source](res/sids-source)
+- Sids: [res/sids](res/sids)
+
+## Internals
+
+### Directory
+
+- `src`: includes source code + assets needed by the source code
+- `res`: includes the data in its original format: .vcharproj, sids, etc.
+- `bin`: the compiled binary
+
+
+## Documentation
+
+- [chipdisk_internals.en.rst](chipdisk_internals.en.rst)
+
+## License
+
+[Apache v2 License](LICENSE)
+
+
+# Chipdisk Nacional Volumen 1
+
 Se recomienda correrlo en una Commodore 64 con SID 8580. Funciona en PAL-B, NTSC y PAL-N (Drean).
 
 ## Cómo compilarlo
@@ -9,6 +53,10 @@ Se recomienda correrlo en una Commodore 64 con SID 8580. Funciona en PAL-B, NTSC
 - Bajarse [VICE](http://vice-emu.sourceforge.net/) y ponerlo en el path
 
 Y luego darle `make`
+
+        $ git clone https://github.com/c64scene-ar/chipdisk-nac-vol.1.git
+        $ cd chipdisk-nac-vol.1.git
+        $ make
 
 ## Tracks originales
 

@@ -1711,7 +1711,7 @@ Si queremos saber si la tecla ``Q`` fue apretada entonces hay que hacer lo sigui
 Al igual que el joystick, un valor 0 indica que fue apretada, y un 1 que no.
 
     .. note:: Los joysticks y el teclado comparten el mismo controlador (CIA)
-      por lo que diferencia entre un movimiento de joystick y teclas apretadas a
+      por lo que diferenciar entre un movimiento de joystick y teclas apretadas a
       veces se complica. Notaran que ambos usan tanto `$dc00`_ como  `$dc01`_ para
       leer los datos.
 
