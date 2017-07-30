@@ -127,7 +127,7 @@ in another. The entire bitmap must be in only one bank.
 That is not all. It can not be anywhere in the bank. There are special places
 to put bitmaps, charset and screen RAM.
 
-To tell the VIC which bank to use is done through the registry `$dd00`_ of CIA 2,
+To tell the VIC which bank to use is done through the register `$dd00`_ of CIA 2,
 like this:
 
 .. code:: asm
@@ -2519,9 +2519,9 @@ The code looks like this:
         ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-;
         .macro STABILIZE_RASTER
                 ; A Raster Compare IRQ is triggered on cycle 0 on the current $d012 line
-                ; The MPU needs to finish it's current OP code before starting the Interrupt Handler,
+                ; The MPU needs to finish its current OP code before starting the interrupt Handler,
                 ; meaning a 0 -> 7 cycles delay depending on OP code.
-                ; Then a 7 cycle delay is spent invoking the Interrupt Handler (Push SR/PC to stack++)
+                ; Then a 7 cycle delay is spent invoking the interrupt Handler (push SR/PC to stack++)
                 ; Then 13 cycles for storing registers (pha, txa, pha, tya, pha)
 
                 ; prev cycle count: 20~27
